@@ -1,0 +1,144 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: CONTAINER
+platform: duckdb
+instance: duckdb
+database: warehouse
+env: PROD
+name: Warehouse
+subTypes: Database
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+---
+kind: DATASET
+name: warehouse_raw_layer_patient
+platform: duckdb
+env: PROD
+description: Raw copy of ehr_public_patient in the warehouse
+container:
+  platform: duckdb
+  instance: duckdb
+  database: warehouse
+  env: PROD
+schema:
+  fields:
+    - fieldPath: patient_id
+      type: number
+      nativeDataType: BIGINT
+      partOfKey: true
+    - fieldPath: nom
+      type: string
+      nativeDataType: VARCHAR
+      partOfKey: false
+subTypes: Table
+tags:
+  - pii
+owners:
+  - owner: datahub
+    type: TECHNICAL_OWNER
+domains: "3667192a0a19c51419efe99aa865c1ba"
+upstreamLineage:
+  upstreams:
+    - dataset:
+        platform: postgres
+        name: ehr_public_patient
+        env: PROD
+  fineGrainedLineages:
+    - upstream:
+        platform: postgres
+        name: ehr_public_patient
+        env: PROD
+        fieldPath: patient_id
+      downstream:
+        platform: duckdb
+        name: warehouse_raw_layer_patient
+        env: PROD
+        fieldPath: patient_id
+      operation: "IDENTITY"
+      confidence: 1.0
+    - upstream:
+        platform: postgres
+        name: ehr_public_patient
+        env: PROD
+        fieldPath: nom
+      downstream:
+        platform: duckdb
+        name: warehouse_raw_layer_patient
+        env: PROD
+        fieldPath: nom
+      operation: "IDENTITY"
+      confidence: 1.0
+---
+kind: DATA_FLOW
+orchestrator: airflow
+flowId: ehr_to_warehouse
+cluster: PROD
+name: EHR to Warehouse
+description: Copies EHR tables into the warehouse raw layer
+project: ehr2warehouse
+domains: "3667192a0a19c51419efe99aa865c1ba"
+owners:
+  - owner: eds-data-engineering
+    type: TECHNICAL_OWNER
+---
+kind: DATA_JOB
+jobId: patient_to_raw_layer
+dataFlow:
+  orchestrator: airflow
+  flowId: ehr_to_warehouse
+  cluster: PROD
+name: Patient -> Warehouse raw layer
+description: Copies patient table as-is into the warehouse
+type: RawCopy
+inputDatasets:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+outputDatasets:
+  - platform: duckdb
+    name: warehouse_raw_layer_patient
+    env: PROD
+fineGrainedLineages:
+  - upstream:
+      platform: postgres
+      name: ehr_public_patient
+      env: PROD
+      fieldPath: patient_id
+    downstream:
+      platform: duckdb
+      name: warehouse_raw_layer_patient
+      env: PROD
+      fieldPath: patient_id
+    operation: "IDENTITY"
+    confidence: 1.0
+owners:
+  - owner: eds-data-engineering
+    type: TECHNICAL_OWNER
+---
+kind: DATA_PROCESS_INSTANCE
+id: "airflow_patient_to_raw_layer__2026-05-25T08:00:00"
+name: "Patient -> Warehouse raw layer @ 2026-05-25T08:00:00"
+type: BATCH_SCHEDULED
+created:
+  timestampMillis: 1779696000000
+  actor: svc-airflow
+parentTemplate:
+  orchestrator: airflow
+  flowId: ehr_to_warehouse
+  cluster: PROD
+  jobId: patient_to_raw_layer
+inputs:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+outputs:
+  - platform: duckdb
+    name: warehouse_raw_layer_patient
+    env: PROD
+runEvents:
+  - status: STARTED
+    timestampMillis: 1779696000000
+    attempt: 1
+  - status: COMPLETE
+    timestampMillis: 1779696180000
+    attempt: 1

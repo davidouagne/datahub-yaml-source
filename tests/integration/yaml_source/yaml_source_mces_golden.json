@@ -1,0 +1,2147 @@
+[
+{
+    "entityType": "dataPlatform",
+    "entityUrn": "urn:li:dataPlatform:pathling",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInfo",
+    "aspect": {
+        "json": {
+            "name": "pathling",
+            "displayName": "Pathling",
+            "type": "OTHERS",
+            "datasetNameDelimiter": ".",
+            "logoUrl": "https://example.org/assets/pathling-logo.png"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790606,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:pii",
+    "changeType": "UPSERT",
+    "aspectName": "tagProperties",
+    "aspect": {
+        "json": {
+            "name": "pii",
+            "description": "Contains personally identifiable information"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790606,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:fhir-r4",
+    "changeType": "UPSERT",
+    "aspectName": "tagProperties",
+    "aspect": {
+        "json": {
+            "name": "fhir-r4",
+            "description": "Modeled after the HL7 FHIR R4 standard"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790606,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryNode",
+    "entityUrn": "urn:li:glossaryNode:fhir:Resource",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryNodeInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "definition": "Root node for FHIR resource glossary terms",
+            "name": "HL7 FHIR Resource"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790607,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTermInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "HL7 FHIR Patient",
+            "definition": "A person receiving care",
+            "parentNode": "urn:li:glossaryNode:fhir:Resource",
+            "termSource": "INTERNAL"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790607,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Encounter",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTermInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "HL7 FHIR Encounter",
+            "definition": "An interaction between a patient and healthcare provider(s)",
+            "parentNode": "urn:li:glossaryNode:fhir:Resource",
+            "termSource": "INTERNAL"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790607,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "structuredProperty",
+    "entityUrn": "urn:li:structuredProperty:org.example.dataProduct.publishingFrequency",
+    "changeType": "UPSERT",
+    "aspectName": "propertyDefinition",
+    "aspect": {
+        "json": {
+            "qualifiedName": "org.example.dataProduct.publishingFrequency",
+            "displayName": "Publishing frequency",
+            "valueType": "urn:li:dataType:datahub.string",
+            "allowedValues": [
+                {
+                    "value": {
+                        "string": "DAILY"
+                    }
+                },
+                {
+                    "value": {
+                        "string": "MONTHLY"
+                    }
+                }
+            ],
+            "cardinality": "SINGLE",
+            "entityTypes": [
+                "urn:li:entityType:datahub.dataProduct"
+            ],
+            "description": "How often this data product is refreshed",
+            "immutable": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790607,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "domain",
+    "entityUrn": "urn:li:domain:3667192a0a19c51419efe99aa865c1ba",
+    "changeType": "UPSERT",
+    "aspectName": "domainProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient Identity",
+            "description": "Patient identity and demographics"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790608,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "containerProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "platform": "postgres",
+                "env": "PROD",
+                "database": "ehr"
+            },
+            "name": "EHR",
+            "description": "Primary EHR production database",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790608,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790609,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:postgres"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790609,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Database"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790609,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790610,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790610,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "containerProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "platform": "duckdb",
+                "env": "PROD",
+                "database": "warehouse"
+            },
+            "name": "Warehouse",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790611,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790611,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:duckdb"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790611,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Database"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790612,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790612,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790612,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:44c6f8da817901635425c92093b4a3ca"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790613,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "containerProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "platform": "postgres",
+                "env": "PROD",
+                "database": "ehr",
+                "schema": "public"
+            },
+            "name": "public",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790613,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790613,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:postgres"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790613,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Schema"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790613,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790614,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+                    "urn": "urn:li:container:44c6f8da817901635425c92093b4a3ca"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790614,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:postgres"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790616,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "schemaMetadata",
+    "aspect": {
+        "json": {
+            "schemaName": "ehr_public_patient",
+            "platform": "urn:li:dataPlatform:postgres",
+            "version": 0,
+            "created": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "hash": "",
+            "platformSchema": {
+                "com.linkedin.schema.OtherSchema": {
+                    "rawSchema": ""
+                }
+            },
+            "fields": [
+                {
+                    "fieldPath": "patient_id",
+                    "nullable": false,
+                    "description": "Primary key",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NumberType": {}
+                        }
+                    },
+                    "nativeDataType": "BIGSERIAL",
+                    "recursive": false,
+                    "isPartOfKey": true
+                },
+                {
+                    "fieldPath": "nom",
+                    "nullable": false,
+                    "description": "Last name",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.StringType": {}
+                        }
+                    },
+                    "nativeDataType": "VARCHAR(255)",
+                    "recursive": false,
+                    "isPartOfKey": false
+                },
+                {
+                    "fieldPath": "date_naissance",
+                    "nullable": false,
+                    "description": "Date of birth",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.DateType": {}
+                        }
+                    },
+                    "nativeDataType": "DATE",
+                    "recursive": false,
+                    "isPartOfKey": false
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790616,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "source_system": "EDSH"
+            },
+            "description": "Patient demographic and identity data",
+            "tags": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:1e900ca2865924d6b5f71e29908940c5"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Table"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTerms",
+    "aspect": {
+        "json": {
+            "terms": [
+                {
+                    "urn": "urn:li:glossaryTerm:fhir:Patient"
+                }
+            ],
+            "auditStamp": {
+                "time": 0,
+                "actor": "urn:li:corpuser:__ingestion"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790617,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790618,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+                    "urn": "urn:li:container:44c6f8da817901635425c92093b4a3ca"
+                },
+                {
+                    "id": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+                    "urn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790618,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:postgres"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790619,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "schemaMetadata",
+    "aspect": {
+        "json": {
+            "schemaName": "ehr_public_encounter",
+            "platform": "urn:li:dataPlatform:postgres",
+            "version": 0,
+            "created": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "hash": "",
+            "platformSchema": {
+                "com.linkedin.schema.OtherSchema": {
+                    "rawSchema": ""
+                }
+            },
+            "fields": [
+                {
+                    "fieldPath": "encounter_id",
+                    "nullable": false,
+                    "description": "Primary key",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NumberType": {}
+                        }
+                    },
+                    "nativeDataType": "BIGSERIAL",
+                    "recursive": false,
+                    "isPartOfKey": true
+                },
+                {
+                    "fieldPath": "patient_id",
+                    "nullable": false,
+                    "description": "Foreign key to patient",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NumberType": {}
+                        }
+                    },
+                    "nativeDataType": "BIGINT",
+                    "recursive": false,
+                    "isPartOfKey": false
+                },
+                {
+                    "fieldPath": "admission_date",
+                    "nullable": false,
+                    "description": "Admission date",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.DateType": {}
+                        }
+                    },
+                    "nativeDataType": "DATE",
+                    "recursive": false,
+                    "isPartOfKey": false
+                }
+            ],
+            "foreignKeys": [
+                {
+                    "name": "fk_encounter_patient",
+                    "foreignFields": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),patient_id)"
+                    ],
+                    "sourceFields": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD),patient_id)"
+                    ],
+                    "foreignDataset": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790619,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "description": "Hospital encounter/visit data, linked to patient",
+            "tags": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:1e900ca2865924d6b5f71e29908940c5"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Table"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:fhir-r4"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTerms",
+    "aspect": {
+        "json": {
+            "terms": [
+                {
+                    "urn": "urn:li:glossaryTerm:fhir:Encounter"
+                }
+            ],
+            "auditStamp": {
+                "time": 0,
+                "actor": "urn:li:corpuser:__ingestion"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790620,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790622,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+                    "urn": "urn:li:container:44c6f8da817901635425c92093b4a3ca"
+                },
+                {
+                    "id": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+                    "urn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790622,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:duckdb"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790622,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "schemaMetadata",
+    "aspect": {
+        "json": {
+            "schemaName": "warehouse_raw_layer_patient",
+            "platform": "urn:li:dataPlatform:duckdb",
+            "version": 0,
+            "created": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "hash": "",
+            "platformSchema": {
+                "com.linkedin.schema.OtherSchema": {
+                    "rawSchema": ""
+                }
+            },
+            "fields": [
+                {
+                    "fieldPath": "patient_id",
+                    "nullable": false,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NumberType": {}
+                        }
+                    },
+                    "nativeDataType": "BIGINT",
+                    "recursive": false,
+                    "isPartOfKey": true
+                },
+                {
+                    "fieldPath": "nom",
+                    "nullable": false,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.StringType": {}
+                        }
+                    },
+                    "nativeDataType": "VARCHAR",
+                    "recursive": false,
+                    "isPartOfKey": false
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790622,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "upstreamLineage",
+    "aspect": {
+        "json": {
+            "upstreams": [
+                {
+                    "auditStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:unknown"
+                    },
+                    "dataset": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+                    "type": "TRANSFORMED"
+                }
+            ],
+            "fineGrainedLineages": [
+                {
+                    "upstreamType": "FIELD_SET",
+                    "upstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),patient_id)"
+                    ],
+                    "downstreamType": "FIELD",
+                    "downstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD),patient_id)"
+                    ],
+                    "transformOperation": "IDENTITY",
+                    "confidenceScore": 1.0
+                },
+                {
+                    "upstreamType": "FIELD_SET",
+                    "upstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),nom)"
+                    ],
+                    "downstreamType": "FIELD",
+                    "downstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD),nom)"
+                    ],
+                    "transformOperation": "IDENTITY",
+                    "confidenceScore": 1.0
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790623,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "description": "Raw copy of ehr_public_patient in the warehouse",
+            "tags": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790623,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790623,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Table"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790623,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790623,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790624,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790624,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+                    "urn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790624,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "dataProductProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient Identity",
+            "description": "Canonical patient identity data product, combining the raw EHR patient\ntable with its warehouse copy.\n",
+            "assets": [
+                {
+                    "destinationUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+                    "outputPort": false
+                },
+                {
+                    "destinationUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+                    "outputPort": false
+                },
+                {
+                    "destinationUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+                    "outputPort": false
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790624,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790626,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790626,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTerms",
+    "aspect": {
+        "json": {
+            "terms": [
+                {
+                    "urn": "urn:li:glossaryTerm:fhir:Patient"
+                }
+            ],
+            "auditStamp": {
+                "time": 0,
+                "actor": "urn:li:corpuser:datahub"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790626,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:data-team@example.org",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790626,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "structuredProperties",
+    "aspect": {
+        "json": {
+            "properties": [
+                {
+                    "propertyUrn": "urn:li:structuredProperty:org.example.dataProduct.publishingFrequency",
+                    "values": [
+                        {
+                            "string": "DAILY"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790626,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:airflow"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataFlowInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "project": "ehr2warehouse"
+            },
+            "name": "EHR to Warehouse",
+            "description": "Copies EHR tables into the warehouse raw layer",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:eds-data-engineering",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:airflow"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "dataJobInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient -> Warehouse raw layer",
+            "description": "Copies patient table as-is into the warehouse",
+            "type": {
+                "string": "COMMAND"
+            },
+            "flowUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790627,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "RawCopy"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790629,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:eds-data-engineering",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790629,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "dataJobInputOutput",
+    "aspect": {
+        "json": {
+            "inputDatasets": [
+                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+            ],
+            "outputDatasets": [
+                "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)"
+            ],
+            "fineGrainedLineages": [
+                {
+                    "upstreamType": "FIELD_SET",
+                    "upstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),patient_id)"
+                    ],
+                    "downstreamType": "FIELD",
+                    "downstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD),patient_id)"
+                    ],
+                    "transformOperation": "IDENTITY",
+                    "confidenceScore": 1.0
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790629,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "ehr_to_warehouse",
+                    "urn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790629,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient -> Warehouse raw layer @ 2026-05-25T08:00:00",
+            "type": "BATCH_SCHEDULED",
+            "created": {
+                "time": 1779696000000,
+                "actor": "urn:li:corpuser:svc-airflow"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790629,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceRelationships",
+    "aspect": {
+        "json": {
+            "parentTemplate": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+            "upstreamInstances": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790630,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceInput",
+    "aspect": {
+        "json": {
+            "inputs": [
+                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790630,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceOutput",
+    "aspect": {
+        "json": {
+            "outputs": [
+                "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790630,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceRunEvent",
+    "aspect": {
+        "json": {
+            "timestampMillis": 1779696000000,
+            "partitionSpec": {
+                "partition": "FULL_TABLE_SNAPSHOT",
+                "type": "FULL_TABLE"
+            },
+            "status": "STARTED",
+            "attempt": 1
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790630,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "dataProcessInstanceRunEvent",
+    "aspect": {
+        "json": {
+            "timestampMillis": 1779696180000,
+            "partitionSpec": {
+                "partition": "FULL_TABLE_SNAPSHOT",
+                "type": "FULL_TABLE"
+            },
+            "status": "COMPLETE",
+            "attempt": 1
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790630,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:ehr-patient-freshness-check",
+    "changeType": "UPSERT",
+    "aspectName": "assertionInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "type": "FRESHNESS",
+            "freshnessAssertion": {
+                "type": "DATASET_CHANGE",
+                "entity": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+                "schedule": {
+                    "type": "CRON",
+                    "cron": {
+                        "cron": "0 8 * * *",
+                        "timezone": "UTC"
+                    }
+                }
+            },
+            "description": "The patient table must be refreshed within 24h"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790631,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:warehouse-patient-uniqueness-check",
+    "changeType": "UPSERT",
+    "aspectName": "assertionInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "type": "SQL",
+            "sqlAssertion": {
+                "type": "METRIC",
+                "entity": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+                "statement": "SELECT COUNT(*) - COUNT(DISTINCT patient_id) FROM warehouse_raw_layer_patient",
+                "changeType": "ABSOLUTE",
+                "operator": "EQUAL_TO",
+                "parameters": {
+                    "value": {
+                        "value": "0",
+                        "type": "NUMBER"
+                    }
+                }
+            },
+            "description": "patient_id must be unique"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790631,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProfile",
+    "aspect": {
+        "json": {
+            "timestampMillis": 1777662127622,
+            "eventGranularity": {
+                "unit": "DAY",
+                "multiple": 1
+            },
+            "partitionSpec": {
+                "partition": "FULL_TABLE_SNAPSHOT",
+                "type": "FULL_TABLE"
+            },
+            "messageId": "profile-ehr_public_patient-20260501",
+            "rowCount": 1480100,
+            "columnCount": 3,
+            "fieldProfiles": [
+                {
+                    "fieldPath": "patient_id",
+                    "uniqueCount": 1480100,
+                    "uniqueProportion": 1.0,
+                    "nullCount": 0,
+                    "nullProportion": 0.0,
+                    "min": "10000001",
+                    "max": "99999999"
+                },
+                {
+                    "fieldPath": "nom",
+                    "uniqueCount": 0,
+                    "uniqueProportion": 0.0,
+                    "nullCount": 0,
+                    "nullProportion": 0.0
+                }
+            ],
+            "sizeInBytes": 311681024
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790631,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:ehr-patient-freshness-check",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:warehouse-patient-uniqueness-check",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProcessInstance",
+    "entityUrn": "urn:li:dataProcessInstance:airflow_patient_to_raw_layer__2026-05-25T08:00:00",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790633,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790634,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_encounter,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790634,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790634,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryNode",
+    "entityUrn": "urn:li:glossaryNode:fhir:Resource",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790634,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Encounter",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790635,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790635,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "structuredProperty",
+    "entityUrn": "urn:li:structuredProperty:org.example.dataProduct.publishingFrequency",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790635,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:fhir-r4",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790635,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:pii",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1783963790635,
+        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastRunId": "no-run-id-provided"
+    }
+}
+]

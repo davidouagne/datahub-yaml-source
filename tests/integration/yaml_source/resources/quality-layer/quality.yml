@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: ASSERTION
+id: ehr-patient-freshness-check
+description: "The patient table must be refreshed within 24h"
+sourceType: NATIVE
+properties:
+  name: "Freshness - patient"
+assertion:
+  type: FRESHNESS
+  entityUrn: "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+  freshnessType: DATASET_CHANGE
+  scheduleType: CRON
+  cron: "0 8 * * *"
+  timezone: "UTC"
+---
+kind: ASSERTION
+id: warehouse-patient-uniqueness-check
+description: "patient_id must be unique"
+sourceType: NATIVE
+properties:
+  name: "Uniqueness - patient_id"
+assertion:
+  type: SQL
+  entityUrn: "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)"
+  sqlType: METRIC
+  statement: "SELECT COUNT(*) - COUNT(DISTINCT patient_id) FROM warehouse_raw_layer_patient"
+  operator: EQUAL_TO
+  value: 0
+  changeType: ABSOLUTE

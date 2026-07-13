@@ -1,0 +1,119 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: CONTAINER
+platform: postgres
+database: ehr
+env: PROD
+name: EHR
+description: Primary EHR production database
+subTypes: Database
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+---
+kind: CONTAINER
+platform: postgres
+database: ehr
+schema: public
+env: PROD
+name: public
+parentContainer:
+  platform: postgres
+  database: ehr
+  env: PROD
+subTypes: Schema
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+---
+kind: DATASET
+name: ehr_public_patient
+platform: postgres
+env: PROD
+description: Patient demographic and identity data
+container:
+  platform: postgres
+  database: ehr
+  schema: public
+  env: PROD
+schema:
+  fields:
+    - fieldPath: patient_id
+      type: number
+      description: Primary key
+      nativeDataType: BIGSERIAL
+      partOfKey: true
+    - fieldPath: nom
+      type: string
+      description: Last name
+      nativeDataType: VARCHAR(255)
+      partOfKey: false
+    - fieldPath: date_naissance
+      type: date
+      description: Date of birth
+      nativeDataType: DATE
+      partOfKey: false
+properties:
+  source_system: EDSH
+subTypes:
+  - Table
+tags:
+  - pii
+glossaryTerms:
+  - fhir:Patient
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+domains: "3667192a0a19c51419efe99aa865c1ba"
+---
+kind: DATASET
+name: ehr_public_encounter
+platform: postgres
+env: PROD
+description: Hospital encounter/visit data, linked to patient
+container:
+  platform: postgres
+  database: ehr
+  schema: public
+  env: PROD
+schema:
+  fields:
+    - fieldPath: encounter_id
+      type: number
+      description: Primary key
+      nativeDataType: BIGSERIAL
+      partOfKey: true
+    - fieldPath: patient_id
+      type: number
+      description: Foreign key to patient
+      nativeDataType: BIGINT
+      partOfKey: false
+    - fieldPath: admission_date
+      type: date
+      description: Admission date
+      nativeDataType: DATE
+      partOfKey: false
+  foreignKeys:
+    - name: fk_encounter_patient
+      sourceFields:
+        - platform: postgres
+          name: ehr_public_encounter
+          env: PROD
+          fieldPath: patient_id
+      foreignDataset:
+        platform: postgres
+        name: ehr_public_patient
+        env: PROD
+      foreignFields:
+        - platform: postgres
+          name: ehr_public_patient
+          env: PROD
+          fieldPath: patient_id
+subTypes: Table
+tags:
+  - fhir-r4
+glossaryTerms:
+  - fhir:Encounter
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+domains: "3667192a0a19c51419efe99aa865c1ba"

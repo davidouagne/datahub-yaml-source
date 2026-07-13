@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: DATA_PLATFORM
+name: pathling
+displayName: Pathling
+type: OTHERS
+logoUrl: https://example.org/assets/pathling-logo.png
+datasetNameDelimiter: "."
+---
+kind: TAG
+name: pii
+description: Contains personally identifiable information
+---
+kind: TAG
+name: fhir-r4
+description: Modeled after the HL7 FHIR R4 standard
+---
+kind: GLOSSARY_NODE
+id: fhir:Resource
+name: HL7 FHIR Resource
+definition: Root node for FHIR resource glossary terms
+---
+kind: GLOSSARY_TERM
+id: fhir:Patient
+name: HL7 FHIR Patient
+definition: A person receiving care
+parentNode: fhir:Resource
+---
+kind: GLOSSARY_TERM
+id: fhir:Encounter
+name: HL7 FHIR Encounter
+definition: An interaction between a patient and healthcare provider(s)
+parentNode: fhir:Resource
+---
+kind: STRUCTURED_PROPERTY
+qualifiedName: "org.example.dataProduct.publishingFrequency"
+displayName: Publishing frequency
+description: How often this data product is refreshed
+cardinality: SINGLE
+valueType: string
+allowedValues:
+  - value: "DAILY"
+  - value: "MONTHLY"
+entityTypes: [dataProduct]
+---
+kind: DOMAIN
+id: "3667192a0a19c51419efe99aa865c1ba"
+name: Patient Identity
+description: Patient identity and demographics

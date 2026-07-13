@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: DATA_PRODUCT
+id: "b78435bfad26dab4c11e6e41c2a72b53"
+name: "Patient Identity"
+description: |
+  Canonical patient identity data product, combining the raw EHR patient
+  table with its warehouse copy.
+domains: "3667192a0a19c51419efe99aa865c1ba"
+glossaryTerms:
+  - fhir:Patient
+tags:
+  - pii
+owners:
+  - owner: "data-team@example.org"
+    type: TECHNICAL_OWNER
+structuredProperties:
+  org.example.dataProduct.publishingFrequency: "DAILY"
+assets:
+  - "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+  - "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)"
+  - "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)"

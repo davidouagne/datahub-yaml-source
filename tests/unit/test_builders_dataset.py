@@ -1,0 +1,213 @@
+from datahub_yaml_source.builders.dataset import build_dataset
+from datahub_yaml_source.loader import ParsedRepository
+from datahub_yaml_source.models import ContainerDoc, DatasetDoc, DomainDoc, GlossaryTermDoc, TagDoc
+from datahub_yaml_source.urns import ReferenceIndex
+from datahub_yaml_source.yaml_source_report import YamlSourceReport
+
+
+def _repository_with_known_references():
+    repo = ParsedRepository()
+    repo.tags.append(TagDoc(kind="TAG", name="pii"))
+    repo.tags.append(TagDoc(kind="TAG", name="fhir-r4"))
+    repo.glossary_terms.append(GlossaryTermDoc(kind="GLOSSARY_TERM", id="donnees-patient.patient", name="Patient"))
+    repo.domains.append(DomainDoc(kind="DOMAIN", id="3667192a0a19c51419efe99aa865c1ba", name="Identite patient"))
+    repo.containers.append(
+        ContainerDoc.model_validate(
+            {
+                "kind": "CONTAINER",
+                "platform": "postgres",
+                "database": "ehr",
+                "schema": "public",
+                "env": "PROD",
+                "name": "public",
+                "subTypes": "Schema",
+            }
+        )
+    )
+    return repo
+
+
+def _dataset_doc():
+    return DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "ehr_public_patient",
+            "platform": "postgres",
+            "env": "PROD",
+            "description": "Patient data",
+            "container": {"platform": "postgres", "database": "ehr", "schema": "public", "env": "PROD"},
+            "schema": {
+                "fields": [
+                    {"fieldPath": "patient_id", "type": "number", "nativeDataType": "BIGSERIAL", "partOfKey": True},
+                    {"fieldPath": "nom", "type": "string", "nativeDataType": "VARCHAR(255)", "partOfKey": False},
+                ],
+            },
+            "subTypes": ["Table"],
+            "tags": ["pii"],
+            "glossaryTerms": ["donnees-patient.patient"],
+            "owners": {"owner": "datahub", "type": "TECHNICAL_OWNER"},
+            "domains": "3667192a0a19c51419efe99aa865c1ba",
+        }
+    )
+
+
+def test_build_dataset_emits_expected_aspects():
+    repo = _repository_with_known_references()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    wus = list(build_dataset(_dataset_doc(), index, report))
+    assert not report.dangling_references
+
+    aspects_by_name = {wu.metadata.aspect.__class__.__name__: wu.metadata.aspect for wu in wus}
+    assert wus[0].metadata.entityUrn == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+
+    schema_metadata = aspects_by_name["SchemaMetadataClass"]
+    assert [f.fieldPath for f in schema_metadata.fields] == ["patient_id", "nom"]
+    assert schema_metadata.fields[0].isPartOfKey is True
+
+    tags = aspects_by_name["GlobalTagsClass"]
+    assert tags.tags[0].tag == "urn:li:tag:pii"
+
+    terms = aspects_by_name["GlossaryTermsClass"]
+    assert terms.terms[0].urn == "urn:li:glossaryTerm:donnees-patient.patient"
+
+    domains = aspects_by_name["DomainsClass"]
+    assert domains.domains == ["urn:li:domain:3667192a0a19c51419efe99aa865c1ba"]
+
+    container = aspects_by_name["ContainerClass"]
+    assert container.container is not None
+
+
+def test_build_dataset_with_foreign_keys_builds_schema_field_urns():
+    repo = _repository_with_known_references()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "ehr_public_actes",
+            "platform": "postgres",
+            "env": "PROD",
+            "schema": {
+                "fields": [{"fieldPath": "acte_id", "type": "number", "partOfKey": True}],
+                "foreignKeys": [
+                    {
+                        "name": "fk_actes_patient",
+                        "sourceFields": [
+                            {"platform": "postgres", "name": "ehr_public_actes", "env": "PROD", "fieldPath": "patient_id"}
+                        ],
+                        "foreignDataset": {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"},
+                        "foreignFields": [
+                            {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "patient_id"}
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    schema_metadata = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "SchemaMetadataClass"
+    )
+    fk = schema_metadata.foreignKeys[0]
+    assert fk.foreignDataset == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert fk.sourceFields[0].endswith(",patient_id)")
+
+
+def test_build_dataset_with_upstream_lineage_and_fine_grained():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "transform_layer_fhir_condition",
+            "platform": "dbt",
+            "env": "PROD",
+            "upstreamLineage": {
+                "upstreams": [{"dataset": {"platform": "duckdb", "name": "warehouse_staging_stg_ehr__diagnostics", "env": "PROD"}}],
+                "fineGrainedLineages": [
+                    {
+                        "upstream": {"platform": "duckdb", "name": "warehouse_staging_stg_ehr__diagnostics", "env": "PROD", "fieldPath": "diagnostic_id"},
+                        "downstream": {"platform": "dbt", "name": "transform_layer_fhir_condition", "env": "PROD", "fieldPath": "identifier_diag_value"},
+                        "operation": "TRANSFORM",
+                        "confidence": 1.0,
+                    }
+                ],
+            },
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    upstream_lineage = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
+    )
+    assert len(upstream_lineage.upstreams) == 1
+    assert upstream_lineage.upstreams[0].dataset == "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_staging_stg_ehr__diagnostics,PROD)"
+    assert len(upstream_lineage.fineGrainedLineages) == 1
+    fgl = upstream_lineage.fineGrainedLineages[0]
+    assert fgl.transformOperation == "TRANSFORM"
+    assert fgl.upstreams[0].endswith(",diagnostic_id)")
+    assert fgl.downstreams[0].endswith(",identifier_diag_value)")
+
+
+def test_build_dataset_upstream_lineage_handles_constant_operation_without_upstream():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "omop_public_visit_occurrence",
+            "platform": "postgres",
+            "upstreamLineage": {
+                "upstreams": [],
+                "fineGrainedLineages": [
+                    {
+                        "downstream": {
+                            "platform": "postgres",
+                            "name": "omop_public_visit_occurrence",
+                            "env": "PROD",
+                            "fieldPath": "visit_type_concept_id",
+                        },
+                        "operation": "CONSTANT",
+                        "confidence": 1.0,
+                    }
+                ],
+            },
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    upstream_lineage = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
+    )
+    fgl = upstream_lineage.fineGrainedLineages[0]
+    assert fgl.upstreams == []
+    assert fgl.transformOperation == "CONSTANT"
+
+
+def test_build_dataset_reports_dangling_tag_domain_and_container_but_still_emits():
+    repo = ParsedRepository()  # empty: nothing declared
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "x",
+            "platform": "postgres",
+            "tags": ["unknown-tag"],
+            "domains": "unknown-domain",
+            "container": {"platform": "postgres", "database": "unknown-db", "env": "PROD"},
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    assert len(wus) > 0
+    assert len(report.dangling_references) == 3

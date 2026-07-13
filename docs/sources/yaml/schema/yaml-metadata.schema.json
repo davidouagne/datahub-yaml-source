@@ -1,0 +1,2175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "YAML metadata-as-code document",
+  "description": "A single document (one `---`-separated section of a *.yml/*.yaml file) in the datahub-yaml-source format. Discriminated by `kind` for entity documents, or by `aspectName` for raw aspect passthrough documents. See docs/sources/yaml/yaml.md for the full reference.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/DataPlatformDoc"
+    },
+    {
+      "$ref": "#/$defs/TagDoc"
+    },
+    {
+      "$ref": "#/$defs/GlossaryNodeDoc"
+    },
+    {
+      "$ref": "#/$defs/GlossaryTermDoc"
+    },
+    {
+      "$ref": "#/$defs/StructuredPropertyDoc"
+    },
+    {
+      "$ref": "#/$defs/DomainDoc"
+    },
+    {
+      "$ref": "#/$defs/ContainerDoc"
+    },
+    {
+      "$ref": "#/$defs/DatasetDoc"
+    },
+    {
+      "$ref": "#/$defs/DataProductDoc"
+    },
+    {
+      "$ref": "#/$defs/DataFlowDoc"
+    },
+    {
+      "$ref": "#/$defs/DataJobDoc"
+    },
+    {
+      "$ref": "#/$defs/DataProcessInstanceDoc"
+    },
+    {
+      "$ref": "#/$defs/AssertionDoc"
+    },
+    {
+      "$ref": "#/$defs/RawAspectDoc"
+    }
+  ],
+  "$defs": {
+    "AllowedValueDoc": {
+      "properties": {
+        "value": {
+          "title": "Value"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "AllowedValueDoc",
+      "type": "object"
+    },
+    "AssertionAssertionDoc": {
+      "description": "Union of the FRESHNESS / SQL / FIELD assertion shapes, kept flat.\n\nOnly the fields relevant to `type` will be populated by the author; the\nassertion builder picks which ones to read based on `type`.",
+      "properties": {
+        "type": {
+          "description": "FRESHNESS, SQL, or FIELD -- selects which fields below apply.",
+          "title": "Type",
+          "type": "string"
+        },
+        "entityUrn": {
+          "description": "Full URN of the dataset this assertion checks.",
+          "title": "Entityurn",
+          "type": "string"
+        },
+        "freshnessType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FRESHNESS] e.g. DATASET_CHANGE.",
+          "title": "Freshnesstype"
+        },
+        "scheduleType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FRESHNESS] e.g. CRON.",
+          "title": "Scheduletype"
+        },
+        "cron": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FRESHNESS] cron expression, if scheduleType is CRON.",
+          "title": "Cron"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FRESHNESS] IANA timezone for the cron schedule.",
+          "title": "Timezone"
+        },
+        "sqlType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[SQL] e.g. METRIC.",
+          "title": "Sqltype"
+        },
+        "statement": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[SQL] the SQL query to evaluate.",
+          "title": "Statement"
+        },
+        "operator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[SQL/FIELD] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.",
+          "title": "Operator"
+        },
+        "value": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[SQL] the comparison value for 'operator'.",
+          "title": "Value"
+        },
+        "changeType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[SQL] e.g. ABSOLUTE, PERCENTAGE.",
+          "title": "Changetype"
+        },
+        "fieldType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD] FIELD_METRIC or FIELD_VALUES.",
+          "title": "Fieldtype"
+        },
+        "fieldPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD] the column this assertion checks.",
+          "title": "Fieldpath"
+        },
+        "dataType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD] the column's DataHub schema type.",
+          "title": "Datatype"
+        },
+        "nativeDataType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD] the column's native source type.",
+          "title": "Nativedatatype"
+        },
+        "metric": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD, FIELD_METRIC] e.g. UNIQUE_PERCENTAGE.",
+          "title": "Metric"
+        },
+        "metricOperator": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD, FIELD_METRIC] comparison operator for 'metric'.",
+          "title": "Metricoperator"
+        },
+        "metricValue": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD, FIELD_METRIC] the comparison value.",
+          "title": "Metricvalue"
+        },
+        "excludeNulls": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[FIELD, FIELD_VALUES] ignore nulls when checking 'operator'.",
+          "title": "Excludenulls"
+        }
+      },
+      "required": [
+        "type",
+        "entityUrn"
+      ],
+      "title": "AssertionAssertionDoc",
+      "type": "object"
+    },
+    "AssertionDoc": {
+      "description": "A data quality assertion (freshness, SQL-based, or field-level check).",
+      "properties": {
+        "kind": {
+          "const": "ASSERTION",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:assertion:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "sourceType": {
+          "default": "NATIVE",
+          "title": "Sourcetype",
+          "type": "string"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssertionPropertiesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "assertion": {
+          "$ref": "#/$defs/AssertionAssertionDoc"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "assertion"
+      ],
+      "title": "AssertionDoc",
+      "type": "object"
+    },
+    "AssertionPropertiesDoc": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "dbt_test": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dbt Test"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "AssertionPropertiesDoc",
+      "type": "object"
+    },
+    "ContainerDoc": {
+      "description": "A container (database, schema, bucket, ...). Emitted with parents\nbefore children automatically, regardless of declaration order across\nfiles. See `ContainerRef` for how the URN is computed.",
+      "properties": {
+        "platform": {
+          "description": "Platform of the container, e.g. 'postgres', 'duckdb', 's3'.",
+          "title": "Platform",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Platform instance name. Does not affect the container's URN.",
+          "title": "Instance"
+        },
+        "database": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Database"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "env": {
+          "default": "PROD",
+          "description": "Does not affect the container's URN.",
+          "title": "Env",
+          "type": "string"
+        },
+        "kind": {
+          "const": "CONTAINER",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "parentContainer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference to the parent container, if any (e.g. a schema's parent database)."
+        },
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'Database', 'Schema', 'S3_BUCKET'.",
+          "title": "Subtypes"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "platform",
+        "kind",
+        "name"
+      ],
+      "title": "ContainerDoc",
+      "type": "object"
+    },
+    "ContainerRef": {
+      "description": "Reference to a container by its natural (platform, database, schema) key.\n\nOnly `platform` + `database` + `schema` determine the container's URN;\n`instance` and `env` are accepted but never affect it (they're only used\nfor the separate `dataPlatformInstance` aspect). See the \"Container URN\ncomputation\" section in yaml.md.",
+      "properties": {
+        "platform": {
+          "description": "Platform of the container, e.g. 'postgres', 'duckdb', 's3'.",
+          "title": "Platform",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Platform instance name. Does not affect the container's URN.",
+          "title": "Instance"
+        },
+        "database": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Database"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schema"
+        },
+        "env": {
+          "default": "PROD",
+          "description": "Does not affect the container's URN.",
+          "title": "Env",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform"
+      ],
+      "title": "ContainerRef",
+      "type": "object"
+    },
+    "CreatedDoc": {
+      "properties": {
+        "timestampMillis": {
+          "title": "Timestampmillis",
+          "type": "integer"
+        },
+        "actor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owner name; converted to a corpuser URN if not already one.",
+          "title": "Actor"
+        }
+      },
+      "required": [
+        "timestampMillis"
+      ],
+      "title": "CreatedDoc",
+      "type": "object"
+    },
+    "DataFlowDoc": {
+      "description": "A pipeline (e.g. an Airflow DAG, a dbt project run).",
+      "properties": {
+        "kind": {
+          "const": "DATA_FLOW",
+          "title": "Kind",
+          "type": "string"
+        },
+        "orchestrator": {
+          "description": "e.g. 'airflow', 'dbt'. Becomes part of the dataFlow URN.",
+          "title": "Orchestrator",
+          "type": "string"
+        },
+        "flowId": {
+          "title": "Flowid",
+          "type": "string"
+        },
+        "cluster": {
+          "default": "PROD",
+          "description": "Deployment/cluster identifier, part of the dataFlow URN.",
+          "title": "Cluster",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        }
+      },
+      "required": [
+        "kind",
+        "orchestrator",
+        "flowId",
+        "name"
+      ],
+      "title": "DataFlowDoc",
+      "type": "object"
+    },
+    "DataFlowJobRef": {
+      "description": "Reference to a DATA_JOB by its natural (orchestrator, flowId, cluster, jobId) key.",
+      "properties": {
+        "orchestrator": {
+          "title": "Orchestrator",
+          "type": "string"
+        },
+        "flowId": {
+          "title": "Flowid",
+          "type": "string"
+        },
+        "cluster": {
+          "default": "PROD",
+          "title": "Cluster",
+          "type": "string"
+        },
+        "jobId": {
+          "title": "Jobid",
+          "type": "string"
+        }
+      },
+      "required": [
+        "orchestrator",
+        "flowId",
+        "jobId"
+      ],
+      "title": "DataFlowJobRef",
+      "type": "object"
+    },
+    "DataFlowRef": {
+      "description": "Reference to a DATA_FLOW by its natural (orchestrator, flowId, cluster) key.",
+      "properties": {
+        "orchestrator": {
+          "title": "Orchestrator",
+          "type": "string"
+        },
+        "flowId": {
+          "title": "Flowid",
+          "type": "string"
+        },
+        "cluster": {
+          "default": "PROD",
+          "title": "Cluster",
+          "type": "string"
+        }
+      },
+      "required": [
+        "orchestrator",
+        "flowId"
+      ],
+      "title": "DataFlowRef",
+      "type": "object"
+    },
+    "DataJobDoc": {
+      "description": "A task within a pipeline (DATA_FLOW).",
+      "properties": {
+        "kind": {
+          "const": "DATA_JOB",
+          "title": "Kind",
+          "type": "string"
+        },
+        "jobId": {
+          "title": "Jobid",
+          "type": "string"
+        },
+        "dataFlow": {
+          "$ref": "#/$defs/DataFlowRef",
+          "description": "Reference to the parent DATA_FLOW this task belongs to."
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "inputDatasets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inputdatasets"
+        },
+        "outputDatasets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outputdatasets"
+        },
+        "fineGrainedLineages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/FineGrainedLineageDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Column-level lineage edges from inputDatasets to outputDatasets.",
+          "title": "Finegrainedlineages"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        }
+      },
+      "required": [
+        "kind",
+        "jobId",
+        "dataFlow",
+        "name"
+      ],
+      "title": "DataJobDoc",
+      "type": "object"
+    },
+    "DataPlatformDoc": {
+      "description": "Registers a custom data platform (e.g. one not built into DataHub's\ncore platform list). Not needed for well-known platforms like `postgres`\nor `duckdb` -- only for platforms DataHub doesn't already know about.",
+      "properties": {
+        "kind": {
+          "const": "DATA_PLATFORM",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "Platform identifier, e.g. 'pathling'. Becomes urn:li:dataPlatform:<name>.",
+          "title": "Name",
+          "type": "string"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "type": {
+          "default": "OTHERS",
+          "description": "One of DataHub's PlatformType enum values, e.g. RELATIONAL_DB, OTHERS.",
+          "title": "Type",
+          "type": "string"
+        },
+        "logoUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Logourl"
+        },
+        "datasetNameDelimiter": {
+          "default": ".",
+          "title": "Datasetnamedelimiter",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "DataPlatformDoc",
+      "type": "object"
+    },
+    "DataProcessInstanceDoc": {
+      "description": "A single run of a DATA_JOB, with its own run-event history. For\nongoing/incremental run events after the initial run, prefer an\n`aspectName: DATA_PROCESS_INSTANCE_RUN_EVENT` raw-aspect document instead\nof appending to `runEvents` here.",
+      "properties": {
+        "kind": {
+          "const": "DATA_PROCESS_INSTANCE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:dataProcessInstance:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "default": "BATCH_SCHEDULED",
+          "title": "Type",
+          "type": "string"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "created": {
+          "$ref": "#/$defs/CreatedDoc"
+        },
+        "parentTemplate": {
+          "$ref": "#/$defs/DataFlowJobRef",
+          "description": "Reference to the DATA_JOB this is a run of."
+        },
+        "inputs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inputs"
+        },
+        "outputs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outputs"
+        },
+        "runEvents": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RunEventDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Runevents"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "created",
+        "parentTemplate"
+      ],
+      "title": "DataProcessInstanceDoc",
+      "type": "object"
+    },
+    "DataProductDoc": {
+      "description": "A data product: a curated bundle of datasets/jobs presented as a\nsingle discoverable asset, with its own domain/tags/owners.",
+      "properties": {
+        "kind": {
+          "const": "DATA_PRODUCT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:dataProduct:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Full URNs of the entities (datasets, dataJobs, ...) that make up this product.",
+          "title": "Assets"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "DataProductDoc",
+      "type": "object"
+    },
+    "DatasetDoc": {
+      "description": "A dataset (table, view, topic, file, ...).",
+      "properties": {
+        "kind": {
+          "const": "DATASET",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The dataset's parent container."
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SchemaBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'Table', 'View', 'Topic'.",
+          "title": "Subtypes"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "upstreamLineage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UpstreamLineageDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "platform"
+      ],
+      "title": "DatasetDoc",
+      "type": "object"
+    },
+    "DatasetFieldRef": {
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "fieldPath": {
+          "title": "Fieldpath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "name",
+        "fieldPath"
+      ],
+      "title": "DatasetFieldRef",
+      "type": "object"
+    },
+    "DatasetRef": {
+      "description": "Reference to a dataset by its natural (platform, name, env) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "DatasetRef",
+      "type": "object"
+    },
+    "DomainDoc": {
+      "description": "A business domain, used to group related datasets/data products.\nReferenced elsewhere via `domains: <id>`.",
+      "properties": {
+        "kind": {
+          "const": "DOMAIN",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:domain:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "DomainDoc",
+      "type": "object"
+    },
+    "FineGrainedLineageDoc": {
+      "description": "A single column-level lineage edge.",
+      "properties": {
+        "upstream": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DatasetFieldRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Source column. Absent for e.g. operation: CONSTANT, where the downstream value is a literal with no source column."
+        },
+        "downstream": {
+          "$ref": "#/$defs/DatasetFieldRef"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text transform description, e.g. IDENTITY, CONSTANT.",
+          "title": "Operation"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 1.0,
+          "title": "Confidence"
+        }
+      },
+      "required": [
+        "downstream"
+      ],
+      "title": "FineGrainedLineageDoc",
+      "type": "object"
+    },
+    "ForeignKeyDoc": {
+      "description": "A foreign key constraint from this dataset's schema to another dataset.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "sourceFields": {
+          "description": "Column(s) on this dataset.",
+          "items": {
+            "$ref": "#/$defs/DatasetFieldRef"
+          },
+          "title": "Sourcefields",
+          "type": "array"
+        },
+        "foreignDataset": {
+          "$ref": "#/$defs/DatasetRef",
+          "description": "The dataset the foreign key points to."
+        },
+        "foreignFields": {
+          "description": "Column(s) on the foreign dataset.",
+          "items": {
+            "$ref": "#/$defs/DatasetFieldRef"
+          },
+          "title": "Foreignfields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "foreignDataset"
+      ],
+      "title": "ForeignKeyDoc",
+      "type": "object"
+    },
+    "GlossaryNodeDoc": {
+      "description": "A glossary category/folder that groups related glossary terms.",
+      "properties": {
+        "kind": {
+          "const": "GLOSSARY_NODE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:glossaryNode:<id>. Referenced via 'parentNode'.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "definition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Definition"
+        },
+        "parentNode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a parent GLOSSARY_NODE, for nested categories.",
+          "title": "Parentnode"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "GlossaryNodeDoc",
+      "type": "object"
+    },
+    "GlossaryTermDoc": {
+      "description": "A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`.",
+      "properties": {
+        "kind": {
+          "const": "GLOSSARY_TERM",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:glossaryTerm:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "definition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Definition"
+        },
+        "parentNode": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of the GLOSSARY_NODE this term belongs to.",
+          "title": "Parentnode"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "GlossaryTermDoc",
+      "type": "object"
+    },
+    "OwnerEntry": {
+      "properties": {
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "type": {
+          "default": "TECHNICAL_OWNER",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner"
+      ],
+      "title": "OwnerEntry",
+      "type": "object"
+    },
+    "RawAspectDoc": {
+      "additionalProperties": true,
+      "description": "Passthrough document for directly emitting an existing DataHub aspect.\n\nDiscriminated by the presence of `aspectName` rather than `kind`. All\nfields other than `aspectName` and the entity reference are treated as\nthe raw payload for that aspect class. Different aspects attach to\ndifferent entity types, so the entity reference is one of several\nmutually-exclusive fields depending on `aspectName`:\n  - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...)\n  - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string)\n  - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string)",
+      "properties": {
+        "aspectName": {
+          "title": "Aspectname",
+          "type": "string"
+        },
+        "dataset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DatasetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "assertionUrn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assertionurn"
+        },
+        "dataProcessInstanceUrn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataprocessinstanceurn"
+        }
+      },
+      "required": [
+        "aspectName"
+      ],
+      "title": "RawAspectDoc",
+      "type": "object"
+    },
+    "RunEventDoc": {
+      "properties": {
+        "status": {
+          "description": "e.g. STARTED, COMPLETE, FAILURE.",
+          "title": "Status",
+          "type": "string"
+        },
+        "timestampMillis": {
+          "title": "Timestampmillis",
+          "type": "integer"
+        },
+        "attempt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attempt"
+        }
+      },
+      "required": [
+        "status",
+        "timestampMillis"
+      ],
+      "title": "RunEventDoc",
+      "type": "object"
+    },
+    "SchemaBlock": {
+      "description": "A dataset's full schema: its fields and any foreign keys.",
+      "properties": {
+        "fields": {
+          "items": {
+            "$ref": "#/$defs/SchemaFieldDoc"
+          },
+          "title": "Fields",
+          "type": "array"
+        },
+        "foreignKeys": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ForeignKeyDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Foreignkeys"
+        }
+      },
+      "title": "SchemaBlock",
+      "type": "object"
+    },
+    "SchemaFieldDoc": {
+      "description": "A single column/field in a dataset's schema.",
+      "properties": {
+        "fieldPath": {
+          "title": "Fieldpath",
+          "type": "string"
+        },
+        "type": {
+          "description": "A DataHub schema type: number, string, boolean, date, time, bytes, record.",
+          "title": "Type",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "nativeDataType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The source system's own type name, e.g. VARCHAR(255).",
+          "title": "Nativedatatype"
+        },
+        "partOfKey": {
+          "default": false,
+          "title": "Partofkey",
+          "type": "boolean"
+        },
+        "nullable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nullable"
+        }
+      },
+      "required": [
+        "fieldPath",
+        "type"
+      ],
+      "title": "SchemaFieldDoc",
+      "type": "object"
+    },
+    "StructuredPropertyDoc": {
+      "description": "A custom structured property definition (a typed, filterable field\nattachable to datasets/data products/etc, beyond built-in DataHub fields).",
+      "properties": {
+        "kind": {
+          "const": "STRUCTURED_PROPERTY",
+          "title": "Kind",
+          "type": "string"
+        },
+        "qualifiedName": {
+          "description": "Globally unique dotted name, e.g. 'org.example.legalBasis'.",
+          "title": "Qualifiedname",
+          "type": "string"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "cardinality": {
+          "default": "SINGLE",
+          "description": "SINGLE or MULTIPLE values allowed per entity.",
+          "title": "Cardinality",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "One of DataHub's data types: string, number, date, rich_text, urn, ...",
+          "title": "Valuetype",
+          "type": "string"
+        },
+        "allowedValues": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AllowedValueDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Restrict to an enum of allowed values; omit to allow any value.",
+          "title": "Allowedvalues"
+        },
+        "entityTypes": {
+          "description": "Which entity types this property can be attached to, e.g. [dataset, dataProduct].",
+          "items": {
+            "type": "string"
+          },
+          "title": "Entitytypes",
+          "type": "array"
+        },
+        "typeQualifier": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For valueType 'urn': list of allowed target entity-type URNs (e.g. 'urn:li:entityType:datahub.dataProduct'). Maps to the 'allowedTypes' qualifier.",
+          "title": "Typequalifier"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StructuredPropertySettingsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Where this property is surfaced in the DataHub UI."
+        }
+      },
+      "required": [
+        "kind",
+        "qualifiedName",
+        "valueType"
+      ],
+      "title": "StructuredPropertyDoc",
+      "type": "object"
+    },
+    "StructuredPropertySettingsDoc": {
+      "properties": {
+        "showInAssetSummary": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showinassetsummary"
+        },
+        "showInSearchFilters": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showinsearchfilters"
+        },
+        "showInColumnsTable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showincolumnstable"
+        },
+        "showAsAssetBadge": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Showasassetbadge"
+        },
+        "isHidden": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ishidden"
+        }
+      },
+      "title": "StructuredPropertySettingsDoc",
+      "type": "object"
+    },
+    "TagDoc": {
+      "description": "A tag definition. Referenced elsewhere via `tags: [<name>]`.",
+      "properties": {
+        "kind": {
+          "const": "TAG",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "title": "TagDoc",
+      "type": "object"
+    },
+    "UpstreamEntryDoc": {
+      "properties": {
+        "dataset": {
+          "$ref": "#/$defs/DatasetRef"
+        }
+      },
+      "required": [
+        "dataset"
+      ],
+      "title": "UpstreamEntryDoc",
+      "type": "object"
+    },
+    "UpstreamLineageDoc": {
+      "description": "Table-level and (optionally) column-level lineage for a dataset.",
+      "properties": {
+        "upstreams": {
+          "description": "Upstream (source) datasets.",
+          "items": {
+            "$ref": "#/$defs/UpstreamEntryDoc"
+          },
+          "title": "Upstreams",
+          "type": "array"
+        },
+        "fineGrainedLineages": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/FineGrainedLineageDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Column-level lineage edges.",
+          "title": "Finegrainedlineages"
+        }
+      },
+      "title": "UpstreamLineageDoc",
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+source:
+  type: yaml
+  config:
+    path: "${YAML_SOURCE_TEST_RESOURCES_DIR}"
+
+sink:
+  type: file
+  config:
+    filename: "${YAML_SOURCE_TEST_OUTPUT_PATH}"

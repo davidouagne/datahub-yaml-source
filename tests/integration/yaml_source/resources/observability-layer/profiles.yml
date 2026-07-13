@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+aspectName: DATASET_PROFILE
+dataset:
+  platform: postgres
+  name: ehr_public_patient
+  env: PROD
+timestampMillis: 1777662127622
+messageId: "profile-ehr_public_patient-20260501"
+eventGranularity:
+  unit: DAY
+  multiple: 1
+partitionSpec:
+  partition: "FULL_TABLE_SNAPSHOT"
+  type: FULL_TABLE
+rowCount: 1480100
+columnCount: 3
+sizeInBytes: 311681024
+fieldProfiles:
+  - fieldPath: "patient_id"
+    uniqueCount: 1480100
+    uniqueProportion: 1.0
+    nullCount: 0
+    nullProportion: 0.0
+    min: "10000001"
+    max: "99999999"
+  - fieldPath: "nom"
+    uniqueCount: 0
+    uniqueProportion: 0.0
+    nullCount: 0
+    nullProportion: 0.0

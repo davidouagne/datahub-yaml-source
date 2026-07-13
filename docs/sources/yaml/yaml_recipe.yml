@@ -1,0 +1,25 @@
+# Example recipe for the YAML Metadata source.
+# See yaml.md for the full YAML document format reference.
+
+source:
+  type: yaml
+  config:
+    # Root directory to scan recursively for '*.yml' / '*.yaml' files.
+    # Typically a checked-out git repository of hand-authored metadata.
+    path: /mnt/c/Users/4087446/Projects/aphp/datahub-sample/observability-layer
+
+    # Optional: turn dangling references (a tag/domain/glossaryTerm/container
+    # that's referenced but never declared anywhere in the scanned files) into
+    # a hard failure instead of a warning. Default: false.
+    fail_on_unresolved_reference: false
+
+    # Optional: stateful ingestion for stale entity removal. When enabled,
+    # entities that disappear from the YAML files between runs are soft-deleted.
+    # stateful_ingestion:
+    #   enabled: true
+    #   remove_stale_metadata: true
+
+sink:
+  type: datahub-rest
+  config:
+    server: http://localhost:8080

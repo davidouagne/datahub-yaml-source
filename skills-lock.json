@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "datahub-connector-planning": {
+      "source": "datahub-project/datahub-skills",
+      "sourceType": "github",
+      "skillPath": "skills/datahub-connector-planning/SKILL.md",
+      "computedHash": "795b17bbe3b51b7897b083bad7e3bf910243c5eecce440fa869c0656f5b53cae"
+    },
+    "datahub-connector-pr-review": {
+      "source": "datahub-project/datahub-skills",
+      "sourceType": "github",
+      "skillPath": "skills/datahub-connector-pr-review/SKILL.md",
+      "computedHash": "a90811c9b311501e8ee85f4c81f46793bc146ffb9e73f2f01cbc7baa30b2089e"
+    },
+    "load-standards": {
+      "source": "datahub-project/datahub-skills",
+      "sourceType": "github",
+      "skillPath": "skills/load-standards/SKILL.md",
+      "computedHash": "2b154e296d4c758881351467f9de7bc6e65d754b1278bcedd3dbb1ad5240c62a"
+    }
+  }
+}

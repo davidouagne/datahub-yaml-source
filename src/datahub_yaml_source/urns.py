@@ -21,6 +21,7 @@ from datahub.emitter.mce_builder import (
 )
 from datahub.emitter.mcp_builder import ContainerKey, DatabaseKey, SchemaKey
 from datahub.metadata.urns import (
+    ApplicationUrn,
     DataFlowUrn,
     DataJobUrn,
     DataProcessInstanceUrn,
@@ -116,6 +117,10 @@ def domain_urn(domain_id: str) -> str:
     return _passthrough_if_urn(domain_id, make_domain_urn)
 
 
+def application_urn(app_id: str) -> str:
+    return _passthrough_if_urn(app_id, lambda v: ApplicationUrn(v).urn())
+
+
 def data_platform_urn(platform_name: str) -> str:
     return make_data_platform_urn(platform_name)
 
@@ -166,6 +171,7 @@ class ReferenceIndex:
         self._glossary_term_ids: Set[str] = {t.id for t in repository.glossary_terms}
         self._glossary_node_ids: Set[str] = {n.id for n in repository.glossary_nodes}
         self._domain_ids: Set[str] = {d.id for d in repository.domains}
+        self._application_ids: Set[str] = {a.id for a in repository.applications}
         self._structured_property_names: Set[str] = {
             p.qualifiedName for p in repository.structured_properties
         }
@@ -184,6 +190,9 @@ class ReferenceIndex:
 
     def has_domain(self, domain_id: str) -> bool:
         return domain_id in self._domain_ids
+
+    def has_application(self, app_id: str) -> bool:
+        return app_id in self._application_ids
 
     def has_structured_property(self, qualified_name: str) -> bool:
         return qualified_name in self._structured_property_names

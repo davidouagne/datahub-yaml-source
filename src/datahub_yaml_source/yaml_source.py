@@ -21,6 +21,7 @@ from datahub.ingestion.source.state.stateful_ingestion_base import (
     StatefulIngestionSourceBase,
 )
 
+from datahub_yaml_source.builders.application import build_application
 from datahub_yaml_source.builders.assertion import build_assertion
 from datahub_yaml_source.builders.container import build_container, topological_sort_containers
 from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_data_job
@@ -56,8 +57,8 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     """DataHub source that reads a directory tree of declarative YAML metadata
     files ("metadata as code") and emits the DataHub entities they describe:
     data platforms, tags, glossary terms, structured properties, domains,
-    containers, datasets, data products, pipelines, pipeline run history, and
-    data quality assertions.
+    applications, containers, datasets, data products, pipelines, pipeline
+    run history, and data quality assertions.
 
     This source has no connection of its own -- every platform, environment,
     and instance is declared per-entity inside the YAML files themselves.
@@ -153,6 +154,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for domain_doc in repository.domains:
             self.report.domains_scanned += 1
             yield from self._safe_build("DOMAIN", domain_doc.id, build_domain, domain_doc)
+
+        for application_doc in repository.applications:
+            self.report.applications_scanned += 1
+            yield from self._safe_build(
+                "APPLICATION", application_doc.id, build_application, application_doc
+            )
 
         for container_doc in topological_sort_containers(repository.containers):
             self.report.containers_scanned += 1

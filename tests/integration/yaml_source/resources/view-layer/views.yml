@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: APPLICATION
+id: ORBIS
+name: ORBIS
+description: Hospital information system (EHR) source application
+---
+kind: CONTAINER
+platform: oracle
+database: OR1PRO
+schema: prescription
+env: PROD
+name: prescription
+subTypes: Schema
+---
+kind: DATASET
+name: or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2
+platform: oracle
+env: PROD
+displayName: APH_PHA_recup_Prescr_V3_HC1V2
+description: >-
+  Récupération des prescriptions médicamenteuses signées pour les séjours
+  d'hospitalisation complète en cours.
+container:
+  platform: oracle
+  database: OR1PRO
+  schema: prescription
+  env: PROD
+schema:
+  fields:
+    - fieldPath: DRUGNAME
+      type: string
+      description: Libellé du médicament prescrit
+      nativeDataType: VARCHAR2
+      partOfKey: false
+    - fieldPath: PID
+      type: string
+      description: Identifiant permanent du patient (IPP)
+      nativeDataType: VARCHAR2
+      partOfKey: false
+subTypes: View
+viewProperties:
+  viewLogic: |-
+    SELECT
+        T132_MEDICATION.DRUGNAME DRUGNAME,
+        T157_NATPERSON.PID PID
+    FROM
+        MEDICATION T132_MEDICATION,
+        NATPERSON T157_NATPERSON
+    WHERE
+        T132_MEDICATION.FALLID IN (/*#INPARLIST#*/:I1)
+  viewLanguage: SQL
+  materialized: false
+applications:
+  - ORBIS
+domains: "3667192a0a19c51419efe99aa865c1ba"
+tags:
+  - pii
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+upstreamLineage:
+  upstreams:
+    - dataset:
+        platform: oracle
+        name: or1pro_prescription_medication
+        env: PROD
+  fineGrainedLineages:
+    - upstream:
+        platform: oracle
+        name: or1pro_prescription_medication
+        env: PROD
+        fieldPath: DRUGNAME
+      downstream:
+        platform: oracle
+        name: or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2
+        env: PROD
+        fieldPath: DRUGNAME
+      operation: IDENTITY
+      confidence: 1.0

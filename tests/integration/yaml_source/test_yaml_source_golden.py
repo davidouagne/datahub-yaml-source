@@ -90,5 +90,6 @@ def test_yaml_source_reports_no_dangling_references_or_parse_failures():
     source_report = pipeline.source.get_report()
     assert source_report.documents_failed_to_parse == 0
     assert len(source_report.dangling_references) == 0
-    assert source_report.datasets_scanned == 3
-    assert source_report.containers_scanned == 3
+    assert source_report.datasets_scanned == 4
+    assert source_report.containers_scanned == 4
+    assert source_report.applications_scanned == 1

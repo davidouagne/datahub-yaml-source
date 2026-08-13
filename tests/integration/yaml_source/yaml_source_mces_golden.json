@@ -14,8 +14,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790606,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -31,8 +31,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790606,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -48,8 +48,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790606,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -66,8 +66,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790607,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -86,8 +86,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790607,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -106,8 +106,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790607,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -142,8 +142,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790607,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -160,8 +160,26 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790608,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "application",
+    "entityUrn": "urn:li:application:ORBIS",
+    "changeType": "UPSERT",
+    "aspectName": "applicationProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "ORBIS",
+            "description": "Hospital information system (EHR) source application"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -183,8 +201,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790608,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -199,8 +217,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790609,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -215,8 +233,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790609,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -233,8 +251,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790609,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -259,8 +277,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790610,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -275,8 +293,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790610,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829856,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -297,8 +315,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790611,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -313,8 +331,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790611,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -329,8 +347,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790611,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -347,8 +365,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790612,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -373,8 +391,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790612,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -389,8 +407,97 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790612,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+    "changeType": "UPSERT",
+    "aspectName": "containerProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {
+                "platform": "oracle",
+                "env": "PROD",
+                "database": "OR1PRO",
+                "schema": "prescription"
+            },
+            "name": "prescription",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:oracle"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Schema"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -405,8 +512,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790613,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -428,8 +535,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790613,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -444,8 +551,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790613,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -460,8 +567,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790613,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -478,8 +585,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790613,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -504,8 +611,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790614,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -525,8 +632,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790614,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829862,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -541,8 +648,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790616,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -614,8 +721,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790616,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -634,8 +741,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -650,8 +757,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -668,8 +775,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -694,8 +801,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -714,8 +821,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -738,8 +845,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790617,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -756,8 +863,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790618,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -781,8 +888,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790618,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -797,8 +904,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790619,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -882,8 +989,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790619,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -900,8 +1007,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -916,8 +1023,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829867,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -934,8 +1041,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829872,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -960,8 +1067,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829872,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -980,8 +1087,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829872,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1004,8 +1111,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790620,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829874,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1022,8 +1129,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790622,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829874,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1047,8 +1154,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790622,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829874,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1063,8 +1170,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790622,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829874,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1121,8 +1228,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790622,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829876,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1172,8 +1279,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790623,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829876,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1190,8 +1297,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790623,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829878,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1206,8 +1313,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790623,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829878,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1224,8 +1331,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790623,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829878,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1250,8 +1357,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790623,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829878,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1270,8 +1377,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790624,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829880,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1288,8 +1395,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790624,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829880,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1309,8 +1416,301 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790624,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829880,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "applications",
+    "aspect": {
+        "json": {
+            "applications": [
+                "urn:li:application:ORBIS"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:oracle"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "schemaMetadata",
+    "aspect": {
+        "json": {
+            "schemaName": "or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2",
+            "platform": "urn:li:dataPlatform:oracle",
+            "version": 0,
+            "created": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "hash": "",
+            "platformSchema": {
+                "com.linkedin.schema.OtherSchema": {
+                    "rawSchema": ""
+                }
+            },
+            "fields": [
+                {
+                    "fieldPath": "DRUGNAME",
+                    "nullable": false,
+                    "description": "Libell\u00e9 du m\u00e9dicament prescrit",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.StringType": {}
+                        }
+                    },
+                    "nativeDataType": "VARCHAR2",
+                    "recursive": false,
+                    "isPartOfKey": false
+                },
+                {
+                    "fieldPath": "PID",
+                    "nullable": false,
+                    "description": "Identifiant permanent du patient (IPP)",
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.StringType": {}
+                        }
+                    },
+                    "nativeDataType": "VARCHAR2",
+                    "recursive": false,
+                    "isPartOfKey": false
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "upstreamLineage",
+    "aspect": {
+        "json": {
+            "upstreams": [
+                {
+                    "auditStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:unknown"
+                    },
+                    "dataset": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_medication,PROD)",
+                    "type": "TRANSFORMED"
+                }
+            ],
+            "fineGrainedLineages": [
+                {
+                    "upstreamType": "FIELD_SET",
+                    "upstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_medication,PROD),DRUGNAME)"
+                    ],
+                    "downstreamType": "FIELD",
+                    "downstreams": [
+                        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD),DRUGNAME)"
+                    ],
+                    "transformOperation": "IDENTITY",
+                    "confidenceScore": 1.0
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "APH_PHA_recup_Prescr_V3_HC1V2",
+            "description": "R\u00e9cup\u00e9ration des prescriptions m\u00e9dicamenteuses sign\u00e9es pour les s\u00e9jours d'hospitalisation compl\u00e8te en cours.",
+            "tags": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "viewProperties",
+    "aspect": {
+        "json": {
+            "materialized": false,
+            "viewLogic": "SELECT\n    T132_MEDICATION.DRUGNAME DRUGNAME,\n    T157_NATPERSON.PID PID\nFROM\n    MEDICATION T132_MEDICATION,\n    NATPERSON T157_NATPERSON\nWHERE\n    T132_MEDICATION.FALLID IN (/*#INPARLIST#*/:I1)",
+            "viewLanguage": "SQL"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "View"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:dd4b5972397a3a23e65b987b76ba75a8",
+                    "urn": "urn:li:container:dd4b5972397a3a23e65b987b76ba75a8"
+                },
+                {
+                    "id": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556",
+                    "urn": "urn:li:container:d46296fff4f15d34cd97bb65a21aa556"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1341,8 +1741,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790624,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829882,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1359,8 +1759,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790626,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1379,8 +1779,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790626,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1403,8 +1803,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790626,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1429,8 +1829,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790626,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1454,8 +1854,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790626,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1470,8 +1870,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1491,8 +1891,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1517,8 +1917,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1535,8 +1935,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1551,8 +1951,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1574,8 +1974,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790627,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1592,8 +1992,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790629,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829888,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1618,8 +2018,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790629,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1653,8 +2053,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790629,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1674,8 +2074,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790629,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1696,8 +2096,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790629,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1713,8 +2113,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790630,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1731,8 +2131,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790630,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1749,8 +2149,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790630,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1771,8 +2171,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790630,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1793,8 +2193,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790630,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1822,8 +2222,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790631,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1853,8 +2253,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790631,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1899,8 +2299,24 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790631,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "application",
+    "entityUrn": "urn:li:application:ORBIS",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1915,8 +2331,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1931,8 +2347,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1947,8 +2363,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1963,8 +2379,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1979,8 +2395,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -1995,8 +2411,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790633,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2011,8 +2427,24 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790634,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2027,8 +2459,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790634,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2043,8 +2475,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790634,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2059,8 +2491,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790634,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2075,8 +2507,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790635,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2091,8 +2523,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790635,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2107,8 +2539,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790635,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2123,8 +2555,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790635,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 },
@@ -2139,8 +2571,8 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1783963790635,
-        "runId": "yaml-2026_07_13-19_29_50-osbvp4",
+        "lastObserved": 1786615829892,
+        "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
 }

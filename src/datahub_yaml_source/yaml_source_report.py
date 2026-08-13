@@ -16,6 +16,7 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
     glossary_terms_scanned: int = 0
     structured_properties_scanned: int = 0
     domains_scanned: int = 0
+    applications_scanned: int = 0
     containers_scanned: int = 0
     datasets_scanned: int = 0
     data_products_scanned: int = 0

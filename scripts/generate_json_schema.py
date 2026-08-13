@@ -19,6 +19,7 @@ from pathlib import Path
 from pydantic.json_schema import models_json_schema
 
 from datahub_yaml_source.models import (
+    ApplicationDoc,
     AssertionDoc,
     ContainerDoc,
     DataFlowDoc,
@@ -48,6 +49,7 @@ DOCUMENT_MODELS = [
     GlossaryTermDoc,
     StructuredPropertyDoc,
     DomainDoc,
+    ApplicationDoc,
     ContainerDoc,
     DatasetDoc,
     DataProductDoc,

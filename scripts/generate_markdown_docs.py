@@ -16,6 +16,7 @@ from pydantic_core import PydanticUndefined
 
 from datahub_yaml_source.models import (
     AllowedValueDoc,
+    ApplicationDoc,
     AssertionAssertionDoc,
     AssertionDoc,
     AssertionPropertiesDoc,
@@ -47,6 +48,7 @@ from datahub_yaml_source.models import (
     TagDoc,
     UpstreamEntryDoc,
     UpstreamLineageDoc,
+    ViewPropertiesDoc,
 )
 
 OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "sources" / "yaml" / "reference.md"
@@ -59,6 +61,7 @@ DOCUMENT_MODELS = [
     ("GLOSSARY_TERM", GlossaryTermDoc),
     ("STRUCTURED_PROPERTY", StructuredPropertyDoc),
     ("DOMAIN", DomainDoc),
+    ("APPLICATION", ApplicationDoc),
     ("CONTAINER", ContainerDoc),
     ("DATASET", DatasetDoc),
     ("DATA_PRODUCT", DataProductDoc),
@@ -82,6 +85,7 @@ SUPPORTING_MODELS = [
     UpstreamLineageDoc,
     UpstreamEntryDoc,
     FineGrainedLineageDoc,
+    ViewPropertiesDoc,
     OwnerEntry,
     DataFlowRef,
     DataFlowJobRef,

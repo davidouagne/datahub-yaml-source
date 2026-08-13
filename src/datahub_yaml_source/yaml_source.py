@@ -84,7 +84,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         root = Path(self.config.path)
 
         if not root.exists():
-            self.report.report_failure(
+            self.report.failure(
                 title="Configured path does not exist",
                 message="The 'path' in your recipe does not exist on disk. Check for "
                 "typos, and note that under WSL, Windows paths must be given as "
@@ -94,7 +94,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             return ParsedRepository()
 
         if not root.is_dir():
-            self.report.report_failure(
+            self.report.failure(
                 title="Configured path is not a directory",
                 message="The 'path' in your recipe points at a file, not a directory.",
                 context=str(root),
@@ -112,7 +112,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         repository = load_repository(root, on_error=on_error, on_file_scanned=on_file_scanned)
 
         if self.report.files_scanned == 0:
-            self.report.report_warning(
+            self.report.warning(
                 title="No YAML files found",
                 message="No '*.yml' / '*.yaml' files were found under the configured "
                 "path. Check that 'path' points at the right directory.",
@@ -212,7 +212,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         try:
             yield from builder(*args)
         except Exception as e:
-            self.report.report_warning(
+            self.report.warning(
                 title="Failed to build entity",
                 message="A document could not be translated into DataHub metadata and was skipped.",
                 context=f"{kind} '{identifier}': {e}",

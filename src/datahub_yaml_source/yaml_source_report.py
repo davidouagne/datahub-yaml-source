@@ -31,7 +31,7 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
 
     def report_document_parse_failure(self, path: str, message: str) -> None:
         self.documents_failed_to_parse += 1
-        self.report_warning(
+        self.warning(
             title="Failed to parse YAML document",
             message="A document in a scanned file could not be parsed and was skipped.",
             context=f"{path}: {message}",
@@ -39,7 +39,7 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
 
     def report_dangling_reference(self, context: str) -> None:
         self.dangling_references.append(context)
-        self.report_warning(
+        self.warning(
             title="Reference to an undeclared entity",
             message="A document references a tag/domain/glossary term/container "
             "that was never declared as its own document anywhere in the "

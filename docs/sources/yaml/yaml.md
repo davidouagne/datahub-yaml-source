@@ -13,6 +13,15 @@ platform instance, so a single tree of files can describe entities spanning many
 different source systems (e.g. `postgres`, `duckdb`, `dbt`, `s3`) without the
 source itself connecting to any of them.
 
+**Scope note**: through Phase 5B this was purely a *data* catalog format (datasets,
+pipelines, BI assets, ML entities, the semantic layer). Phase 5C adds `REPOSITORY`,
+`API`, `AGENT_SKILL`, `AI_AGENT`, and `SERVICE` — cataloging source-code repositories,
+callable APIs, AI agents, and running services. This is a deliberate widening of the
+connector's *subject matter* to a software/AI-agent catalog, not just its kind count:
+these five entities describe software artifacts rather than data assets, and their
+registry-permitted metadata is correspondingly thinner (e.g. `SERVICE` only accepts
+`tags`/`owners`/`subTypes` among the cross-cutting aspects below).
+
 ## Capabilities
 
 - Data platforms (registers custom platforms not built into DataHub)
@@ -43,6 +52,14 @@ source itself connecting to any of them.
 - ML feature store metadata (feature tables, features, primary keys) and ML
   model versions/groups, including a full model card (intended use, ethical
   considerations, caveats, training/evaluation data, metrics, source code)
+- Semantic-layer models (e.g. a dbt semantic model) and the business metrics
+  defined against them, with AI-consumption hints (`aiContext`: synonyms,
+  instructions, examples)
+- **Software and AI-agent catalog** (`REPOSITORY`, `API`, `AGENT_SKILL`,
+  `AI_AGENT`, `SERVICE`): source repositories, callable APIs, AI agents and
+  their skills, and running services (including MCP servers) — see the note
+  below, this is a genuine widening of the connector's subject matter beyond
+  data assets
 - Data products
 - Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
   edges (`inputDataJobs`), and optional parent containers
@@ -124,6 +141,13 @@ checked-in schema and the models have drifted apart.
 | `MLFEATURE_TABLE`       | ML feature table                       | `platform`, `name`, `mlFeatures`, `mlPrimaryKeys`                                       |
 | `MLMODEL_GROUP`         | ML model group                         | `platform`, `name`, `container`                                                          |
 | `MLMODEL`               | ML model version                       | `platform`, `name`, `modelGroup`, `mlFeatures`, `hyperParameters`, full model card       |
+| `SEMANTIC_MODEL`        | Semantic-layer model (dbt/Looker/...)  | `platform`, `path`, `id`, `nativeDefinition`, `datasets`, `aiContext`                    |
+| `METRIC`                | Business metric definition             | `platform`, `path`, `id`, `semanticModel`, `expression`, `derivedFrom`, `relatedMetrics`, `datasetUpstreams`, `aiContext` |
+| `REPOSITORY`            | Source code repository                 | `id`, `name`, `defaultBranch`, `languages`, `license`, `source`, `forkOf`, `platform`+`instance` |
+| `API`                   | Callable API (REST endpoint, ...)      | `id`, `name`, `sourceRepository`, `restApi`, `signature`, `platform`+`instance`          |
+| `AGENT_SKILL`           | AI agent skill / capability bundle     | `id`, `name`, `instructions`, `requiredTools`, `sourceRepository`, `platform`+`instance` |
+| `AI_AGENT`              | AI agent                               | `id`, `name`, `tagline`, `instructions`, `source`, `dependencies`, `displayProperties`, `platform`+`instance` |
+| `SERVICE`               | Running service (incl. MCP servers)    | `id`, `displayName`, `lifecycle`, `apis`, `sourceRepository`, `mcpServer`, `definition`, `platform`+`instance` |
 | `DATA_PRODUCT`          | Data product                           | `id`, `name`, `domains`, `assets`, `structuredProperties`                                |
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |

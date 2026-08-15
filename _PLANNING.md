@@ -65,13 +65,13 @@ directly into `UpstreamLineageClass` / `FineGrainedLineageClass`.
 
 ## Entity Mapping
 
-The connector covers **24 entity kinds** (discriminated by a `kind:` field on every YAML
+The connector covers **29 entity kinds** (discriminated by a `kind:` field on every YAML
 document) plus a **raw-aspect passthrough** format (discriminated by an `aspectName:`
 field). 14 kinds shipped in the initial build; `CHART`, `DASHBOARD`, `QUERY`, `INCIDENT`,
 and `DOCUMENT` were added in the coverage extension (Phase 4); `MLMODEL`, `MLMODEL_GROUP`,
-`MLFEATURE_TABLE`, `MLFEATURE`, and `MLPRIMARY_KEY` in Phase 5A. `SEMANTIC_MODEL`,
-`METRIC`, `SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, and `AGENT_SKILL` are planned for
-Phases 5B/5C (not yet shipped).
+`MLFEATURE_TABLE`, `MLFEATURE`, and `MLPRIMARY_KEY` in Phase 5A; `SEMANTIC_MODEL` and
+`METRIC` in Phase 5B; `SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, and `AGENT_SKILL` in
+Phase 5C. All 12 kinds targeted by Phase 5 have now shipped.
 
 | `kind:` value | DataHub entity | Own aspects / notes | Emission mechanism |
 | --- | --- | --- | --- |
@@ -94,6 +94,13 @@ Phases 5B/5C (not yet shipped).
 | `MLFEATURE_TABLE` | `mlFeatureTable` | platform, name, mlFeatures, mlPrimaryKeys | Raw MCP (`MLFeatureTablePropertiesClass`) + `common_aspect_mcps()` |
 | `MLMODEL_GROUP` | `mlModelGroup` | platform, name, container | SDK V2 `MLModelGroup` + `common_sdk_kwargs()` (narrowed `native=`, no `subtype=`/`applications=`/`container=` kwarg) |
 | `MLMODEL` | `mlModel` | platform, name, modelGroup, mlFeatures, container, hyperParameters, type, full model card (intendedUse, ethicalConsiderations, caveatsAndRecommendations, trainingData, evaluationData, factorPrompts, metrics, sourceCode) | SDK V2 `MLModel` + `common_sdk_kwargs()` (same narrowed `native=`); model-card aspects always via `extra_aspects=` (valid only on `mlModel`, not a shared mixin) |
+| `SEMANTIC_MODEL` | `semanticModel` | platform, path, id, nativeDefinition, datasets, aiContext | SDK V2 `SemanticModel` + `common_sdk_kwargs()` (narrowed `native=`, no `subtype=`/`applications=` kwarg); `externalUrl` via `_ensure_model_props()` (no constructor kwarg, C9) |
+| `METRIC` | `metric` | platform, path, id, semanticModel (required), expression, derivedFrom, relatedMetrics, datasetUpstreams, aiContext | SDK V2 `Metric` + `common_sdk_kwargs()` (same narrowed `native=`); `externalUrl`/`relatedMetrics` via `_ensure_metric_props()`/`_ensure_metric_relationships()` (C9); emitted after `SEMANTIC_MODEL` — `semantic_model=` is a required constructor kwarg |
+| `REPOSITORY` | `repository` | id, name, defaultBranch, languages, license, homepageUrl, archived, source (externalUrl/externalId), forkOf, platform/instance | Raw MCP (`repositoryProperties`, `repositorySource`, `repositoryLineage`) + `common_aspect_mcps()`; `platform`/`instance` emit a standalone `dataPlatformInstance` aspect (no `Has*` mixin — see Phase 5C notes) |
+| `API` | `api` | id, name, externalUrl, sourceRepository, restApi (method/path), signature (schemaDefinition), platform/instance | Raw MCP (`apiProperties`, `restApiProperties`, `apiSignature`) + `common_aspect_mcps()` |
+| `AGENT_SKILL` | `agentSkill` | id, name, instructions, requiredTools (API ids — `array[Urn]` in the PDL, not free text), sourceRepository, platform/instance | Raw MCP (`agentSkillInfo`) + `common_aspect_mcps()`; no `subTypes` (registry doesn't permit it on `agentSkill`) |
+| `AI_AGENT` | `aiAgent` | id, name, tagline, instructions, source (type/clonedFrom), dependencies (skills/tools/models — all `array[Urn]` in the PDL), displayProperties, platform/instance | Raw MCP (`aiAgentInfo`, `aiAgentDependencies`, `displayProperties`) + `common_aspect_mcps()`; `created`/`lastModified` required on `aiAgentInfo` — pinned to the epoch like `queryProperties`; no `subTypes` |
+| `SERVICE` | `service` | id, displayName, lifecycle, apis, sourceRepository, mcpServer (url/transport), definition (format/rawSpec/version), platform/instance | Raw MCP (`serviceProperties`, `mcpServerProperties`, `serviceDefinition`) + `common_aspect_mcps()`; only `tags`/`owners`/`subTypes` among the 9 cross-cutting mixins — the most restricted kind in the connector |
 | `DATA_PRODUCT` | `dataProduct` | id, name, assets (raw URNs) | Raw MCP (`DataProductPropertiesClass`) + `common_aspect_mcps()` |
 | `DATA_FLOW` | `dataFlow` | orchestrator/flowId/cluster, project, externalUrl, container | SDK V2 `DataFlow` + `common_sdk_kwargs()` |
 | `DATA_JOB` | `dataJob` | jobId + `dataFlow` ref, inputDatasets/outputDatasets, inputDataJobs (DAG edges), fineGrainedLineages | SDK V2 `DataJob` + `common_sdk_kwargs()` (no `HasSubTypes` — its own `type` field already maps to that aspect) |
@@ -105,7 +112,7 @@ Phases 5B/5C (not yet shipped).
 For aspects that don't map to their own `kind` (mostly time-series data), use
 `aspectName:` instead of `kind:`:
 
-| `aspectName`                      | Entity reference field       |
+| `aspectName`                       | Entity reference field        |
 | ---------------------------------- | ----------------------------- |
 | `DATASET_PROFILE`                  | `dataset:`                    |
 | `DATASET_USAGE_STATISTICS`         | `dataset:`                    |
@@ -131,8 +138,10 @@ Every kind can reference entities defined in a **different file**, so the source
    precede children: `DATA_PLATFORM → TAG → GLOSSARY_NODE → GLOSSARY_TERM →
    STRUCTURED_PROPERTY → DOMAIN (topologically sorted by parentDomain) → APPLICATION →
    CONTAINER (topologically sorted by parentContainer) → DATASET → CHART → DASHBOARD →
-   QUERY → INCIDENT → DOCUMENT → DATA_PRODUCT → DATA_FLOW → DATA_JOB →
-   DATA_PROCESS_INSTANCE → ASSERTION → raw-aspect docs`.
+   QUERY → INCIDENT → DOCUMENT → MLFEATURE → MLPRIMARY_KEY → MLFEATURE_TABLE →
+   MLMODEL_GROUP → MLMODEL → SEMANTIC_MODEL → METRIC → REPOSITORY → API → AGENT_SKILL →
+   AI_AGENT → SERVICE → DATA_PRODUCT → DATA_FLOW → DATA_JOB → DATA_PROCESS_INSTANCE →
+   ASSERTION → raw-aspect docs`.
 
 References to other entities inside a document (`container:`, `parentContainer:`,
 `tags:`, `glossaryTerms:`, `domains:`, `applications:`, `dataFlow:`, ...) are
@@ -188,6 +197,8 @@ datahub-yaml-source/
 │           ├── incident.py                   # INCIDENT
 │           ├── document.py                   # DOCUMENT
 │           ├── ml.py                         # MLFEATURE_TABLE / MLFEATURE / MLPRIMARY_KEY / MLMODEL_GROUP / MLMODEL
+│           ├── semantic.py                   # SEMANTIC_MODEL / METRIC
+│           ├── software.py                   # REPOSITORY / API / AGENT_SKILL / AI_AGENT / SERVICE
 │           ├── data_product.py               # DATA_PRODUCT
 │           ├── data_flow_job.py              # DATA_FLOW / DATA_JOB (fine-grained lineage, job-to-job DAG edges)
 │           ├── data_process_instance.py      # DATA_PROCESS_INSTANCE (run events)
@@ -247,6 +258,13 @@ of the class declarations (● = permitted):
 | `MLFEATURE_TABLE` | ● | ● | ● | ● | ● | ● | ● | ● | ● |
 | `MLFEATURE` | ● | ● | ● | ● | ● | ● | ● | ● | ● |
 | `MLPRIMARY_KEY` | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `SEMANTIC_MODEL` | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `METRIC` | ● | ● | ● | ● | ● | ● | ● | ● | ● |
+| `REPOSITORY` | ● | ● | ● | ● | | ● | | ● | ● |
+| `API` | ● | ● | ● | ● | | ● | | ● | ● |
+| `AGENT_SKILL` | ● | ● | ● | ● | | ● | | ● | |
+| `AI_AGENT` | ● | ● | ● | ● | | ● | | ● | |
+| `SERVICE` | ● | ● | | | | | | | ● |
 | `GLOSSARY_TERM` | ● | ● | | ● | ● | ● | ● | ● | ● |
 | `GLOSSARY_NODE` | ● | ● | | ● | | ● | | ● | ● |
 | `APPLICATION` | ● | ● | | ● | | ● | | ● | ● |
@@ -256,6 +274,14 @@ of the class declarations (● = permitted):
 | `QUERY` | | | | | | | | | ● |
 | `INCIDENT` | | ● | | | | | | | |
 | `SchemaField` (column) | | ● | ● | | | | ● | ● | |
+
+The five Phase 5C kinds (`REPOSITORY`/`API`/`AGENT_SKILL`/`AI_AGENT`/`SERVICE`) also each
+accept a tenth aspect this matrix doesn't track: `dataPlatformInstance`, via a `platform`/
+`instance` field pair on their Doc classes and a new
+`build_data_platform_instance_aspect()` helper in `builders/common.py`. It's not a
+`Has*` mixin (nothing else in the connector uses it — their URNs are the only ones in
+the connector that don't already encode a platform) and is emitted directly by each
+Phase 5C builder rather than dispatched from `common_sdk_kwargs()`/`common_aspect_mcps()`.
 
 `schemaField` (column-level metadata) is not a `kind:` of its own — it's a nested
 `schema.fields[]` entry on `DATASET`, and only the 4 aspects the PII-tagging use case
@@ -406,7 +432,12 @@ once — turning what would have been an accidental ordering regression into the
 single-declaration-point documentation improvement the coverage-extension spec asked
 for.
 
-## Corrections found during implementation (C1-C8)
+## Corrections found during implementation (C1-C10)
+
+C9 (an SDK V2 aspect field with no matching constructor kwarg) and C10 (`array[Urn]`
+fields that look like free-text from their names) are documented inline in the Phase 5
+implementation history below, where the surrounding context they were found in matters
+more than a one-line table row would convey.
 
 Each was found by checking an assumption against the actually-installed SDK or a real
 pipeline run, not by re-reading the spec more carefully:
@@ -532,8 +563,9 @@ Promotes `SEMANTIC_MODEL`/`METRIC`/`SERVICE`/`API`/`REPOSITORY`/`AI_AGENT`/`AGEN
 5 ML entities (`MLMODEL`/`MLMODEL_GROUP`/`MLFEATURE_TABLE`/`MLFEATURE`/`MLPRIMARY_KEY`) out of Future
 Considerations, where they'd been deferred as "brand new in this DataHub release; premature to
 encode" and "no current AP-HP use case". 12 kinds, delivered as 3 commits (one per family, not one
-per kind as Phase 4 was — validated with the user given the larger batch size): **5A — ML entities**,
-5B — semantic layer, 5C — software/AI catalog (5B/5C not yet started).
+per kind as Phase 4 was — validated with the user given the larger batch size): **5A — ML entities**
+(`9804975`), **5B — semantic layer** (`64493e3`), **5C — software/AI catalog** (`57bb3fe`). All
+three shipped; the connector now covers 29 `kind:` values.
 
 - **Phase 5A — ML entities**, one commit. All 5 kinds and their aspects verified to exist in both
   `entity-registry.yml` and the installed `acryl-datahub==1.7.0.3` before writing any code — one
@@ -566,28 +598,68 @@ per kind as Phase 4 was — validated with the user given the larger batch size)
     `MLMODEL_GROUP` before `MLMODEL` (which references its group via the SDK's native `model_group=`
     kwarg).
   - Exercised end-to-end in a new integration fixture (`ml-layer/models.yml`).
-- **Phase 5B — semantic layer** (`SEMANTIC_MODEL`, `METRIC`) — not yet started. Verified: both have
-  SDK V2 wrappers (`datahub.sdk.semantic_model.SemanticModel`/`datahub.sdk.metric.Metric`), both with
-  the same narrowed `native=` as 5A (no `subtype=`/`applications=`/`container=` kwarg either).
+- **Phase 5B — semantic layer** (`SEMANTIC_MODEL`, `METRIC`), one commit. Both have SDK V2 wrappers
+  (`datahub.sdk.semantic_model.SemanticModel`/`datahub.sdk.metric.Metric`), both with the same
+  narrowed `native=` as 5A (no `subtype=`/`applications=`/`container=` kwarg either).
   `Metric`'s constructor **requires** `semantic_model=` — a real emission-order dependency, not
-  cosmetic. `aiContext:` maps to the native `ai_context=` kwarg on both, but needs a real
-  `AiContextInput` dataclass (`datahub.sdk.semantic_model.AiContextInput`), not a plain dict — a dict
-  fails with `AttributeError` inside the SDK's own `build_ai_context()`. `metricRelationships`'s
-  `relatedMetrics`/`parentMetric` need the same `_ensure_metric_relationships()` post-construction
+  cosmetic, so `SEMANTIC_MODEL` is emitted before `METRIC`. `aiContext:` maps to the native
+  `ai_context=` kwarg on both, but needs a real `AiContextInput` dataclass
+  (`datahub.sdk.semantic_model.AiContextInput`/`datahub.sdk.metric.AiContextInput`, the same class
+  re-exported from both modules), not a plain dict — a dict fails with `AttributeError` inside the
+  SDK's own `build_ai_context()`. `MetricInfoClass.expression` doesn't accept a plain string despite
+  `MetricDoc.expression: Optional[str]` — constructing it from a string produces
+  `MetricExpressionClass(dialects=[DialectExpressionClass(dialect='ANSI_SQL', expression=<str>)])`,
+  caught by a smoke test before finalizing the builder and test assertions. `metricRelationships`'s
+  `relatedMetrics`/`derivedFrom` and `semanticModelInfo`/`metricInfo`'s `externalUrl` need the same
+  `_ensure_metric_relationships()`/`_ensure_model_props()`/`_ensure_metric_props()` post-construction
   pattern as C9 (an aspect the SDK partially owns); `metricUpstreams` has no SDK involvement at all,
-  so it's a plain `extra_aspects=` entry with no race risk.
-- **Phase 5C — software/AI catalog** (`SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, `AGENT_SKILL`) —
-  not yet started. All five: raw MCP, id-based URN (like `QUERY`/`INCIDENT`/`DOCUMENT`). A genuine
-  widening of the connector's *subject matter* (software/AI-agent catalog, not data catalog) rather
-  than just its kind count — each entity's registry-permitted mixin subset is much thinner than the
-  data-oriented kinds (e.g. `SERVICE` only gets `tags`/`owners`/`subTypes`; none of the five get
-  `applications` or `deprecation`).
+  so it's a plain `extra_aspects=` entry with no race risk. Exercised end-to-end by extending the
+  Phase 5A fixture (`ml-layer/models.yml`) rather than a new file, since `METRIC.datasetUpstreams`
+  reuses the same dataset already declared there.
+- **Phase 5C — software/AI catalog** (`SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, `AGENT_SKILL`), one
+  commit. All five: raw MCP, id-based URN (like `QUERY`/`INCIDENT`/`DOCUMENT`) — no SDK V2 wrapper
+  exists for any of them (verified against the `datahub/sdk/` package listing). A genuine widening of
+  the connector's *subject matter* (software/AI-agent catalog, not data catalog) rather than just its
+  kind count — each entity's registry-permitted mixin subset is much thinner than the data-oriented
+  kinds (`SERVICE` only gets `tags`/`owners`/`subTypes`; `AI_AGENT`/`AGENT_SKILL` don't get
+  `subTypes` either; none of the five get `applications` or `deprecation`).
+  - **New finding (C10)**: `AgentSkillInfo.requiredTools` and `AIAgentDependencies.tools` are both
+    `array[Urn]` in their `.pdl` source (`entityTypes: [api]`), **not free-text tool names** as
+    initially assumed from their field names — the wrong assumption was caught not by a Python smoke
+    test (a plain string is a valid `Urn`-typed field value at the SDK layer, so construction
+    silently succeeds) but by an actual pipeline run: DataHub's
+    `auto_materialize_referenced_tags_terms` workunit processor walks every `Urn`-typed field via
+    `list_urns()` and asserts it starts with `urn:li:`, which a raw id like `"fhir_search"` fails at
+    ingestion time, not at MCP-construction time. Both fields now resolve their ids through
+    `api_urn()` like every other cross-reference in the connector. Lesson: for `array[Urn]` fields
+    specifically, a construction-time smoke test isn't sufficient verification — running the full
+    pipeline (as the golden-file regeneration step already does) is what actually catches this class
+    of bug.
+  - `AIAgentInfoClass.created`/`.lastModified` are **required** (unlike every other Phase 5C aspect,
+    and unlike `MLMODEL`/`SEMANTIC_MODEL`/`METRIC`'s optional audit stamps) — pinned to
+    `ZERO_AUDIT_STAMP` for golden-file determinism, the same fix C8 already established for
+    `DOCUMENT`.
+  - `ServiceDefinitionClass.rawSpec` is typed `LargeStringClass`, not a plain string — a document's
+    `rawSpec: str` field is wrapped in `LargeStringClass(blob=...)` in the builder.
+  - `dataPlatformInstance` was brought into scope for all five kinds (arbitrated with the user during
+    planning, not in the original spec text): their URNs are the only ones in the connector that
+    don't already encode a platform, so without it there'd be no way to say "this repository is on
+    GitLab" at all. New `build_data_platform_instance_aspect()` helper in `builders/common.py`,
+    called directly by each Phase 5C builder rather than dispatched through a `Has*` mixin (no other
+    kind uses it).
+  - Emission order: `REPOSITORY → API → AGENT_SKILL → AI_AGENT → SERVICE` — parents before the
+    children that reference them (`API.sourceRepository`, `AGENT_SKILL.sourceRepository`,
+    `AI_AGENT.dependencies.skills`, `SERVICE.apis`/`.sourceRepository`).
+  - Exercised end-to-end in a new integration fixture (`software-layer/catalog.yml`).
 - **Explicitly out of scope for all 12** (documented, not silently dropped): `versionProperties`
   (needs a `VERSION_SET` entity this connector doesn't model, already in Future Considerations),
   `semanticContent` (vector embeddings — system-computed, not hand-authorable), `incidentsSummary`
-  (system-computed), `cost` on `MLMODEL` (see above). No new `@capability` decorators — DataHub's
-  `SourceCapability` enum has no dedicated value for any ML/semantic/software-catalog entity, the same
-  situation already true for `DATA_PRODUCT`/`ASSERTION`/the BI kinds.
+  and `browsePathsV2` (system-computed), `upstreamLineage` on `AI_AGENT` (would need a lineage
+  mechanism this connector doesn't model for non-dataset entities), `apiSignature.inputFields`/
+  `.outputFields` (only the free-text `schemaDefinition` is exposed), `cost` on `MLMODEL` (see above).
+  No new `@capability` decorators — DataHub's `SourceCapability` enum has no dedicated value for any
+  ML/semantic/software-catalog entity, the same situation already true for
+  `DATA_PRODUCT`/`ASSERTION`/the BI kinds.
 
 Spec item 1.10 (`dataPlatformInstanceProperties`) was deferred by decision D3.
 `RawAspectDoc.entityUrn` was added to the model but has no generic-scope builder
@@ -622,7 +694,7 @@ new fixture content lands on top of it.
 **4. Full suite with coverage**
 ```bash
 python -m pytest tests/unit tests/integration -q --cov=datahub_yaml_source --cov-report=term-missing
-# 140 passed, 97% coverage, no file below 83% (acryl-datahub==1.7.0.3)
+# 157 passed, 98% coverage, no file below 83% (acryl-datahub==1.7.0.3, post Phase 5)
 ```
 
 **5. Real ingest against the AP-HP repo** (88 datasets, 64 structured properties, 12 containers, 39 jobs)

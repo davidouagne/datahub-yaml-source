@@ -102,8 +102,8 @@ golden file (~20 files, per commit `52ad86f`), so the inconsistency compounds wi
 | Generating `datasetProfile` / `datasetUsageStatistics` / `operation` | Already reachable via the `aspectName:` raw-aspect passthrough, which the sample repo uses 32 times. No new mechanism needed. |
 | `CORP_USER` / `CORP_GROUP` | Deferred by explicit decision. Documented in Future Considerations because `owners:` today points at `corpuser` URNs that are never created — the gap is real, just not now. |
 | `DATA_CONTRACT` | Deferred by explicit decision, despite being a natural pairing with the existing `ASSERTION` support. |
-| `FORM` assignment, ML entities, `ER_MODEL_RELATIONSHIP`, `BUSINESS_ATTRIBUTE` definitions | No current AP-HP use case. Future Considerations. |
-| v1.7 entities `SEMANTIC_MODEL`, `METRIC`, `SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, `AGENT_SKILL` | Brand new in this DataHub release; premature to encode in a stable authoring format. |
+| `FORM` assignment, `ER_MODEL_RELATIONSHIP`, `BUSINESS_ATTRIBUTE` definitions | No current AP-HP use case. Future Considerations. |
+| ~~ML entities; v1.7 entities `SEMANTIC_MODEL`, `METRIC`, `SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, `AGENT_SKILL`~~ | **Superseded — shipped in Phase 5.** All 12 kinds this row deferred were built; see `docs/specs/ml-semantic-ai-catalog-entities.md` and `_PLANNING.md`'s "ML / semantic / software-catalog entities — Phase 5" section for the coverage matrix, decisions, and verified SDK facts. |
 | SQL parsing / lineage inference | Deliberate existing design: lineage is fully YAML-declared (`_PLANNING.md`, "Key simplification"). `parse_view_lineage=False` at `builders/dataset.py:185` stays. |
 
 ---
@@ -318,13 +318,16 @@ properties aspect, not its cross-cutting aspects).
 
 `CORP_USER` / `CORP_GROUP` (`owners:` currently references `corpuser` URNs that are never created —
 no name, email, or group membership reaches DataHub); `DATA_CONTRACT` (would reference the
-already-supported `ASSERTION` entities); ML entities (`MLMODEL`, `MLMODEL_GROUP`, `MLFEATURE_TABLE`,
-`MLFEATURE`, `MLPRIMARY_KEY` — SDK V2 exists for the first two); `ER_MODEL_RELATIONSHIP`;
+already-supported `ASSERTION` entities); `ER_MODEL_RELATIONSHIP`;
 `BUSINESS_ATTRIBUTE` definitions + the `businessAttributes` aspect on `schemaField`; `FORM` +
 `dynamicFormAssignment`; `NOTEBOOK`; `VERSION_SET` / `versionProperties`; custom `OWNERSHIP_TYPE`
 (today `OwnerEntry.type` is a free-text string mapped onto the built-in `OwnershipType` enum —
-custom types need `typeUrn`); v1.7 entities `SEMANTIC_MODEL`, `METRIC`, `SERVICE`, `API`,
-`REPOSITORY`, `AI_AGENT`, `AGENT_SKILL`.
+custom types need `typeUrn`).
+
+**No longer deferred**: the ML entities (`MLMODEL`, `MLMODEL_GROUP`, `MLFEATURE_TABLE`, `MLFEATURE`,
+`MLPRIMARY_KEY`) and the v1.7 entities (`SEMANTIC_MODEL`, `METRIC`, `SERVICE`, `API`, `REPOSITORY`,
+`AI_AGENT`, `AGENT_SKILL`) previously listed here shipped in Phase 5 — see
+`docs/specs/ml-semantic-ai-catalog-entities.md`.
 
 The `CommonMetadataMixin` + allowlist design is what makes each of these cheap later: a new kind
 inherits the full cross-cutting surface for free and declares only its own properties aspect.

@@ -30,6 +30,9 @@ source itself connecting to any of them.
   error under `fail_on_unresolved_reference`), never silently dropped.
 - Table-level and column-level lineage (`upstreamLineage`), fully hand-declared
   in the YAML — no SQL parsing is involved
+- Column-level metadata: `tags`, `glossaryTerms`, `deprecation`, and
+  `structuredProperties` on an individual `schema.fields[]` entry (e.g. tagging
+  a single column as PII), emitted on that column's `schemaField` entity
 - Data products
 - Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
   edges (`inputDataJobs`), and optional parent containers

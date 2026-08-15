@@ -407,8 +407,8 @@ Spec Open Question #1 is closed by D3; spec Open Question #2 is closed by D2.
 
 ## Implementation Status
 
-_As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`. Test suite:
-`python -m pytest tests/unit tests/integration -q` → 119 passed, 96% coverage._
+_As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. Test suite:
+`python -m pytest tests/unit tests/integration -q` → 121 passed, 96% coverage._
 
 ### Done
 
@@ -478,7 +478,16 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`. Test suite:
   was registered for it** in `raw_aspect.py` — there's no concrete new `aspectName` in this round that would
   exercise it, and registering the field alone without a matching builder is dead surface. Wire it up
   together with whatever raw aspect first needs a non-dataset/assertion/dataProcessInstance entity reference.
-- **Phase 3** (column-level metadata on `schemaField` entities) — not started.
+- ~~**Phase 3** (column-level metadata on `schemaField` entities) — not started.~~ **Done, 2026-08-15.**
+  `SchemaFieldDoc` gained `HasTags`/`HasTerms`/`HasStructuredProps`/`HasDeprecation` (not `HasOwners`/
+  `HasDomain`/`HasApplications`/`HasLinks`/`HasSubTypes` — scoped to the spec's PII-tagging use case,
+  even though the registry permits more on `schemaField`). `build_dataset()` loops
+  `doc.schema_block.fields` after emitting the dataset's own workunits, computes each field's URN via
+  the already-imported `make_schema_field_urn()`, and delegates straight to `common_aspect_mcps()` --
+  no new aspect-construction code needed at all, exactly the "marginal cost drops to ~3 files" the
+  Phase 1 refactor was meant to enable. Dangling-reference warnings name the column
+  (`"DATASET 'x' field 'ssn' references undeclared tag '...'"`). Exercised end-to-end in the
+  integration fixture (`nom` column on `ehr_public_patient` tagged `pii` + linked to `fhir:Patient`).
 - **Phase 4** (new kinds `DASHBOARD`/`CHART`/`QUERY`/`INCIDENT`/`DOCUMENT`) — not started. Each is a
   self-contained addition following the "per-addition file checklist" in the Architecture section above,
   independent of everything else in this document.

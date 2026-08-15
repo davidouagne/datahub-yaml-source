@@ -16,6 +16,7 @@ from datahub.sdk.dataset import Dataset
 
 from datahub_yaml_source.builders.common import (
     build_fine_grained_lineage_list,
+    common_aspect_mcps,
     common_sdk_kwargs,
     schema_field_data_type,
     stringify_custom_properties,
@@ -135,3 +136,15 @@ def build_dataset(
         **common,
     )
     yield from dataset.as_workunits()
+
+    # Column-level metadata (Phase 3): tags/glossaryTerms/deprecation/
+    # structuredProperties on an individual schema.fields[] entry, emitted on
+    # the schemaField entity URN -- never editableSchemaMetadata, which is
+    # UI-owned. Emitted after the dataset's own workunits above so the field
+    # already exists (via schemaMetadata) when these annotations land.
+    if doc.schema_block is not None:
+        entity_urn = dataset_urn(doc)
+        for field in doc.schema_block.fields:
+            field_urn = make_schema_field_urn(entity_urn, field.fieldPath)
+            field_context = f"{context} field '{field.fieldPath}'"
+            yield from common_aspect_mcps(field_urn, field, index, report, field_context)

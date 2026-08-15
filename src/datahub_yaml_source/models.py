@@ -96,22 +96,9 @@ class ForeignKeyDoc(BaseModel):
     )
 
 
-class SchemaFieldDoc(BaseModel):
-    """A single column/field in a dataset's schema."""
-
-    fieldPath: str
-    type: str = Field(description="A DataHub schema type: number, string, boolean, date, time, bytes, record.")
-    description: Optional[str] = None
-    nativeDataType: Optional[str] = Field(default=None, description="The source system's own type name, e.g. VARCHAR(255).")
-    partOfKey: bool = False
-    nullable: Optional[bool] = None
-
-
-class SchemaBlock(BaseModel):
-    """A dataset's full schema: its fields and any foreign keys."""
-
-    fields: List[SchemaFieldDoc] = Field(default_factory=list)
-    foreignKeys: Optional[List[ForeignKeyDoc]] = None
+# SchemaFieldDoc / SchemaBlock are defined further below, after the Has*
+# mixins -- SchemaFieldDoc needs to inherit some of them (Phase 3: column-
+# level metadata).
 
 
 class ViewPropertiesDoc(BaseModel):
@@ -249,6 +236,30 @@ class HasStructuredProps(BaseModel):
 
 class HasSubTypes(BaseModel):
     subTypes: Optional[SubTypesField] = None
+
+
+class SchemaFieldDoc(HasTags, HasTerms, HasStructuredProps, HasDeprecation, BaseModel):
+    """A single column/field in a dataset's schema.
+
+    Cross-cutting mixins per `schemaField`'s entry in entity-registry.yml:
+    tags/glossaryTerms/structuredProperties/deprecation are permitted (as
+    are ownership/domains/subTypes/documentation/businessAttributes, not
+    exposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).
+    """
+
+    fieldPath: str
+    type: str = Field(description="A DataHub schema type: number, string, boolean, date, time, bytes, record.")
+    description: Optional[str] = None
+    nativeDataType: Optional[str] = Field(default=None, description="The source system's own type name, e.g. VARCHAR(255).")
+    partOfKey: bool = False
+    nullable: Optional[bool] = None
+
+
+class SchemaBlock(BaseModel):
+    """A dataset's full schema: its fields and any foreign keys."""
+
+    fields: List[SchemaFieldDoc] = Field(default_factory=list)
+    foreignKeys: Optional[List[ForeignKeyDoc]] = None
 
 
 class DisplayPropertiesDoc(BaseModel):

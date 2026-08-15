@@ -55,6 +55,10 @@ schema:
       description: Last name
       nativeDataType: VARCHAR(255)
       partOfKey: false
+      tags:
+        - pii
+      glossaryTerms:
+        - fhir:Patient
     - fieldPath: date_naissance
       type: date
       description: Date of birth

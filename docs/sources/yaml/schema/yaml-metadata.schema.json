@@ -3180,8 +3180,63 @@
       "type": "object"
     },
     "SchemaFieldDoc": {
-      "description": "A single column/field in a dataset's schema.",
+      "description": "A single column/field in a dataset's schema.\n\nCross-cutting mixins per `schemaField`'s entry in entity-registry.yml:\ntags/glossaryTerms/structuredProperties/deprecation are permitted (as\nare ownership/domains/subTypes/documentation/businessAttributes, not\nexposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).",
       "properties": {
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
         "fieldPath": {
           "title": "Fieldpath",
           "type": "string"

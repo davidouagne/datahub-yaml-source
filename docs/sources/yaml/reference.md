@@ -432,7 +432,7 @@ A dataset's full schema: its fields and any foreign keys.
 
 ### SchemaFieldDoc
 
-A single column/field in a dataset's schema.
+A single column/field in a dataset's schema.  Cross-cutting mixins per `schemaField`'s entry in entity-registry.yml: tags/glossaryTerms/structuredProperties/deprecation are permitted (as are ownership/domains/subTypes/documentation/businessAttributes, not exposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -442,6 +442,15 @@ A single column/field in a dataset's schema.
 | `nativeDataType` | string | no | - | The source system's own type name, e.g. VARCHAR(255). |
 | `partOfKey` | boolean | no | `False` |  |
 | `nullable` | boolean | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 
 ### ForeignKeyDoc
 

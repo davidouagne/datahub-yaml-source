@@ -272,3 +272,67 @@ def test_build_dataset_reports_dangling_application_but_still_emits():
     assert len(wus) > 0
     assert len(report.dangling_references) == 1
     assert "ORBIS" in report.dangling_references[0]
+
+
+def test_build_dataset_emits_column_level_metadata():
+    repo = _repository_with_known_references()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "ehr_public_patient",
+            "platform": "postgres",
+            "env": "PROD",
+            "schema": {
+                "fields": [
+                    {
+                        "fieldPath": "nom",
+                        "type": "string",
+                        "tags": ["pii"],
+                        "glossaryTerms": ["donnees-patient.patient"],
+                        "deprecation": {"deprecated": True, "note": "Remplacée par nom_normalise"},
+                    },
+                    {"fieldPath": "patient_id", "type": "number"},
+                ],
+            },
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    assert not report.dangling_references
+
+    field_urn = "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),nom)"
+    field_wus = [wu for wu in wus if wu.metadata.entityUrn == field_urn]
+    aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in field_wus}
+    assert aspect_names == {"GlobalTagsClass", "GlossaryTermsClass", "DeprecationClass"}
+
+    tags_aspect = next(wu.metadata.aspect for wu in field_wus if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass")
+    assert tags_aspect.tags[0].tag == "urn:li:tag:pii"
+
+    # The second column has no common-metadata fields set -- no workunits for it at all.
+    other_field_urn = "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),patient_id)"
+    assert not [wu for wu in wus if wu.metadata.entityUrn == other_field_urn]
+
+
+def test_build_dataset_reports_dangling_reference_naming_the_column():
+    repo = ParsedRepository()  # empty: nothing declared
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "x",
+            "platform": "postgres",
+            "schema": {
+                "fields": [{"fieldPath": "ssn", "type": "string", "tags": ["unknown-tag"]}],
+            },
+        }
+    )
+
+    list(build_dataset(doc, index, report))
+    assert len(report.dangling_references) == 1
+    assert "field 'ssn'" in report.dangling_references[0]
+    assert "unknown-tag" in report.dangling_references[0]

@@ -26,6 +26,11 @@ from datahub_yaml_source.models import (
     GlossaryNodeDoc,
     GlossaryTermDoc,
     IncidentDoc,
+    MLFeatureDoc,
+    MLFeatureTableDoc,
+    MLModelDoc,
+    MLModelGroupDoc,
+    MLPrimaryKeyDoc,
     QueryDoc,
     RawAspectDoc,
     StructuredPropertyDoc,
@@ -63,6 +68,11 @@ class ParsedRepository:
     queries: List[QueryDoc] = field(default_factory=list)
     incidents: List[IncidentDoc] = field(default_factory=list)
     documents: List[DocumentDoc] = field(default_factory=list)
+    ml_feature_tables: List[MLFeatureTableDoc] = field(default_factory=list)
+    ml_features: List[MLFeatureDoc] = field(default_factory=list)
+    ml_primary_keys: List[MLPrimaryKeyDoc] = field(default_factory=list)
+    ml_model_groups: List[MLModelGroupDoc] = field(default_factory=list)
+    ml_models: List[MLModelDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -99,6 +109,16 @@ class ParsedRepository:
             self.incidents.append(doc)
         elif isinstance(doc, DocumentDoc):
             self.documents.append(doc)
+        elif isinstance(doc, MLFeatureTableDoc):
+            self.ml_feature_tables.append(doc)
+        elif isinstance(doc, MLFeatureDoc):
+            self.ml_features.append(doc)
+        elif isinstance(doc, MLPrimaryKeyDoc):
+            self.ml_primary_keys.append(doc)
+        elif isinstance(doc, MLModelGroupDoc):
+            self.ml_model_groups.append(doc)
+        elif isinstance(doc, MLModelDoc):
+            self.ml_models.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

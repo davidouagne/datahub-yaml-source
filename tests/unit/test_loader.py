@@ -164,6 +164,33 @@ def test_load_repository_parses_document(tmp_path: Path):
     assert repo.documents[0].title == "Runbook patient"
 
 
+def test_load_repository_parses_ml_entities(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: MLFEATURE_TABLE\nname: patient_features\nplatform: feast\n"
+        "---\n"
+        "kind: MLFEATURE\nfeatureNamespace: patient_features\nname: age_at_admission\n"
+        "---\n"
+        "kind: MLPRIMARY_KEY\nfeatureNamespace: patient_features\nname: patient_id\n"
+        "sources: [{platform: postgres, name: ehr_public_patient, env: PROD, fieldPath: patient_id}]\n"
+        "---\n"
+        "kind: MLMODEL_GROUP\nname: readmission_risk\nplatform: mlflow\n"
+        "---\n"
+        "kind: MLMODEL\nname: readmission_risk_v3\nplatform: mlflow\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.ml_feature_tables) == 1
+    assert repo.ml_feature_tables[0].name == "patient_features"
+    assert len(repo.ml_features) == 1
+    assert repo.ml_features[0].featureNamespace == "patient_features"
+    assert len(repo.ml_primary_keys) == 1
+    assert repo.ml_primary_keys[0].sources[0].fieldPath == "patient_id"
+    assert len(repo.ml_model_groups) == 1
+    assert len(repo.ml_models) == 1
+    assert repo.ml_models[0].platform == "mlflow"
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

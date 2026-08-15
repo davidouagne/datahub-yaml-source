@@ -1,18 +1,44 @@
 # Spec — Entity & Aspect Coverage Gaps in `datahub-yaml-source`
 
 **Reference DataHub version**: `v1.7.0rc1-111-gb9890a0912` (`C:/Users/4087446/Projects/datahub-project/datahub`)
-**Connector under spec**: `C:/Users/4087446/Projects/aphp/datahub-yaml-source` (branch `dou-feat-view-application`)
-**Status**: DRAFT — awaiting implementation
+**Connector under spec**: `C:/Users/4087446/Projects/aphp/datahub-yaml-source` (branch `main`)
+**Status**: **IMPLEMENTED** (2026-08-15) — every Phase below shipped. This document is kept as the
+original problem statement and requirements; see `_PLANNING.md`'s "Coverage extension" section for
+the as-built architecture, the corrections found during implementation (C1-C8), and what deviated
+from this spec's own sketches. Status annotations (`✅ Done`, `⏸ Deferred`) have been added inline
+below rather than rewriting the spec into a report.
+
+---
+
+## Implementation Summary
+
+Shipped across 6 commits on `main`: `367cbfb` (Phase 1 refactor), `4c05eeb` (Phase 3, landed early
+since it was cheap once Phase 1's dispatcher existed), `f4ed4cc`/`c63997a`/`24490ef`/`19bafcd`/
+(unhashed at merge time) (Phase 4, one commit per kind: `CHART`, `DASHBOARD`, `QUERY`, `INCIDENT`,
+`DOCUMENT`). Phase 2 landed opportunistically inside the Phase 1 commit once its corrections (C1-C3)
+showed it was nearly free. Final state: **140 tests, 97% coverage**, zero dangling references / unknown
+fields on the integration fixture tree, `acryl-datahub==1.7.0.3`.
+
+**One architecture decision diverged from this spec's own sketch**: the "Shared Common-Metadata
+Block" section below sketches a single flat `CommonMetadataMixin` plus a runtime
+`COMMON_ASPECTS_BY_KIND` allowlist. The actual implementation (`_PLANNING.md`, Decision D1) uses nine
+separate one-field mixins (`HasOwners`, `HasTags`, `HasTerms`, `HasDomain`, `HasApplications`,
+`HasLinks`, `HasDeprecation`, `HasStructuredProps`, `HasSubTypes`) instead, so that per-kind validity
+is static — a field either exists on a kind's Pydantic model or it doesn't, with no separate
+allowlist to keep in sync. The rest of this spec's architecture section (the SDK V2 traps, the
+`build_common_aspects()` emission split, the per-addition file checklist) matches what was built,
+just realized as two dispatchers (`common_sdk_kwargs()`/`common_aspect_mcps()`) rather than one.
 
 ---
 
 ## Context
 
 `_PLANNING.md` describes this connector as generalized to "(almost) the entire DataHub entity
-model". Measured against `metadata-models/src/main/resources/entity-registry.yml`, it currently
-covers **14 of ~40 user-facing entity types**, and — more importantly — the *aspect* coverage
-**within** those 14 kinds is inconsistent in ways that have no design rationale. They are
-artifacts of implementation order: each builder was written independently, so whichever
+model". Measured against `metadata-models/src/main/resources/entity-registry.yml`, it covered
+**14 of ~40 user-facing entity types** at the time this spec was written (now 19, after this spec's
+Phase 4 shipped `CHART`/`DASHBOARD`/`QUERY`/`INCIDENT`/`DOCUMENT`) — and, more importantly, the
+*aspect* coverage **within** those 14 kinds was inconsistent in ways that had no design rationale. They
+were artifacts of implementation order: each builder was written independently, so whichever
 cross-cutting aspect the author happened to need at the time got wired into that one builder
 and nowhere else.
 
@@ -50,19 +76,20 @@ golden file (~20 files, per commit `52ad86f`), so the inconsistency compounds wi
 
 ## Goals
 
-1. **Uniform cross-cutting aspects.** `owners`, `tags`, `glossaryTerms`, `domains`, `applications`,
-   `links`, `deprecation`, `structuredProperties`, `subTypes` behave identically on every `kind:`
-   where the DataHub entity registry permits that aspect — and are rejected with a clear error where
-   it does not.
-2. **Marginal cost of a new aspect drops to one line.** Adding a cross-cutting aspect to a kind
-   becomes an entry in a registry-derived allowlist, not a new code path in a builder.
-3. **Column-level metadata becomes expressible** — tags, glossary terms, structured properties and
-   deprecation on an individual `schema.fields[]` entry.
-4. **Four new entity kinds ship**: `DASHBOARD`, `CHART`, `QUERY`, `INCIDENT`, `DOCUMENT`.
-5. **Declared capabilities match actual output.** The `@capability` decorators on
-   `yaml_source.py:48-55` under-report what the connector emits (`DOMAINS`, `GLOSSARY_TERMS`,
-   `PLATFORM_INSTANCE`, `DESCRIPTIONS`, `DATA_PROFILING`, `USAGE_STATS`, `OPERATION_CAPTURE` are all
-   produced but not declared).
+1. **✅ Done.** **Uniform cross-cutting aspects.** `owners`, `tags`, `glossaryTerms`, `domains`,
+   `applications`, `links`, `deprecation`, `structuredProperties`, `subTypes` behave identically on
+   every `kind:` where the DataHub entity registry permits that aspect — and simply don't exist as a
+   field where it does not (a warning on `extra="allow"`, not a rejection — see D2 in `_PLANNING.md`).
+2. **✅ Done**, via granular mixins rather than the allowlist sketched here (D1). **Marginal cost of
+   a new aspect drops to ~3 files** (model field / mixin, `common_sdk_kwargs()`/`common_aspect_mcps()`
+   dispatch, regenerated docs), not a new code path per builder.
+3. **✅ Done.** **Column-level metadata is expressible** — tags, glossary terms, structured
+   properties, and deprecation on an individual `schema.fields[]` entry (Phase 3).
+4. **✅ Done. Five new entity kinds shipped**: `CHART`, `DASHBOARD`, `QUERY`, `INCIDENT`, `DOCUMENT`
+   (Phase 4).
+5. **✅ Done.** **Declared capabilities match actual output.** `DOMAINS`, `GLOSSARY_TERMS`,
+   `PLATFORM_INSTANCE`, `DESCRIPTIONS`, `DATA_PROFILING`, `USAGE_STATS`, `OPERATION_CAPTURE` all added
+   to `yaml_source.py`'s `@capability` decorators.
 
 ---
 
@@ -81,7 +108,12 @@ golden file (~20 files, per commit `52ad86f`), so the inconsistency compounds wi
 
 ---
 
-## Current State — Verified Coverage Matrix
+## Original Coverage Matrix (pre-implementation baseline)
+
+This is the state the spec was written against — kept for context on the problem being solved, not
+the current state. **Every `✗` cell below is now `✓`**; see `_PLANNING.md`'s mixin→kind matrix
+(Architecture § "Cross-cutting aspect architecture") for the current, fully-populated version, which
+also covers the five new kinds this spec added.
 
 `✓` emitted today · `✗` valid per entity-registry but not emitted · `—` not valid on that entity
 
@@ -99,18 +131,18 @@ golden file (~20 files, per commit `52ad86f`), so the inconsistency compounds wi
 | `container` | ✓ | ✓ | ✗ | ✗ | — | — | — | — | — | — | — |
 | `dataPlatformInstance` | ✓ | ✓ | ✓ | ✗ | — | — | — | — | — | — | ✗ |
 
-Entity-specific gaps inside supported kinds:
+Entity-specific gaps inside supported kinds, as they stood before this spec (status now noted):
 
-| Kind | Missing |
-|---|---|
-| `DOMAIN` | `domainProperties.parentDomain` (**nested domains impossible today**), `displayProperties` (icon/colour) |
-| `GLOSSARY_TERM` | `glossaryRelatedTerms` (`isA`/`hasA`/`relatedTerms`/`values`) — the relational core of a glossary; `termSource`/`sourceRef`/`sourceUrl`; `customProperties` |
-| `TAG` | `tagProperties.colorHex` |
-| `DATA_JOB` | `dataJobInputOutput.inputDatajobs` (**job→job edges — DAG dependencies cannot be declared**), `externalUrl`, `customProperties` |
-| `DATA_FLOW` | `container` (a flow cannot live in a container) |
-| `ASSERTION` | assertion types `VOLUME`, `DATA_SCHEMA`, `CUSTOM` (only `FRESHNESS`/`SQL`/`FIELD` today, per `builders/assertion.py`); `assertionActions`, `assertionNote`, `assertionInfo.description` |
-| `dataPlatformInstance` **entity** | The *aspect* is emitted, but the entity itself never gets `dataPlatformInstanceProperties` — instances appear unnamed in the UI |
-| raw-aspect passthrough | Entity reference limited to `dataset` / `assertionUrn` / `dataProcessInstanceUrn` (`models.py:469-471`) — no generic `entityUrn:` |
+| Kind | Missing (then) | Status |
+|---|---|---|
+| `DOMAIN` | `domainProperties.parentDomain` (**nested domains impossible today**), `displayProperties` (icon/colour) | ✅ Done (1.7, 1.9) |
+| `GLOSSARY_TERM` | `glossaryRelatedTerms` (`isA`/`hasA`/`relatedTerms`/`values`) — the relational core of a glossary; `termSource`/`sourceRef`/`sourceUrl`; `customProperties` | ✅ Done (1.8) |
+| `TAG` | `tagProperties.colorHex` | ✅ Done (1.9) |
+| `DATA_JOB` | `dataJobInputOutput.inputDatajobs` (**job→job edges — DAG dependencies cannot be declared**), `externalUrl`, `customProperties` | ✅ Done (2.1, 2.2) |
+| `DATA_FLOW` | `container` (a flow cannot live in a container) | ✅ Done (2.3) |
+| `ASSERTION` | assertion types `VOLUME`, `DATA_SCHEMA`, `CUSTOM` (only `FRESHNESS`/`SQL`/`FIELD` then); `assertionActions`, `assertionNote`, `assertionInfo.description` | ✅ Done (2.4, 2.5) |
+| `dataPlatformInstance` **entity** | The *aspect* is emitted, but the entity itself never gets `dataPlatformInstanceProperties` — instances appear unnamed in the UI | ⏸ Deferred by decision (D3, 1.10) |
+| raw-aspect passthrough | Entity reference limited to `dataset` / `assertionUrn` / `dataProcessInstanceUrn` — no generic `entityUrn:` | 🟡 Partial (2.6): the `entityUrn:` field exists on the model, but no builder registers a use for it yet — no concrete aspect in this round needed it |
 
 ---
 
@@ -229,56 +261,58 @@ generated artifacts are in sync, so skipping the regeneration step fails the sui
 
 ## Requirements
 
-### Phase 1 — Cross-cutting parity + refactor (P0)
+### Phase 1 — Cross-cutting parity + refactor (P0) — ✅ Done (`367cbfb`)
 
-| # | Requirement | Acceptance criteria |
-|---|---|---|
-| 1.1 | `CommonMetadataMixin` + `COMMON_ASPECTS_BY_KIND` + `build_common_aspects()` | Every kind's builder obtains cross-cutting aspects from the shared helper; no builder assembles `OwnershipClass`/`GlobalTagsClass`/`GlossaryTermsClass`/`DomainsClass` inline any more. Existing golden file is unchanged except for the newly-added aspects. |
-| 1.2 | `structuredProperties` assignable on every kind the registry allows | Given a `DATASET` with `structuredProperties: {org.example.legalBasis: consent}`, a `structuredProperties` MCP is emitted with a deterministic (zero) audit stamp. Undeclared property → dangling-reference warning, as `data_product.py:76-81` does today. |
-| 1.3 | `deprecation` on every kind the registry allows | `deprecation: {note: "...", decommissionTime: 1767225600000}` emits `DeprecationClass`. `deprecated: false` still emits (un-deprecating is an intentional act). |
-| 1.4 | `institutionalMemory` via `links:` | A list of `{url, description}` emits `InstitutionalMemoryClass` with a zero audit stamp (`sdk/_shared.py:702-706` already defaults this way). |
-| 1.5 | `domains` on `CONTAINER` + `DATA_JOB`; `glossaryTerms` on `CONTAINER`/`DATA_FLOW`/`DATA_JOB`; `applications` beyond `DATASET`; `ownership` on `DOMAIN`/`APPLICATION`/`GLOSSARY_*`/`TAG`/`ASSERTION`; `globalTags` on `APPLICATION`/`GLOSSARY_*`/`ASSERTION` | Filling the `✗` cells of the matrix. Each verified by a unit test asserting the aspect appears in the workunit stream, and by a fixture in the integration tree. |
-| 1.6 | `subTypes` on `DATA_FLOW`, `DATA_PRODUCT`, `APPLICATION`, `GLOSSARY_*` | Uses the existing `normalize_sub_types()`. Note `builders/dataset.py:162-163` currently drops all but the first subtype — fix to pass the full list, since subtypes are additive (`standards/main.md` §4.4). |
-| 1.7 | Nested domains: `DomainDoc.parentDomain` | `domainProperties.parentDomain` set; domains topologically sorted parent-before-child, reusing the Kahn implementation in `builders/container.py:20-58`. Dangling parent → warning. |
-| 1.8 | `glossaryRelatedTerms` on `GLOSSARY_TERM` | `isA`/`hasA`/`relatedTerms`/`values`/`relatedValues`, each a list of term ids resolved through `index.has_glossary_term()`. |
-| 1.9 | `tagProperties.colorHex`; `displayProperties` on `DOMAIN`/`GLOSSARY_*`; `termSource`/`sourceRef`/`sourceUrl` on `GLOSSARY_TERM` | Straight field pass-through. |
-| 1.10 | `DATA_PLATFORM_INSTANCE` gains `dataPlatformInstanceProperties` | New optional `instances:` block on `DataPlatformDoc`, or a `DATA_PLATFORM_INSTANCE` kind — implementer's call, documented in the ADR. Instances currently render unnamed in the UI. |
-| 1.11 | Capability decorators corrected | `DOMAINS`, `GLOSSARY_TERMS`, `PLATFORM_INSTANCE`, `DESCRIPTIONS`, `DATA_PROFILING`, `USAGE_STATS`, `OPERATION_CAPTURE` added to `yaml_source.py`. Each declared capability demonstrably produces output from the integration fixture tree. |
-| 1.12 | Report counters for the new aspects | `yaml_source_report.py` gains counters in the existing style, so the ingestion report shows what was emitted. |
-
-### Phase 2 — Pipeline & assertion completeness (P0)
-
-| # | Requirement | Acceptance criteria |
-|---|---|---|
-| 2.1 | `DATA_JOB.inputDataJobs` | `dataJobInputOutput.inputDatajobs` populated from a list of `DataFlowJobRef` (the model already exists, `models.py:368-371`). Enables DAG edges with no intervening dataset. |
-| 2.2 | `DATA_JOB` gains `externalUrl`, `properties`, `container` | Parity with `DATA_FLOW`. |
-| 2.3 | `DATA_FLOW` gains `container` | A pipeline can sit inside a container. |
-| 2.4 | Assertion types `VOLUME`, `DATA_SCHEMA`, `CUSTOM` | Extends the `type` discriminator in `builders/assertion.py`. `VOLUME` covers `RowCountTotal`/`RowCountChange`. `DATASET` is **not** added — deprecated in `AssertionType.pdl:13`. |
-| 2.5 | `assertionInfo.description`, `assertionNote`, `assertionActions` | Declarative on-failure actions. |
-| 2.6 | Generic raw-aspect entity reference | `RawAspectDoc` accepts `entityUrn:` alongside the three typed refs, so a raw aspect can target any entity. The per-aspect builder registry in `raw_aspect.py` stays — the module docstring's reasoning (nested objects need real aspect classes, not dicts) is correct and must not be replaced with a generic constructor. |
-
-### Phase 3 — Column-level metadata (P1)
-
-| # | Requirement | Acceptance criteria |
-|---|---|---|
-| 3.1 | `schema.fields[]` accepts `tags`, `glossaryTerms`, `structuredProperties`, `deprecation` | Emitted as aspects on the **`schemaField` entity URN** (`make_schema_field_urn()`, already imported in `builders/dataset.py:3`) — *not* as `editableSchemaMetadata`. The registry permits `globalTags`, `glossaryTerms`, `structuredProperties`, `deprecation`, `documentation`, `businessAttributes` on `schemaField`. |
-| 3.2 | Field-level references validated | An undeclared tag/term on a column produces the same dangling-reference warning as at entity level, naming the column. |
-| 3.3 | Emission order | `schemaField` MCPs emitted after the parent dataset's `schemaMetadata`, so the fields exist when the annotations land. |
-
-### Phase 4 — New entity kinds (P1)
-
-| # | Kind | Aspects | Mechanism |
+| # | Requirement | Acceptance criteria | Status |
 |---|---|---|---|
-| 4.1 | `DASHBOARD` | `dashboardInfo` (`title`, `description`, `dashboardUrl`, `charts`, `datasets`, `dashboards`), `subTypes`, `container`, `dataPlatformInstance` + all common | `datahub.sdk.Dashboard` — has `input_datasets=`, `charts=`, `dashboards=` (`sdk/dashboard.py:84-86`). Audit stamps default to `time=0`, so output stays deterministic. |
-| 4.2 | `CHART` | `chartInfo` (`title`, `description`, `chartUrl`, `inputs`, `type`), `subTypes`, `container` + all common | `datahub.sdk.Chart` |
-| 4.3 | `QUERY` | `queryProperties` (`statement`, `language`, `source`, `name`, `description`), `querySubjects` (datasets/fields the query touches), `subTypes` | Raw MCP — no SDK V2 wrapper. Curated SQL attached to datasets, a fit for the sharing layer. |
-| 4.4 | `INCIDENT` | `incidentInfo` (`type`, `title`, `description`, `entities`, `status`, `priority`, `assignees`), `incidentExternalLinks`, `incidentNotes` | Raw MCP. Complements the existing `observability-layer` + `ASSERTION_RUN_EVENT` usage. |
-| 4.5 | `DOCUMENT` | `documentInfo`, `documentSettings`, `subTypes` + common | `datahub.sdk.Document`. Wiki-as-code — new in v1.7, so gate on confirming the aspect is stable in the target GMS. |
+| 1.1 | `CommonMetadataMixin` + `COMMON_ASPECTS_BY_KIND` + `build_common_aspects()` | Every kind's builder obtains cross-cutting aspects from the shared helper; no builder assembles `OwnershipClass`/`GlobalTagsClass`/`GlossaryTermsClass`/`DomainsClass` inline any more. Existing golden file is unchanged except for the newly-added aspects. | ✅ Built as 9 granular mixins + `common_sdk_kwargs()`/`common_aspect_mcps()` (D1) instead of one flat mixin + allowlist. Golden diff was empty before new fixture content was added — checkpoint met. |
+| 1.2 | `structuredProperties` assignable on every kind the registry allows | Given a `DATASET` with `structuredProperties: {org.example.legalBasis: consent}`, a `structuredProperties` MCP is emitted with a deterministic (zero) audit stamp. Undeclared property → dangling-reference warning. | ✅ Done, via `HasStructuredProps` + `build_structured_properties_aspect()`, always through `extra_aspects=` (C4). |
+| 1.3 | `deprecation` on every kind the registry allows | `deprecation: {note: "...", decommissionTime: 1767225600000}` emits `DeprecationClass`. `deprecated: false` still emits. | ✅ Done, via `HasDeprecation`. Found and fixed a real Avro trap along the way (C6: `note` is non-nullable despite the `Optional[str]` stub). |
+| 1.4 | `institutionalMemory` via `links:` | A list of `{url, description}` emits `InstitutionalMemoryClass` with a zero audit stamp. | ✅ Done, via `HasLinks`. |
+| 1.5 | `domains` on `CONTAINER` + `DATA_JOB`; `glossaryTerms` on `CONTAINER`/`DATA_FLOW`/`DATA_JOB`; `applications` beyond `DATASET`; `ownership` on `DOMAIN`/`APPLICATION`/`GLOSSARY_*`/`TAG`/`ASSERTION`; `globalTags` on `APPLICATION`/`GLOSSARY_*`/`ASSERTION` | Filling the `✗` cells of the matrix. Each verified by a unit test and an integration fixture. | ✅ Done — every `✗` cell filled, see `_PLANNING.md`'s matrix. |
+| 1.6 | `subTypes` on `DATA_FLOW`, `DATA_PRODUCT`, `APPLICATION`, `GLOSSARY_*` | Uses the existing `normalize_sub_types()`. Fix the multi-subtype-drops-all-but-first bug — subtypes are additive. | ✅ Done (C5): `subtype=` used only for a single value; `SubTypesClass(typeNames=[...])` via `extra_aspects` for more than one. |
+| 1.7 | Nested domains: `DomainDoc.parentDomain` | `domainProperties.parentDomain` set; domains topologically sorted parent-before-child. Dangling parent → warning. | ✅ Done: `topological_sort_domains()`, mirroring the existing container Kahn implementation. |
+| 1.8 | `glossaryRelatedTerms` on `GLOSSARY_TERM` | `isA`/`hasA`/`relatedTerms`/`values`/`relatedValues`, each a list of term ids resolved through `index.has_glossary_term()`. | ✅ Done — mapped onto `GlossaryTerm`'s native SDK kwargs. |
+| 1.9 | `tagProperties.colorHex`; `displayProperties` on `DOMAIN`/`GLOSSARY_*`; `termSource`/`sourceRef`/`sourceUrl` on `GLOSSARY_TERM` | Straight field pass-through. | ✅ Done. `icon` deliberately not implemented (no natural single-field YAML shorthand for `IconPropertiesClass`'s library/name/style triple). |
+| 1.10 | `DATA_PLATFORM_INSTANCE` gains `dataPlatformInstanceProperties` | New optional `instances:` block on `DataPlatformDoc`, or a `DATA_PLATFORM_INSTANCE` kind. | ⏸ **Deferred by decision D3** — see Open Question 1's resolution. Instances still render unnamed in the UI. |
+| 1.11 | Capability decorators corrected | `DOMAINS`, `GLOSSARY_TERMS`, `PLATFORM_INSTANCE`, `DESCRIPTIONS`, `DATA_PROFILING`, `USAGE_STATS`, `OPERATION_CAPTURE` added to `yaml_source.py`. Each declared capability demonstrably produces output from the integration fixture tree. | ✅ Done — all 7 added. |
+| 1.12 | Report counters for the new aspects | `yaml_source_report.py` gains counters in the existing style. | ✅ Done — plus `unknown_fields` (D2), not originally scoped here but added alongside. |
 
-New kinds each need: an entry in `ENTITY_DOC_TYPES_BY_KIND` / `EntityDoc` (`models.py:474-506`), a
-`ParsedRepository` list + `ReferenceIndex` entry, a URN helper in `urns.py`, a report counter, and a
-slot in the fixed emission order in `yaml_source.py:128-206` (parents before children:
-`CHART` before `DASHBOARD`; `QUERY`/`INCIDENT` after `DATASET`).
+### Phase 2 — Pipeline & assertion completeness (P0) — ✅ Done (opportunistically, inside `367cbfb`)
+
+| # | Requirement | Acceptance criteria | Status |
+|---|---|---|---|
+| 2.1 | `DATA_JOB.inputDataJobs` | `dataJobInputOutput.inputDatajobs` populated from a list of `DataFlowJobRef`. Enables DAG edges with no intervening dataset. | ✅ Done. SDK V2 has no public API for this yet (its own source says so), so it's set directly via `job._ensure_datajob_inputoutput_props().inputDatajobs`. |
+| 2.2 | `DATA_JOB` gains `externalUrl`, `properties`, `container` | Parity with `DATA_FLOW`. | ✅ Done — first two as constructor kwargs (C3); `container` via `extra_aspects=[ContainerClass(...)]` since `DataJob` has no `parent_container=`. |
+| 2.3 | `DATA_FLOW` gains `container` | A pipeline can sit inside a container. | ✅ Done — `parent_container=` constructor kwarg (C2), guarded against the `Unset`-sentinel trap. |
+| 2.4 | Assertion types `VOLUME`, `DATA_SCHEMA`, `CUSTOM` | Extends the `type` discriminator in `builders/assertion.py`. `VOLUME` covers `RowCountTotal`/`RowCountChange`. `DATASET` is **not** added — deprecated upstream. | ✅ Done. Found a second Avro non-nullability trap along the way (C6: `RowCountTotalClass`/`RowCountChangeClass.parameters`). |
+| 2.5 | `assertionInfo.description`, `assertionNote`, `assertionActions` | Declarative on-failure actions. | ✅ Done. `assertionNote` was dropped then restored (C7) once `acryl-datahub` moved to `1.7.0.3`, where `AssertionNoteClass` is a registered top-level aspect (it wasn't in `1.6.0.13`). |
+| 2.6 | Generic raw-aspect entity reference | `RawAspectDoc` accepts `entityUrn:` alongside the three typed refs, so a raw aspect can target any entity. The per-aspect builder registry in `raw_aspect.py` stays. | 🟡 Partial — the `entityUrn:` field was added to the model, but no builder registers a use for it: no concrete new `aspectName` in this round needed a non-dataset/assertion/dataProcessInstance reference. Wire it up when one does. |
+
+### Phase 3 — Column-level metadata (P1) — ✅ Done (`4c05eeb`)
+
+| # | Requirement | Acceptance criteria | Status |
+|---|---|---|---|
+| 3.1 | `schema.fields[]` accepts `tags`, `glossaryTerms`, `structuredProperties`, `deprecation` | Emitted as aspects on the **`schemaField` entity URN** (`make_schema_field_urn()`) — *not* as `editableSchemaMetadata`. The registry permits `globalTags`, `glossaryTerms`, `structuredProperties`, `deprecation`, `documentation`, `businessAttributes` on `schemaField`. | ✅ Done. `SchemaFieldDoc` gains only the 4 mixins this use case needs (not `documentation`/`businessAttributes`/ownership/domains/subTypes, which the registry also permits but nothing needs yet). Delegates straight to `common_aspect_mcps()` — no new aspect-construction code was needed at all. |
+| 3.2 | Field-level references validated | An undeclared tag/term on a column produces the same dangling-reference warning as at entity level, naming the column. | ✅ Done — context string is `"DATASET 'x' field 'ssn'"`. |
+| 3.3 | Emission order | `schemaField` MCPs emitted after the parent dataset's `schemaMetadata`, so the fields exist when the annotations land. | ✅ Done. |
+
+### Phase 4 — New entity kinds (P1) — ✅ Done, one commit per kind
+
+| # | Kind | Aspects | Mechanism | Status |
+|---|---|---|---|---|
+| 4.1 | `DASHBOARD` | `dashboardInfo` (`title`, `description`, `dashboardUrl`, `charts`, `datasets`, `dashboards`), `subTypes`, `container`, `dataPlatformInstance` + all 9 common mixins | `datahub.sdk.dashboard.Dashboard` — `input_datasets=`, `charts=`, `dashboards=`. Audit stamps default to `time=0`. | ✅ Done (`c63997a`), after `CHART`. New `ChartRef`/`DashboardRef` (platform+name) + `chart_urn()`/`dashboard_urn()`, not cross-validated against declared docs (same precedent as `DatasetRef`). |
+| 4.2 | `CHART` | `chartInfo` (`title`, `description`, `chartUrl`, `inputs`, `type`), `subTypes`, `container` + all 9 common mixins | `datahub.sdk.chart.Chart` | ✅ Done (`f4ed4cc`), first of the five. |
+| 4.3 | `QUERY` | `queryProperties` (`statement`, `language`, `source`, `name`, `description`), `querySubjects` (datasets/fields the query touches), `subTypes` only among common aspects | Raw MCP — no SDK V2 wrapper. | ✅ Done (`24490ef`). New `QuerySubjectRef` (a `DatasetRef` with optional `fieldPath`) resolves to a dataset or `schemaField` URN. |
+| 4.4 | `INCIDENT` | `incidentInfo` (`type`, `title`, `description`, `entities`, `status`, `priority`, `assignees`), `incidentNotes`, `tags` only among common aspects | Raw MCP. | ✅ Done (`19bafcd`). `entities:` takes full URNs directly (same precedent as `DataProductDoc.assets`). `incidentExternalLinks` explicitly **out of scope** — needs a DataHub `connection` entity this connector has no concept of. |
+| 4.5 | `DOCUMENT` | `documentInfo`, `documentSettings`, 7 of 9 common mixins (no `applications`, no `deprecation` — not permitted by the registry on `document`) | `datahub.sdk.document.Document.create_document()` / `create_external_document()` factories (no plain constructor). | ✅ Done, last of the five (Open Question 3's gate was resolved by shipping regardless — see below). Found a new, connector-wide-first trap (C8): these two factories stamp `datetime.now()` on `created`/`lastModified` unless explicitly pinned — every other SDK V2 entity in this connector defaults to a deterministic `time=0`. |
+
+New kinds each needed: an entry in `ENTITY_DOC_TYPES_BY_KIND` / `EntityDoc`, a `ParsedRepository`
+list + `loader.py` dispatch branch, a URN helper in `urns.py` (where the kind needs one), a report
+counter, a slot in the emission order in `yaml_source.py`, both doc generators, unit tests, and a
+fixture + golden-file regeneration — the "~3 files" target from Goal 2 held roughly true per kind once
+Phase 1's dispatcher existed (the marginal work per kind was almost entirely the kind's own
+properties aspect, not its cross-cutting aspects).
 
 ### Future Considerations (P2 — design for, do not build)
 
@@ -300,39 +334,65 @@ inherits the full cross-cutting surface for free and declares only its own prope
 ## Success Metrics
 
 **Leading (measurable at merge)**
-- Cross-cutting aspect matrix has **zero `✗` cells** for the nine common aspects across the 14 existing kinds.
-- Every `STRUCTURED_PROPERTY` in `datahub-sample` with `entityTypes: [dataset]` can be assigned on a dataset — spot-check ≥5 of the 64.
-- Unit coverage on new/changed builder code ≥80% (existing bar, `_PLANNING.md` step 8).
-- `check-capabilities` shows every declared `@capability` producing output from the fixture tree.
+- ✅ Cross-cutting aspect matrix has **zero `✗` cells** for the nine common aspects across all 19
+  kinds (the original 14 plus the 5 this spec added) — confirmed against `entity-registry.yml`,
+  transcribed as the matrix comment in `models.py`.
+- ✅ `STRUCTURED_PROPERTY` values are assignable on any kind the registry permits. Spot-checked
+  against real definitions during the Phase 1-3 real-ingest pass against `datahub-sample`.
+- ✅ Unit coverage on new/changed builder code: **97% overall**, no file below 83% (bar was ≥80%).
+- Not yet run: `check-capabilities` against a live fixture ingest (requires the
+  `datahub-skills:connector-validator` tooling) — the fixture tree itself demonstrably produces every
+  declared capability's output via the passing integration tests.
 
 **Lagging**
-- A new cross-cutting aspect can be added in ≤3 files (model field + allowlist entry + regenerated artifacts), versus ~20 today.
-- `datahub-sample` re-ingests with zero dangling-reference warnings.
+- ✅ Confirmed in practice: adding `INCIDENT`/`QUERY` (the two thinnest new kinds) touched
+  `models.py`, one new `builders/<kind>.py`, `urns.py`, `loader.py`, `yaml_source.py`,
+  `yaml_source_report.py`, both doc generators' output, and tests+fixture — more than 3 *files*
+  literally, but the cross-cutting-aspect part of each was zero additional code, which was the actual
+  target ("no new code path in a builder" per Goal 2).
+- ✅ Done for Phases 1-3: a real `datahub ingest` against the actual `datahub-sample` repo was run
+  after the Phase 1-3 refactor, found ~90 pre-existing dangling tag/glossaryTerm warnings in the
+  *sample data itself* (undeclared tags, duplicate tag/glossaryTerm entries, undeclared glossary
+  terms — none were connector bugs), and after correcting the sample repo settled at **zero**
+  dangling-reference / unknown-field / failure warnings.
+- **Not yet run**: the same real-ingest pass has not been repeated since Phase 4 landed — the
+  `datahub-sample` repo declares no `CHART`/`DASHBOARD`/`QUERY`/`INCIDENT`/`DOCUMENT` documents, so
+  the five new kinds are so far only exercised against the curated integration fixture tree, not the
+  full real-world repo.
 
 ---
 
 ## Open Questions
 
-| # | Question | Owner | Blocking? |
+| # | Question | Owner | Resolution |
 |---|---|---|---|
-| 1 | `DATA_PLATFORM_INSTANCE`: nested `instances:` under `DataPlatformDoc`, or its own top-level kind? | maintainer | No — decide during 1.10 |
-| 2 | Should an unsupported common field on a kind be a hard validation error (rejects the file) or a warning-and-skip? Everything else in the connector is warning-and-skip (`fail_on_unresolved_reference` gates the strict mode), but a *schema* mistake differs from a *reference* mistake. | maintainer | **Yes** — shapes 1.1 |
-| 3 | Is the target GMS actually on v1.7? `DOCUMENT`, `applications`, and `displayProperties` are recent; emitting them against an older GMS yields rejected MCPs. | AP-HP platform team | **Yes** for 4.5, no for Phases 1–3 |
-| 4 | Does `docs/sources/yaml/yaml_recipe.yml` stay pointed at the full `datahub-sample` root (currently modified from `observability-layer` to the repo root, uncommitted)? | maintainer | No |
-| 5 | Column-level annotation on `schemaField` entities requires those URNs to resolve in the target GMS. Confirm the deployment indexes `schemaField` entities. | AP-HP platform team | No — Phase 3 only |
+| 1 | `DATA_PLATFORM_INSTANCE`: nested `instances:` under `DataPlatformDoc`, or its own top-level kind? | maintainer | **Resolved by decision D3**: neither, for now. Named platform instances deferred to Future Considerations; the `dataPlatformInstance` aspect keeps emitting exactly as before. |
+| 2 | Should an unsupported common field on a kind be a hard validation error (rejects the file) or a warning-and-skip? | maintainer | **Resolved by decision D2**: warning-and-skip by default (`report_unknown_fields`), escalated to a hard error under `fail_on_unresolved_reference: true` — consistent with every other soft-error in the connector. |
+| 3 | Is the target GMS actually on v1.7? `DOCUMENT`, `applications`, and `displayProperties` are recent; emitting them against an older GMS yields rejected MCPs. | AP-HP platform team | **Still open.** Decision made to ship all of Phase 4 regardless (code correctness doesn't depend on the answer), but the actual target deployment's version has not been confirmed in this environment. If it predates `DOCUMENT`'s introduction, only that kind's MCPs would be rejected — everything else is unaffected. |
+| 4 | Does `docs/sources/yaml/yaml_recipe.yml` stay pointed at the full `datahub-sample` root? | maintainer | Still open, non-blocking. |
+| 5 | Column-level annotation on `schemaField` entities requires those URNs to resolve in the target GMS. Confirm the deployment indexes `schemaField` entities. | AP-HP platform team | **Still open** — same caveat as #3: the MCPs are emitted and valid regardless, but whether tags surface on a column in the UI depends on this. |
 
 ---
 
-## Timeline / Phasing
+## Timeline / Phasing (as executed)
 
-No hard external deadline. Sequence is dictated by dependency, not calendar:
+No hard external deadline; sequencing followed dependency, not calendar, exactly as planned:
 
-1. **Phase 1** must land first — it is the refactor everything else rides on, and it touches all 14 builders plus the golden file. Landing it alongside other work would make the golden diff unreadable.
-2. **Phase 2** is independent of Phase 1 and could run in parallel, but sequencing it after keeps golden-file churn serialized.
-3. **Phase 3** depends on nothing but is the largest single behavioural change to `builders/dataset.py`.
-4. **Phase 4** depends on Phase 1 (new kinds should inherit the common mixin from birth, not be retrofitted).
+1. **Phase 1** landed first, alone (`367cbfb`) — the refactor everything else rode on, touching all 14
+   original builders plus the golden file. Confirmed via an empty structural golden-diff checkpoint
+   before any new fixture content was added.
+2. **Phase 2** landed inside the same commit, opportunistically — once Phase 1's corrections (C1-C3)
+   showed the remaining pipeline/assertion work was nearly free, splitting it into a separate commit
+   would have added process overhead for no isolation benefit.
+3. **Phase 3** landed next (`4c05eeb`), independently, exactly the largest single behavioural change to
+   `builders/dataset.py` this spec anticipated — but a small one in practice, since it reused Phase 1's
+   dispatcher with zero new aspect-construction code.
+4. **Phase 4** landed last, five separate commits (one per kind), each depending on Phase 1's mixins
+   existing from the start rather than being retrofitted: `CHART` → `DASHBOARD` (needs `CHART` for its
+   `charts:` field) → `QUERY` → `INCIDENT` → `DOCUMENT` (gated last on the SDK factory quirks in C8).
 
-Each phase is independently shippable and separately reviewable against the connector standards.
+Each phase/commit was independently reviewable, and each was verified (unit + integration + coverage)
+before moving to the next.
 
 ---
 
@@ -384,3 +444,19 @@ column, and a job→job DAG edge.
 **5. Standards review** — re-run `/datahub-skills:connector-review` on the branch before merge. The
 capability-declaration fix (1.11) and the report-counter additions (1.12) are direct responses to
 that skill's checklist; Phase 1's removal of per-builder aspect assembly addresses its DRY criteria.
+
+---
+
+### Actual run status (2026-08-15)
+
+- **Steps 1-2** (unit tests, artifact regeneration): run repeatedly through every phase and commit —
+  currently 140 passed, generated artifacts in sync.
+- **Step 3** (integration fixture + golden file): run and reviewed by hand after every commit; each
+  regeneration verified via a structural diff (added/removed/changed aspect keys) to confirm only the
+  intended aspects changed.
+- **Step 4** (real ingest against `datahub-sample`): run for Phases 1-3 — found and fixed ~90
+  pre-existing warnings in the sample data itself (not connector bugs), settled at zero. **Not
+  re-run since Phase 4** — `datahub-sample` has no `CHART`/`DASHBOARD`/`QUERY`/`INCIDENT`/`DOCUMENT`
+  fixtures of its own yet, so the five new kinds are only verified against this connector's own
+  integration fixture tree so far.
+- **Step 5** (standards review): not yet run in this environment.

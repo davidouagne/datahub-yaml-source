@@ -46,6 +46,21 @@
       "$ref": "#/$defs/DocumentDoc"
     },
     {
+      "$ref": "#/$defs/MLFeatureDoc"
+    },
+    {
+      "$ref": "#/$defs/MLPrimaryKeyDoc"
+    },
+    {
+      "$ref": "#/$defs/MLFeatureTableDoc"
+    },
+    {
+      "$ref": "#/$defs/MLModelGroupDoc"
+    },
+    {
+      "$ref": "#/$defs/MLModelDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -712,6 +727,96 @@
         "name"
       ],
       "title": "AssertionPropertiesDoc",
+      "type": "object"
+    },
+    "CaveatDetailsDoc": {
+      "properties": {
+        "needsFurtherTesting": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Needsfurthertesting"
+        },
+        "caveatDescription": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caveatdescription"
+        },
+        "groupsNotRepresented": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Groupsnotrepresented"
+        }
+      },
+      "title": "CaveatDetailsDoc",
+      "type": "object"
+    },
+    "CaveatsAndRecommendationsDoc": {
+      "description": "[MLMODEL model card] Emits the `mlModelCaveatsAndRecommendations` aspect.",
+      "properties": {
+        "caveats": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaveatDetailsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recommendations": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommendations"
+        },
+        "idealDatasetCharacteristics": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idealdatasetcharacteristics"
+        }
+      },
+      "title": "CaveatsAndRecommendationsDoc",
       "type": "object"
     },
     "ChartDoc": {
@@ -3353,6 +3458,88 @@
       "title": "DomainDoc",
       "type": "object"
     },
+    "EthicalConsiderationsDoc": {
+      "description": "[MLMODEL model card] Emits the `mlModelEthicalConsiderations` aspect.",
+      "properties": {
+        "data": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data"
+        },
+        "humanLife": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Humanlife"
+        },
+        "mitigations": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mitigations"
+        },
+        "risksAndHarms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risksandharms"
+        },
+        "useCases": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usecases"
+        }
+      },
+      "title": "EthicalConsiderationsDoc",
+      "type": "object"
+    },
     "FineGrainedLineageDoc": {
       "description": "A single column-level lineage edge.",
       "properties": {
@@ -4129,6 +4316,58 @@
       "title": "IncidentStatusDoc",
       "type": "object"
     },
+    "IntendedUseDoc": {
+      "description": "[MLMODEL model card] Intended and out-of-scope uses. Emits the `intendedUse` aspect.",
+      "properties": {
+        "primaryUses": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primaryuses"
+        },
+        "primaryUsers": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Primaryusers"
+        },
+        "outOfScopeUses": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outofscopeuses"
+        }
+      },
+      "title": "IntendedUseDoc",
+      "type": "object"
+    },
     "LinkDoc": {
       "description": "A link surfaced in DataHub's \"Links\" panel (the `institutionalMemory` aspect).",
       "properties": {
@@ -4153,6 +4392,1541 @@
         "url"
       ],
       "title": "LinkDoc",
+      "type": "object"
+    },
+    "MLFeatureDoc": {
+      "additionalProperties": true,
+      "description": "A single feature in a feature store.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "MLFEATURE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "featureNamespace": {
+          "description": "The feature's namespace, usually its feature table's name.",
+          "title": "Featurenamespace",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dataType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT.",
+          "title": "Datatype"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "sources": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/QuerySubjectRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Dataset(s)/column(s) this feature is derived from.",
+          "title": "Sources"
+        }
+      },
+      "required": [
+        "kind",
+        "featureNamespace",
+        "name"
+      ],
+      "title": "MLFeatureDoc",
+      "type": "object"
+    },
+    "MLFeatureRef": {
+      "description": "Reference to an MLFEATURE by its natural (featureNamespace, name) key.",
+      "properties": {
+        "featureNamespace": {
+          "title": "Featurenamespace",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "featureNamespace",
+        "name"
+      ],
+      "title": "MLFeatureRef",
+      "type": "object"
+    },
+    "MLFeatureTableDoc": {
+      "additionalProperties": true,
+      "description": "A feature store's feature table (e.g. a Feast feature view).",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "MLFEATURE_TABLE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "Feature table identifier. Becomes part of the mlFeatureTable URN.",
+          "title": "Name",
+          "type": "string"
+        },
+        "platform": {
+          "description": "The feature store platform, e.g. 'feast'.",
+          "title": "Platform",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "mlFeatures": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLFeatureRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Features in this table.",
+          "title": "Mlfeatures"
+        },
+        "mlPrimaryKeys": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLPrimaryKeyRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary key(s) of this table.",
+          "title": "Mlprimarykeys"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "platform"
+      ],
+      "title": "MLFeatureTableDoc",
+      "type": "object"
+    },
+    "MLModelDataDoc": {
+      "description": "[MLMODEL model card] One dataset used for training or evaluation -- an entry of\nthe `mlModelTrainingData`/`mlModelEvaluationData` aspects.",
+      "properties": {
+        "dataset": {
+          "$ref": "#/$defs/DatasetRef"
+        },
+        "motivation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Motivation"
+        },
+        "preProcessing": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preprocessing"
+        }
+      },
+      "required": [
+        "dataset"
+      ],
+      "title": "MLModelDataDoc",
+      "type": "object"
+    },
+    "MLModelDoc": {
+      "additionalProperties": true,
+      "description": "An ML model version. Its full \"model card\" is supported: intended use, ethical\nconsiderations, caveats/recommendations, training/evaluation data, factor prompts,\nmetrics, and source code -- all valid only on `mlModel` per the entity registry, so\nthey live directly on this model rather than as a shared mixin (D1 is for aspects\nshared *across* kinds). `cost` is deliberately not exposed -- a financial\ndiscriminated-union structure outside the usual \"model card\" concept, with no\ncurrent use case.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "MLMODEL",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "Model version identifier. Becomes part of the mlModel URN.",
+          "title": "Name",
+          "type": "string"
+        },
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text model type, e.g. 'classification'.",
+          "title": "Type"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "hyperParameters": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hyperparameters"
+        },
+        "modelGroup": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MLModelGroupRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The MLMODEL_GROUP this version belongs to."
+        },
+        "mlFeatures": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLFeatureRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Features this model consumes.",
+          "title": "Mlfeatures"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The model's parent container, if any."
+        },
+        "intendedUse": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IntendedUseDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "ethicalConsiderations": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EthicalConsiderationsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "caveatsAndRecommendations": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaveatsAndRecommendationsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "trainingData": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelDataDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trainingdata"
+        },
+        "evaluationData": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelDataDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evaluationdata"
+        },
+        "factorPrompts": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MLModelFactorPromptsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metrics": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MLModelMetricsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sourceCode": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelSourceCodeDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourcecode"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "platform"
+      ],
+      "title": "MLModelDoc",
+      "type": "object"
+    },
+    "MLModelFactorDoc": {
+      "properties": {
+        "groups": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Groups"
+        },
+        "instrumentation": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instrumentation"
+        },
+        "environment": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment"
+        }
+      },
+      "title": "MLModelFactorDoc",
+      "type": "object"
+    },
+    "MLModelFactorPromptsDoc": {
+      "description": "[MLMODEL model card] Emits the `mlModelFactorPrompts` aspect.",
+      "properties": {
+        "relevantFactors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelFactorDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Relevantfactors"
+        },
+        "evaluationFactors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelFactorDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Evaluationfactors"
+        }
+      },
+      "title": "MLModelFactorPromptsDoc",
+      "type": "object"
+    },
+    "MLModelGroupDoc": {
+      "additionalProperties": true,
+      "description": "A group of related ML model versions (e.g. all versions of one MLflow registered model).",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "MLMODEL_GROUP",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "Model group identifier. Becomes part of the mlModelGroup URN.",
+          "title": "Name",
+          "type": "string"
+        },
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The model group's parent container, if any."
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "platform"
+      ],
+      "title": "MLModelGroupDoc",
+      "type": "object"
+    },
+    "MLModelGroupRef": {
+      "description": "Reference to an MLMODEL_GROUP by its natural (platform, name, env) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "MLModelGroupRef",
+      "type": "object"
+    },
+    "MLModelMetricsDoc": {
+      "description": "[MLMODEL model card] Emits the `mlModelMetrics` aspect.",
+      "properties": {
+        "performanceMeasures": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Performancemeasures"
+        },
+        "decisionThreshold": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decisionthreshold"
+        }
+      },
+      "title": "MLModelMetricsDoc",
+      "type": "object"
+    },
+    "MLModelSourceCodeDoc": {
+      "properties": {
+        "type": {
+          "description": "TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, or ML_MODEL_SOURCE_CODE.",
+          "title": "Type",
+          "type": "string"
+        },
+        "sourceCodeUrl": {
+          "title": "Sourcecodeurl",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "sourceCodeUrl"
+      ],
+      "title": "MLModelSourceCodeDoc",
+      "type": "object"
+    },
+    "MLPrimaryKeyDoc": {
+      "additionalProperties": true,
+      "description": "A feature table's primary key.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "MLPRIMARY_KEY",
+          "title": "Kind",
+          "type": "string"
+        },
+        "featureNamespace": {
+          "title": "Featurenamespace",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dataType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Datatype"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "sources": {
+          "description": "Dataset(s)/column(s) this primary key is derived from.",
+          "items": {
+            "$ref": "#/$defs/QuerySubjectRef"
+          },
+          "title": "Sources",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "featureNamespace",
+        "name",
+        "sources"
+      ],
+      "title": "MLPrimaryKeyDoc",
+      "type": "object"
+    },
+    "MLPrimaryKeyRef": {
+      "description": "Reference to an MLPRIMARY_KEY by its natural (featureNamespace, name) key.",
+      "properties": {
+        "featureNamespace": {
+          "title": "Featurenamespace",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "featureNamespace",
+        "name"
+      ],
+      "title": "MLPrimaryKeyRef",
       "type": "object"
     },
     "OwnerEntry": {
@@ -4442,7 +6216,7 @@
       "type": "object"
     },
     "SchemaFieldDoc": {
-      "description": "A single column/field in a dataset's schema.\n\nCross-cutting mixins per `schemaField`'s entry in entity-registry.yml:\ntags/glossaryTerms/structuredProperties/deprecation are permitted (as\nare ownership/domains/subTypes/documentation/businessAttributes, not\nexposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).",
+      "description": "A single column/field in a dataset's schema.\n\nCross-cutting mixins per `schemaField`'s entry in entity-registry.yml:\ntags/glossaryTerms/structuredProperties/deprecation are permitted (as\nare ownership/domains/subTypes/documentation/businessAttributes, not\nexposed here -- no current use case, see _PLANNING.md Phase 3 scope).",
       "properties": {
         "deprecation": {
           "anyOf": [

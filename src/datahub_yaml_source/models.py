@@ -164,7 +164,7 @@ class DeprecationDoc(BaseModel):
 # entity type. This makes per-kind validity static: a field that isn't valid
 # on a kind simply isn't a field on that Pydantic model, rather than being a
 # separate allowlist that has to be kept in sync with the class declarations.
-# See docs/specs/entity-aspect-coverage-gaps.md and _PLANNING-v2.md.
+# See docs/specs/entity-aspect-coverage-gaps.md and _PLANNING.md.
 #
 # Verified matrix (Y = mixin included, blank/'-' = not permitted on that kind):
 #
@@ -175,6 +175,11 @@ class DeprecationDoc(BaseModel):
 #   QUERY            -     -    -     -      -     -      -            -          Y
 #   INCIDENT         -     Y    -     -      -     -      -            -          -
 #   DOCUMENT         Y     Y    Y     Y      -     Y      -            Y          Y
+#   MLMODEL          Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   MLMODEL_GROUP    Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   MLFEATURE_TABLE  Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   MLFEATURE        Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   MLPRIMARY_KEY    Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -249,7 +254,7 @@ class SchemaFieldDoc(HasTags, HasTerms, HasStructuredProps, HasDeprecation, Base
     Cross-cutting mixins per `schemaField`'s entry in entity-registry.yml:
     tags/glossaryTerms/structuredProperties/deprecation are permitted (as
     are ownership/domains/subTypes/documentation/businessAttributes, not
-    exposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).
+    exposed here -- no current use case, see _PLANNING.md Phase 3 scope).
     """
 
     fieldPath: str
@@ -601,6 +606,206 @@ class DocumentDoc(
     properties: Optional[Dict[str, Any]] = None
 
 
+class MLFeatureRef(BaseModel):
+    """Reference to an MLFEATURE by its natural (featureNamespace, name) key."""
+
+    featureNamespace: str
+    name: str
+
+
+class MLPrimaryKeyRef(BaseModel):
+    """Reference to an MLPRIMARY_KEY by its natural (featureNamespace, name) key."""
+
+    featureNamespace: str
+    name: str
+
+
+class MLModelGroupRef(BaseModel):
+    """Reference to an MLMODEL_GROUP by its natural (platform, name, env) key."""
+
+    platform: str
+    name: str
+    env: str = "PROD"
+    instance: Optional[str] = None
+
+
+class MLFeatureTableDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A feature store's feature table (e.g. a Feast feature view)."""
+
+    kind: Literal["MLFEATURE_TABLE"]
+    name: str = Field(description="Feature table identifier. Becomes part of the mlFeatureTable URN.")
+    platform: str = Field(description="The feature store platform, e.g. 'feast'.")
+    description: Optional[str] = None
+    properties: Optional[Dict[str, Any]] = None
+    mlFeatures: Optional[List[MLFeatureRef]] = Field(default=None, description="Features in this table.")
+    mlPrimaryKeys: Optional[List[MLPrimaryKeyRef]] = Field(
+        default=None, description="Primary key(s) of this table."
+    )
+
+
+class MLFeatureDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A single feature in a feature store."""
+
+    kind: Literal["MLFEATURE"]
+    featureNamespace: str = Field(description="The feature's namespace, usually its feature table's name.")
+    name: str
+    description: Optional[str] = None
+    dataType: Optional[str] = Field(
+        default=None, description="One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT."
+    )
+    properties: Optional[Dict[str, Any]] = None
+    sources: Optional[List[QuerySubjectRef]] = Field(
+        default=None, description="Dataset(s)/column(s) this feature is derived from."
+    )
+
+
+class MLPrimaryKeyDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A feature table's primary key."""
+
+    kind: Literal["MLPRIMARY_KEY"]
+    featureNamespace: str
+    name: str
+    description: Optional[str] = None
+    dataType: Optional[str] = None
+    properties: Optional[Dict[str, Any]] = None
+    sources: List[QuerySubjectRef] = Field(
+        description="Dataset(s)/column(s) this primary key is derived from."
+    )
+
+
+class MLModelGroupDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A group of related ML model versions (e.g. all versions of one MLflow registered model)."""
+
+    kind: Literal["MLMODEL_GROUP"]
+    name: str = Field(description="Model group identifier. Becomes part of the mlModelGroup URN.")
+    platform: str
+    instance: Optional[str] = None
+    env: str = "PROD"
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    externalUrl: Optional[str] = None
+    properties: Optional[Dict[str, Any]] = None
+    container: Optional[ContainerRef] = Field(
+        default=None, description="The model group's parent container, if any."
+    )
+
+
+class IntendedUseDoc(BaseModel):
+    """[MLMODEL model card] Intended and out-of-scope uses. Emits the `intendedUse` aspect."""
+
+    primaryUses: Optional[List[str]] = None
+    primaryUsers: Optional[List[str]] = None
+    outOfScopeUses: Optional[List[str]] = None
+
+
+class CaveatDetailsDoc(BaseModel):
+    needsFurtherTesting: Optional[bool] = None
+    caveatDescription: Optional[str] = None
+    groupsNotRepresented: Optional[List[str]] = None
+
+
+class EthicalConsiderationsDoc(BaseModel):
+    """[MLMODEL model card] Emits the `mlModelEthicalConsiderations` aspect."""
+
+    data: Optional[List[str]] = None
+    humanLife: Optional[List[str]] = None
+    mitigations: Optional[List[str]] = None
+    risksAndHarms: Optional[List[str]] = None
+    useCases: Optional[List[str]] = None
+
+
+class CaveatsAndRecommendationsDoc(BaseModel):
+    """[MLMODEL model card] Emits the `mlModelCaveatsAndRecommendations` aspect."""
+
+    caveats: Optional[CaveatDetailsDoc] = None
+    recommendations: Optional[str] = None
+    idealDatasetCharacteristics: Optional[List[str]] = None
+
+
+class MLModelDataDoc(BaseModel):
+    """[MLMODEL model card] One dataset used for training or evaluation -- an entry of
+    the `mlModelTrainingData`/`mlModelEvaluationData` aspects."""
+
+    dataset: DatasetRef
+    motivation: Optional[str] = None
+    preProcessing: Optional[List[str]] = None
+
+
+class MLModelFactorDoc(BaseModel):
+    groups: Optional[List[str]] = None
+    instrumentation: Optional[List[str]] = None
+    environment: Optional[List[str]] = None
+
+
+class MLModelFactorPromptsDoc(BaseModel):
+    """[MLMODEL model card] Emits the `mlModelFactorPrompts` aspect."""
+
+    relevantFactors: Optional[List[MLModelFactorDoc]] = None
+    evaluationFactors: Optional[List[MLModelFactorDoc]] = None
+
+
+class MLModelMetricsDoc(BaseModel):
+    """[MLMODEL model card] Emits the `mlModelMetrics` aspect."""
+
+    performanceMeasures: Optional[List[str]] = None
+    decisionThreshold: Optional[List[str]] = None
+
+
+class MLModelSourceCodeDoc(BaseModel):
+    type: str = Field(
+        description="TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, or ML_MODEL_SOURCE_CODE."
+    )
+    sourceCodeUrl: str
+
+
+class MLModelDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """An ML model version. Its full "model card" is supported: intended use, ethical
+    considerations, caveats/recommendations, training/evaluation data, factor prompts,
+    metrics, and source code -- all valid only on `mlModel` per the entity registry, so
+    they live directly on this model rather than as a shared mixin (D1 is for aspects
+    shared *across* kinds). `cost` is deliberately not exposed -- a financial
+    discriminated-union structure outside the usual "model card" concept, with no
+    current use case."""
+
+    kind: Literal["MLMODEL"]
+    name: str = Field(description="Model version identifier. Becomes part of the mlModel URN.")
+    platform: str
+    instance: Optional[str] = None
+    env: str = "PROD"
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[str] = Field(default=None, description="Free-text model type, e.g. 'classification'.")
+    externalUrl: Optional[str] = None
+    properties: Optional[Dict[str, Any]] = None
+    hyperParameters: Optional[Dict[str, Any]] = None
+    modelGroup: Optional[MLModelGroupRef] = Field(default=None, description="The MLMODEL_GROUP this version belongs to.")
+    mlFeatures: Optional[List[MLFeatureRef]] = Field(default=None, description="Features this model consumes.")
+    container: Optional[ContainerRef] = Field(default=None, description="The model's parent container, if any.")
+    intendedUse: Optional[IntendedUseDoc] = None
+    ethicalConsiderations: Optional[EthicalConsiderationsDoc] = None
+    caveatsAndRecommendations: Optional[CaveatsAndRecommendationsDoc] = None
+    trainingData: Optional[List[MLModelDataDoc]] = None
+    evaluationData: Optional[List[MLModelDataDoc]] = None
+    factorPrompts: Optional[MLModelFactorPromptsDoc] = None
+    metrics: Optional[MLModelMetricsDoc] = None
+    sourceCode: Optional[List[MLModelSourceCodeDoc]] = None
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -833,6 +1038,11 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "QUERY": QueryDoc,
     "INCIDENT": IncidentDoc,
     "DOCUMENT": DocumentDoc,
+    "MLFEATURE_TABLE": MLFeatureTableDoc,
+    "MLFEATURE": MLFeatureDoc,
+    "MLPRIMARY_KEY": MLPrimaryKeyDoc,
+    "MLMODEL_GROUP": MLModelGroupDoc,
+    "MLMODEL": MLModelDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -855,6 +1065,11 @@ EntityDoc = Union[
     QueryDoc,
     IncidentDoc,
     DocumentDoc,
+    MLFeatureTableDoc,
+    MLFeatureDoc,
+    MLPrimaryKeyDoc,
+    MLModelGroupDoc,
+    MLModelDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

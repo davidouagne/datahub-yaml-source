@@ -40,6 +40,9 @@ source itself connecting to any of them.
   `ASSERTION` that triggered them
 - Knowledge-base documents (runbooks, FAQs, AI-context notes), authored
   natively or referencing an external system (e.g. Confluence)
+- ML feature store metadata (feature tables, features, primary keys) and ML
+  model versions/groups, including a full model card (intended use, ethical
+  considerations, caveats, training/evaluation data, metrics, source code)
 - Data products
 - Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
   edges (`inputDataJobs`), and optional parent containers
@@ -116,6 +119,11 @@ checked-in schema and the models have drifted apart.
 | `QUERY`                 | Saved/observed query                   | `id`, `statement`, `language`, `source`, `subjects`                                      |
 | `INCIDENT`              | Data quality/operational incident      | `id`, `type`, `entities`, `status`, `assignees`, `source`, `notes`                        |
 | `DOCUMENT`              | Knowledge-base document                | `id`, `title`, `text`, `status`, `platform`+`externalUrl` (external docs), `parentDocument`, `relatedAssets`, `relatedDocuments` |
+| `MLFEATURE`             | ML feature                             | `featureNamespace`, `name`, `dataType`, `sources`                                       |
+| `MLPRIMARY_KEY`         | ML feature table primary key           | `featureNamespace`, `name`, `dataType`, `sources`                                       |
+| `MLFEATURE_TABLE`       | ML feature table                       | `platform`, `name`, `mlFeatures`, `mlPrimaryKeys`                                       |
+| `MLMODEL_GROUP`         | ML model group                         | `platform`, `name`, `container`                                                          |
+| `MLMODEL`               | ML model version                       | `platform`, `name`, `modelGroup`, `mlFeatures`, `hyperParameters`, full model card       |
 | `DATA_PRODUCT`          | Data product                           | `id`, `name`, `domains`, `assets`, `structuredProperties`                                |
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |

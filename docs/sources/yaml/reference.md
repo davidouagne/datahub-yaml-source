@@ -19,6 +19,11 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`QUERY`](#query)
 - [`INCIDENT`](#incident)
 - [`DOCUMENT`](#document)
+- [`MLFEATURE_TABLE`](#mlfeature-table)
+- [`MLFEATURE`](#mlfeature)
+- [`MLPRIMARY_KEY`](#mlprimary-key)
+- [`MLMODEL_GROUP`](#mlmodel-group)
+- [`MLMODEL`](#mlmodel)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -388,6 +393,164 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `subTypes` | string or list of string | no | - |  |
 
+## MLFEATURE_TABLE
+
+A feature store's feature table (e.g. a Feast feature view).
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "MLFEATURE_TABLE" | **yes** | - |  |
+| `name` | string | **yes** | - | Feature table identifier. Becomes part of the mlFeatureTable URN. |
+| `platform` | string | **yes** | - | The feature store platform, e.g. 'feast'. |
+| `description` | string | no | - |  |
+| `properties` | map | no | - |  |
+| `mlFeatures` | list of [MLFeatureRef](#mlfeatureref) | no | - | Features in this table. |
+| `mlPrimaryKeys` | list of [MLPrimaryKeyRef](#mlprimarykeyref) | no | - | Primary key(s) of this table. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## MLFEATURE
+
+A single feature in a feature store.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "MLFEATURE" | **yes** | - |  |
+| `featureNamespace` | string | **yes** | - | The feature's namespace, usually its feature table's name. |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `dataType` | string | no | - | One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT. |
+| `properties` | map | no | - |  |
+| `sources` | list of [QuerySubjectRef](#querysubjectref) | no | - | Dataset(s)/column(s) this feature is derived from. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## MLPRIMARY_KEY
+
+A feature table's primary key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "MLPRIMARY_KEY" | **yes** | - |  |
+| `featureNamespace` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `dataType` | string | no | - |  |
+| `properties` | map | no | - |  |
+| `sources` | list of [QuerySubjectRef](#querysubjectref) | **yes** | - | Dataset(s)/column(s) this primary key is derived from. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## MLMODEL_GROUP
+
+A group of related ML model versions (e.g. all versions of one MLflow registered model).
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "MLMODEL_GROUP" | **yes** | - |  |
+| `name` | string | **yes** | - | Model group identifier. Becomes part of the mlModelGroup URN. |
+| `platform` | string | **yes** | - |  |
+| `instance` | string | no | - |  |
+| `env` | string | no | `PROD` |  |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `externalUrl` | string | no | - |  |
+| `properties` | map | no | - |  |
+| `container` | [ContainerRef](#containerref) | no | - | The model group's parent container, if any. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## MLMODEL
+
+An ML model version. Its full "model card" is supported: intended use, ethical considerations, caveats/recommendations, training/evaluation data, factor prompts, metrics, and source code -- all valid only on `mlModel` per the entity registry, so they live directly on this model rather than as a shared mixin (D1 is for aspects shared *across* kinds). `cost` is deliberately not exposed -- a financial discriminated-union structure outside the usual "model card" concept, with no current use case.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "MLMODEL" | **yes** | - |  |
+| `name` | string | **yes** | - | Model version identifier. Becomes part of the mlModel URN. |
+| `platform` | string | **yes** | - |  |
+| `instance` | string | no | - |  |
+| `env` | string | no | `PROD` |  |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `type` | string | no | - | Free-text model type, e.g. 'classification'. |
+| `externalUrl` | string | no | - |  |
+| `properties` | map | no | - |  |
+| `hyperParameters` | map | no | - |  |
+| `modelGroup` | [MLModelGroupRef](#mlmodelgroupref) | no | - | The MLMODEL_GROUP this version belongs to. |
+| `mlFeatures` | list of [MLFeatureRef](#mlfeatureref) | no | - | Features this model consumes. |
+| `container` | [ContainerRef](#containerref) | no | - | The model's parent container, if any. |
+| `intendedUse` | [IntendedUseDoc](#intendedusedoc) | no | - |  |
+| `ethicalConsiderations` | [EthicalConsiderationsDoc](#ethicalconsiderationsdoc) | no | - |  |
+| `caveatsAndRecommendations` | [CaveatsAndRecommendationsDoc](#caveatsandrecommendationsdoc) | no | - |  |
+| `trainingData` | list of [MLModelDataDoc](#mlmodeldatadoc) | no | - |  |
+| `evaluationData` | list of [MLModelDataDoc](#mlmodeldatadoc) | no | - |  |
+| `factorPrompts` | [MLModelFactorPromptsDoc](#mlmodelfactorpromptsdoc) | no | - |  |
+| `metrics` | [MLModelMetricsDoc](#mlmodelmetricsdoc) | no | - |  |
+| `sourceCode` | list of [MLModelSourceCodeDoc](#mlmodelsourcecodedoc) | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
 ## DATA_PRODUCT
 
 A data product: a curated bundle of datasets/jobs presented as a single discoverable asset, with its own domain/tags/owners.
@@ -607,6 +770,118 @@ A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads.
 | `type` | string | **yes** | - | MANUAL or ASSERTION_FAILURE. |
 | `sourceUrn` | string | no | - | Full URN of the triggering entity, e.g. an ASSERTION's urn, if type is ASSERTION_FAILURE. |
 
+### MLFeatureRef
+
+Reference to an MLFEATURE by its natural (featureNamespace, name) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `featureNamespace` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+
+### MLPrimaryKeyRef
+
+Reference to an MLPRIMARY_KEY by its natural (featureNamespace, name) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `featureNamespace` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+
+### MLModelGroupRef
+
+Reference to an MLMODEL_GROUP by its natural (platform, name, env) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+| `env` | string | no | `PROD` |  |
+| `instance` | string | no | - |  |
+
+### IntendedUseDoc
+
+[MLMODEL model card] Intended and out-of-scope uses. Emits the `intendedUse` aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `primaryUses` | list of string | no | - |  |
+| `primaryUsers` | list of string | no | - |  |
+| `outOfScopeUses` | list of string | no | - |  |
+
+### CaveatDetailsDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `needsFurtherTesting` | boolean | no | - |  |
+| `caveatDescription` | string | no | - |  |
+| `groupsNotRepresented` | list of string | no | - |  |
+
+### EthicalConsiderationsDoc
+
+[MLMODEL model card] Emits the `mlModelEthicalConsiderations` aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `data` | list of string | no | - |  |
+| `humanLife` | list of string | no | - |  |
+| `mitigations` | list of string | no | - |  |
+| `risksAndHarms` | list of string | no | - |  |
+| `useCases` | list of string | no | - |  |
+
+### CaveatsAndRecommendationsDoc
+
+[MLMODEL model card] Emits the `mlModelCaveatsAndRecommendations` aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `caveats` | [CaveatDetailsDoc](#caveatdetailsdoc) | no | - |  |
+| `recommendations` | string | no | - |  |
+| `idealDatasetCharacteristics` | list of string | no | - |  |
+
+### MLModelDataDoc
+
+[MLMODEL model card] One dataset used for training or evaluation -- an entry of the `mlModelTrainingData`/`mlModelEvaluationData` aspects.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `dataset` | [DatasetRef](#datasetref) | **yes** | - |  |
+| `motivation` | string | no | - |  |
+| `preProcessing` | list of string | no | - |  |
+
+### MLModelFactorDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `groups` | list of string | no | - |  |
+| `instrumentation` | list of string | no | - |  |
+| `environment` | list of string | no | - |  |
+
+### MLModelFactorPromptsDoc
+
+[MLMODEL model card] Emits the `mlModelFactorPrompts` aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `relevantFactors` | list of [MLModelFactorDoc](#mlmodelfactordoc) | no | - |  |
+| `evaluationFactors` | list of [MLModelFactorDoc](#mlmodelfactordoc) | no | - |  |
+
+### MLModelMetricsDoc
+
+[MLMODEL model card] Emits the `mlModelMetrics` aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `performanceMeasures` | list of string | no | - |  |
+| `decisionThreshold` | list of string | no | - |  |
+
+### MLModelSourceCodeDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `type` | string | **yes** | - | TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, or ML_MODEL_SOURCE_CODE. |
+| `sourceCodeUrl` | string | **yes** | - |  |
+
 ### DatasetFieldRef
 
 | Field | Type | Required | Default | Description |
@@ -628,7 +903,7 @@ A dataset's full schema: its fields and any foreign keys.
 
 ### SchemaFieldDoc
 
-A single column/field in a dataset's schema.  Cross-cutting mixins per `schemaField`'s entry in entity-registry.yml: tags/glossaryTerms/structuredProperties/deprecation are permitted (as are ownership/domains/subTypes/documentation/businessAttributes, not exposed here -- no current use case, see _PLANNING-v2.md Phase 3 scope).
+A single column/field in a dataset's schema.  Cross-cutting mixins per `schemaField`'s entry in entity-registry.yml: tags/glossaryTerms/structuredProperties/deprecation are permitted (as are ownership/domains/subTypes/documentation/businessAttributes, not exposed here -- no current use case, see _PLANNING.md Phase 3 scope).
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |

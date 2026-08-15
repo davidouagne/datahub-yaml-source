@@ -34,6 +34,13 @@ from datahub_yaml_source.builders.document import build_document
 from datahub_yaml_source.builders.domain import build_domain, topological_sort_domains
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
 from datahub_yaml_source.builders.incident import build_incident
+from datahub_yaml_source.builders.ml import (
+    build_ml_feature,
+    build_ml_feature_table,
+    build_ml_model,
+    build_ml_model_group,
+    build_ml_primary_key,
+)
 from datahub_yaml_source.builders.platform import build_data_platform
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
@@ -221,6 +228,40 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.documents_scanned += 1
             yield from self._safe_build(
                 "DOCUMENT", document_doc.id, build_document, document_doc, index, self.report
+            )
+
+        # MLFEATURE/MLPRIMARY_KEY before MLFEATURE_TABLE (which references them);
+        # MLMODEL_GROUP before MLMODEL (which references its group).
+        for feature_doc in repository.ml_features:
+            self.report.ml_features_scanned += 1
+            yield from self._safe_build(
+                "MLFEATURE", f"{feature_doc.featureNamespace}.{feature_doc.name}",
+                build_ml_feature, feature_doc, index, self.report
+            )
+
+        for primary_key_doc in repository.ml_primary_keys:
+            self.report.ml_primary_keys_scanned += 1
+            yield from self._safe_build(
+                "MLPRIMARY_KEY", f"{primary_key_doc.featureNamespace}.{primary_key_doc.name}",
+                build_ml_primary_key, primary_key_doc, index, self.report
+            )
+
+        for feature_table_doc in repository.ml_feature_tables:
+            self.report.ml_feature_tables_scanned += 1
+            yield from self._safe_build(
+                "MLFEATURE_TABLE", feature_table_doc.name, build_ml_feature_table, feature_table_doc, index, self.report
+            )
+
+        for model_group_doc in repository.ml_model_groups:
+            self.report.ml_model_groups_scanned += 1
+            yield from self._safe_build(
+                "MLMODEL_GROUP", model_group_doc.name, build_ml_model_group, model_group_doc, index, self.report
+            )
+
+        for model_doc in repository.ml_models:
+            self.report.ml_models_scanned += 1
+            yield from self._safe_build(
+                "MLMODEL", model_doc.name, build_ml_model, model_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

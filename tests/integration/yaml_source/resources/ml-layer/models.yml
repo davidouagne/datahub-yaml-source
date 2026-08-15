@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: MLFEATURE
+featureNamespace: patient_features
+name: age_at_admission
+description: Age of the patient at admission time
+dataType: CONTINUOUS
+sources:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+    fieldPath: date_naissance
+---
+kind: MLPRIMARY_KEY
+featureNamespace: patient_features
+name: patient_id
+description: Patient identifier
+dataType: ORDINAL
+sources:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+    fieldPath: patient_id
+---
+kind: MLFEATURE_TABLE
+name: patient_features
+platform: feast
+description: Feature view for patient-level readmission features
+mlFeatures:
+  - featureNamespace: patient_features
+    name: age_at_admission
+mlPrimaryKeys:
+  - featureNamespace: patient_features
+    name: patient_id
+tags:
+  - pii
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+---
+kind: MLMODEL_GROUP
+name: readmission_risk
+platform: mlflow
+description: All versions of the readmission risk model
+domains: "3667192a0a19c51419efe99aa865c1ba"
+---
+kind: MLMODEL
+name: readmission_risk_v3
+platform: mlflow
+displayName: Readmission risk v3
+description: Predicts 30-day readmission risk
+type: classification
+properties:
+  framework: scikit-learn
+hyperParameters:
+  n_estimators: 200
+  max_depth: 8
+modelGroup:
+  platform: mlflow
+  name: readmission_risk
+  env: PROD
+mlFeatures:
+  - featureNamespace: patient_features
+    name: age_at_admission
+domains: "3667192a0a19c51419efe99aa865c1ba"
+tags:
+  - pii
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+intendedUse:
+  primaryUses:
+    - Prioritize post-discharge follow-up
+  outOfScopeUses:
+    - Automated clinical decision-making
+ethicalConsiderations:
+  risksAndHarms:
+    - Possible bias on under-represented populations in the training cohort
+  mitigations:
+    - Quarterly bias audit
+caveatsAndRecommendations:
+  recommendations: Do not use without clinical oversight
+trainingData:
+  - dataset:
+      platform: postgres
+      name: ehr_public_patient
+      env: PROD
+    motivation: Historical cohort 2020-2025
+evaluationData:
+  - dataset:
+      platform: postgres
+      name: ehr_public_patient
+      env: PROD
+factorPrompts:
+  relevantFactors:
+    - groups:
+        - Age > 75
+metrics:
+  performanceMeasures:
+    - AUC 0.82
+    - Sensitivity 0.76
+sourceCode:
+  - type: ML_MODEL_SOURCE_CODE
+    sourceCodeUrl: https://gitlab.example.org/ds/readmission-model

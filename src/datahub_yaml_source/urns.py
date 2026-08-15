@@ -32,6 +32,11 @@ from datahub.metadata.urns import (
     GlossaryNodeUrn,
     GlossaryTermUrn,
     IncidentUrn,
+    MlFeatureTableUrn,
+    MlFeatureUrn,
+    MlModelGroupUrn,
+    MlModelUrn,
+    MlPrimaryKeyUrn,
     QueryUrn,
     StructuredPropertyUrn,
     TagUrn,
@@ -47,6 +52,9 @@ from datahub_yaml_source.models import (
     DataFlowRef,
     DatasetFieldRef,
     DatasetRef,
+    MLFeatureRef,
+    MLModelGroupRef,
+    MLPrimaryKeyRef,
 )
 
 
@@ -134,6 +142,30 @@ def incident_urn(incident_id: str) -> str:
 
 def document_urn(document_id: str) -> str:
     return _passthrough_if_urn(document_id, lambda v: DocumentUrn(v).urn())
+
+
+def ml_feature_table_urn(ref) -> str:
+    """Accepts anything with `platform`/`name` -- an `MLFeatureTableDoc` itself, or a
+    future dedicated ref type, should one ever be needed."""
+    return MlFeatureTableUrn(ref.platform, ref.name).urn()
+
+
+def ml_feature_urn(ref: MLFeatureRef) -> str:
+    return MlFeatureUrn(ref.featureNamespace, ref.name).urn()
+
+
+def ml_primary_key_urn(ref: MLPrimaryKeyRef) -> str:
+    return MlPrimaryKeyUrn(ref.featureNamespace, ref.name).urn()
+
+
+def ml_model_group_urn(ref: MLModelGroupRef) -> str:
+    return MlModelGroupUrn(ref.platform, ref.name, ref.env).urn()
+
+
+def ml_model_urn(ref) -> str:
+    """Accepts anything with `platform`/`name`/`env` -- an `MLModelDoc` itself, or a
+    future dedicated ref type."""
+    return MlModelUrn(ref.platform, ref.name, ref.env).urn()
 
 
 def glossary_node_urn(node_id: str) -> str:

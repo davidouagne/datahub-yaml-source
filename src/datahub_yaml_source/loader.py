@@ -13,6 +13,7 @@ from datahub_yaml_source.models import (
     AssertionDoc,
     ChartDoc,
     ContainerDoc,
+    DashboardDoc,
     DataFlowDoc,
     DataJobDoc,
     DataPlatformDoc,
@@ -55,6 +56,7 @@ class ParsedRepository:
     containers: List[ContainerDoc] = field(default_factory=list)
     datasets: List[DatasetDoc] = field(default_factory=list)
     charts: List[ChartDoc] = field(default_factory=list)
+    dashboards: List[DashboardDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -83,6 +85,8 @@ class ParsedRepository:
             self.datasets.append(doc)
         elif isinstance(doc, ChartDoc):
             self.charts.append(doc)
+        elif isinstance(doc, DashboardDoc):
+            self.dashboards.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

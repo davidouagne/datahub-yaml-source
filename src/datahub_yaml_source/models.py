@@ -171,6 +171,7 @@ class DeprecationDoc(BaseModel):
 #                  owners tags terms domain apps links deprecation structProps subTypes
 #   DATASET          Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CHART            Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   DASHBOARD        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -440,6 +441,20 @@ class DatasetDoc(
     )
 
 
+class ChartRef(BaseModel):
+    """Reference to a CHART by its natural (platform, name) key."""
+
+    platform: str
+    name: str
+
+
+class DashboardRef(BaseModel):
+    """Reference to a DASHBOARD by its natural (platform, name) key."""
+
+    platform: str
+    name: str
+
+
 class ChartDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -461,6 +476,32 @@ class ChartDoc(
     container: Optional[ContainerRef] = Field(default=None, description="The chart's parent container, if any.")
     inputDatasets: Optional[List[DatasetRef]] = Field(
         default=None, description="Datasets this chart is built from."
+    )
+    properties: Optional[Dict[str, Any]] = None
+
+
+class DashboardDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A dashboard: a collection of charts (and/or nested dashboards) from a
+    BI tool (Superset, Looker, Tableau, ...)."""
+
+    kind: Literal["DASHBOARD"]
+    name: str = Field(description="Dashboard identifier within its platform. Becomes part of the dashboard URN.")
+    platform: str = Field(description="The BI tool, e.g. 'superset', 'looker', 'tableau'.")
+    instance: Optional[str] = None
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    dashboardUrl: Optional[str] = Field(default=None, description="Link to the dashboard in its native BI tool.")
+    externalUrl: Optional[str] = None
+    container: Optional[ContainerRef] = Field(default=None, description="The dashboard's parent container, if any.")
+    charts: Optional[List[ChartRef]] = Field(default=None, description="Charts shown on this dashboard.")
+    dashboards: Optional[List[DashboardRef]] = Field(
+        default=None, description="Other dashboards nested under this one."
+    )
+    inputDatasets: Optional[List[DatasetRef]] = Field(
+        default=None, description="Datasets this dashboard is built from."
     )
     properties: Optional[Dict[str, Any]] = None
 
@@ -693,6 +734,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "CONTAINER": ContainerDoc,
     "DATASET": DatasetDoc,
     "CHART": ChartDoc,
+    "DASHBOARD": DashboardDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -711,6 +753,7 @@ EntityDoc = Union[
     ContainerDoc,
     DatasetDoc,
     ChartDoc,
+    DashboardDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

@@ -1,8 +1,9 @@
 """Builder tests for the BI-layer kinds (CHART, DASHBOARD)."""
 
 from datahub_yaml_source.builders.chart import build_chart
+from datahub_yaml_source.builders.dashboard import build_dashboard
 from datahub_yaml_source.loader import ParsedRepository
-from datahub_yaml_source.models import ChartDoc, ContainerDoc, DomainDoc, TagDoc
+from datahub_yaml_source.models import ChartDoc, ContainerDoc, DashboardDoc, DomainDoc, TagDoc
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -84,3 +85,63 @@ def test_build_chart_reports_dangling_tag_and_container():
     assert len(report.dangling_references) == 2
     assert any("unknown-tag" in ref for ref in report.dangling_references)
     assert any("undeclared container" in ref for ref in report.dangling_references)
+
+
+def test_build_dashboard_emits_dashboard_info_with_charts_and_datasets():
+    repo = _repository_with_known_references()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DashboardDoc.model_validate(
+        {
+            "kind": "DASHBOARD",
+            "name": "cockpit_patients",
+            "platform": "superset",
+            "displayName": "Cockpit patients",
+            "dashboardUrl": "https://superset.example.org/dashboard/3",
+            "charts": [{"platform": "superset", "name": "patients_par_mois"}],
+            "dashboards": [{"platform": "superset", "name": "cockpit_global"}],
+            "inputDatasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "tags": ["dashboard"],
+        }
+    )
+
+    wus = list(build_dashboard(doc, index, report))
+    assert not report.dangling_references
+
+    dashboard_info = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DashboardInfoClass"
+    )
+    assert dashboard_info.title == "Cockpit patients"
+    assert dashboard_info.dashboardUrl == "https://superset.example.org/dashboard/3"
+    assert [edge.destinationUrn for edge in dashboard_info.datasetEdges] == [
+        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    ]
+    assert [edge.destinationUrn for edge in dashboard_info.chartEdges] == [
+        "urn:li:chart:(superset,patients_par_mois)"
+    ]
+    assert [edge.destinationUrn for edge in dashboard_info.dashboards] == [
+        "urn:li:dashboard:(superset,cockpit_global)"
+    ]
+
+    entity_urn = wus[0].metadata.entityUrn
+    assert entity_urn == "urn:li:dashboard:(superset,cockpit_patients)"
+
+
+def test_build_dashboard_reports_dangling_container():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DashboardDoc.model_validate(
+        {
+            "kind": "DASHBOARD",
+            "name": "x",
+            "platform": "superset",
+            "container": {"platform": "superset", "database": "missing", "env": "PROD"},
+        }
+    )
+
+    list(build_dashboard(doc, index, report))
+    assert len(report.dangling_references) == 1
+    assert "undeclared container" in report.dangling_references[0]

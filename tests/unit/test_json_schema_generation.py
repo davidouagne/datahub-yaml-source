@@ -28,7 +28,7 @@ def test_generated_schema_is_valid_draft_2020_12():
 
 def test_generated_schema_has_one_branch_per_document_kind():
     schema = build_schema()
-    assert len(schema["oneOf"]) == 16  # 15 `kind:` values + the raw aspect passthrough doc
+    assert len(schema["oneOf"]) == 17  # 16 `kind:` values + the raw aspect passthrough doc
 
 
 def test_generated_schema_validates_every_fixture_document():

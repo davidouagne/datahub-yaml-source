@@ -22,6 +22,8 @@ from datahub.emitter.mce_builder import (
 from datahub.emitter.mcp_builder import ContainerKey, DatabaseKey, SchemaKey
 from datahub.metadata.urns import (
     ApplicationUrn,
+    ChartUrn,
+    DashboardUrn,
     DataFlowUrn,
     DataJobUrn,
     DataProcessInstanceUrn,
@@ -34,8 +36,10 @@ from datahub.metadata.urns import (
 
 from datahub_yaml_source.loader import ParsedRepository
 from datahub_yaml_source.models import (
+    ChartRef,
     ContainerDoc,
     ContainerRef,
+    DashboardRef,
     DataFlowJobRef,
     DataFlowRef,
     DatasetFieldRef,
@@ -99,6 +103,14 @@ def container_key(ref: ContainerRef) -> ContainerKey:
 
 def container_urn(ref: ContainerRef) -> str:
     return container_key(ref).as_urn()
+
+
+def chart_urn(ref: ChartRef) -> str:
+    return ChartUrn(ref.platform, ref.name).urn()
+
+
+def dashboard_urn(ref: DashboardRef) -> str:
+    return DashboardUrn(ref.platform, ref.name).urn()
 
 
 def tag_urn(name: str) -> str:

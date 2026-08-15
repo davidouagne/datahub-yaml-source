@@ -15,6 +15,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`CONTAINER`](#container)
 - [`DATASET`](#dataset)
 - [`CHART`](#chart)
+- [`DASHBOARD`](#dashboard)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -271,6 +272,40 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `subTypes` | string or list of string | no | - |  |
 
+## DASHBOARD
+
+A dashboard: a collection of charts (and/or nested dashboards) from a BI tool (Superset, Looker, Tableau, ...).
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "DASHBOARD" | **yes** | - |  |
+| `name` | string | **yes** | - | Dashboard identifier within its platform. Becomes part of the dashboard URN. |
+| `platform` | string | **yes** | - | The BI tool, e.g. 'superset', 'looker', 'tableau'. |
+| `instance` | string | no | - |  |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `dashboardUrl` | string | no | - | Link to the dashboard in its native BI tool. |
+| `externalUrl` | string | no | - |  |
+| `container` | [ContainerRef](#containerref) | no | - | The dashboard's parent container, if any. |
+| `charts` | list of [ChartRef](#chartref) | no | - | Charts shown on this dashboard. |
+| `dashboards` | list of [DashboardRef](#dashboardref) | no | - | Other dashboards nested under this one. |
+| `inputDatasets` | list of [DatasetRef](#datasetref) | no | - | Datasets this dashboard is built from. |
+| `properties` | map | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
 ## DATA_PRODUCT
 
 A data product: a curated bundle of datasets/jobs presented as a single discoverable asset, with its own domain/tags/owners.
@@ -433,6 +468,24 @@ Reference to a container by its natural (platform, database, schema) key.  Only 
 | `database` | string | no | - |  |
 | `schema` | string | no | - |  |
 | `env` | string | no | `PROD` | Does not affect the container's URN. |
+
+### ChartRef
+
+Reference to a CHART by its natural (platform, name) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+
+### DashboardRef
+
+Reference to a DASHBOARD by its natural (platform, name) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
 
 ### DatasetRef
 

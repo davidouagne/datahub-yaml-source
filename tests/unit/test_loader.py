@@ -148,3 +148,16 @@ def test_load_repository_parses_chart(tmp_path: Path):
     assert len(repo.charts) == 1
     assert repo.charts[0].name == "patients_par_mois"
     assert repo.charts[0].platform == "superset"
+
+
+def test_load_repository_parses_dashboard(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: DASHBOARD\nname: cockpit_patients\nplatform: superset\n"
+        "charts:\n  - {platform: superset, name: patients_par_mois}\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.dashboards) == 1
+    assert repo.dashboards[0].name == "cockpit_patients"
+    assert repo.dashboards[0].charts[0].name == "patients_par_mois"

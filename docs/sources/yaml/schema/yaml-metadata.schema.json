@@ -34,6 +34,9 @@
       "$ref": "#/$defs/ChartDoc"
     },
     {
+      "$ref": "#/$defs/DashboardDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -980,6 +983,25 @@
       "title": "ChartDoc",
       "type": "object"
     },
+    "ChartRef": {
+      "description": "Reference to a CHART by its natural (platform, name) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "ChartRef",
+      "type": "object"
+    },
     "ContainerDoc": {
       "additionalProperties": true,
       "description": "A container (database, schema, bucket, ...). Emitted with parents\nbefore children automatically, regardless of declaration order across\nfiles. See `ContainerRef` for how the URN is computed.",
@@ -1316,6 +1338,322 @@
         "timestampMillis"
       ],
       "title": "CreatedDoc",
+      "type": "object"
+    },
+    "DashboardDoc": {
+      "additionalProperties": true,
+      "description": "A dashboard: a collection of charts (and/or nested dashboards) from a\nBI tool (Superset, Looker, Tableau, ...).",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "DASHBOARD",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "Dashboard identifier within its platform. Becomes part of the dashboard URN.",
+          "title": "Name",
+          "type": "string"
+        },
+        "platform": {
+          "description": "The BI tool, e.g. 'superset', 'looker', 'tableau'.",
+          "title": "Platform",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "dashboardUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link to the dashboard in its native BI tool.",
+          "title": "Dashboardurl"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The dashboard's parent container, if any."
+        },
+        "charts": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ChartRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Charts shown on this dashboard.",
+          "title": "Charts"
+        },
+        "dashboards": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DashboardRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Other dashboards nested under this one.",
+          "title": "Dashboards"
+        },
+        "inputDatasets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Datasets this dashboard is built from.",
+          "title": "Inputdatasets"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "platform"
+      ],
+      "title": "DashboardDoc",
+      "type": "object"
+    },
+    "DashboardRef": {
+      "description": "Reference to a DASHBOARD by its natural (platform, name) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "DashboardRef",
       "type": "object"
     },
     "DataFlowDoc": {

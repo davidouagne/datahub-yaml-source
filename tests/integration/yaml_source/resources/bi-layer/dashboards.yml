@@ -16,3 +16,21 @@ domains: "3667192a0a19c51419efe99aa865c1ba"
 owners:
   owner: datahub
   type: TECHNICAL_OWNER
+---
+kind: DASHBOARD
+name: cockpit_patients
+platform: superset
+displayName: Cockpit patients
+description: Vue d'ensemble de la patientele active
+dashboardUrl: https://superset.example.org/dashboard/3
+charts:
+  - platform: superset
+    name: patients_par_mois
+inputDatasets:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+domains: "3667192a0a19c51419efe99aa865c1ba"
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER

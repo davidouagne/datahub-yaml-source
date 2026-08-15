@@ -496,7 +496,14 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. 
     (all six native kwargs apply, same as `Dataset`/`DataFlow`/`DataJob`) -- no raw MCPs needed.
     `inputDatasets:` resolves via the existing `dataset_urn()` helper; no new URN helper was needed.
     Exercised in the integration fixture (`bi-layer/dashboards.yml`).
-  - `DASHBOARD`, `QUERY`, `INCIDENT`, `DOCUMENT` — not yet started.
+  - ~~`DASHBOARD`~~ **Done, 2026-08-15.** `DashboardDoc` also gets all nine `Has*` mixins. New
+    `ChartRef`/`DashboardRef` natural-key models (platform+name) plus `chart_urn()`/`dashboard_urn()`
+    helpers in `urns.py` let `charts:`/`dashboards:` resolve without a `ReferenceIndex` lookup --
+    consistent with how `DatasetRef` references (e.g. `inputDatasets:`) are never cross-validated
+    against declared `DATASET` docs either. `builders/dashboard.py` uses `datahub.sdk.dashboard.Dashboard`
+    the same way `chart.py` uses `Chart`. Exercised in the integration fixture alongside the CHART it
+    references.
+  - `QUERY`, `INCIDENT`, `DOCUMENT` — not yet started.
 
 ### Verification run
 

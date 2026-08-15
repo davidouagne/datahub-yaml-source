@@ -127,6 +127,18 @@ def test_load_repository_does_not_flag_raw_aspect_extra_fields_as_unknown(tmp_pa
     assert unknown == []
 
 
+def test_load_repository_parses_query(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: QUERY\nid: q_patients_actifs\nstatement: select 1\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.queries) == 1
+    assert repo.queries[0].id == "q_patients_actifs"
+    assert repo.queries[0].statement == "select 1"
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

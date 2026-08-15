@@ -172,6 +172,7 @@ class DeprecationDoc(BaseModel):
 #   DATASET          Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CHART            Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DASHBOARD        Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   QUERY            -     -    -     -      -     -      -            -          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -506,6 +507,28 @@ class DashboardDoc(
     properties: Optional[Dict[str, Any]] = None
 
 
+class QuerySubjectRef(DatasetRef):
+    """A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads."""
+
+    fieldPath: Optional[str] = None
+
+
+class QueryDoc(HasSubTypes, _AllowExtraFields):
+    """A saved/observed query (e.g. the SQL behind a dashboard or a dbt model).
+    `query` only permits `subTypes` among the cross-cutting aspects."""
+
+    kind: Literal["QUERY"]
+    id: str = Field(description="Stable identifier, becomes urn:li:query:<id>.")
+    name: Optional[str] = None
+    description: Optional[str] = None
+    statement: str = Field(description="The query text, e.g. a SQL SELECT statement.")
+    language: str = Field(default="SQL", description="SQL or UNKNOWN.")
+    source: str = Field(default="MANUAL", description="MANUAL (hand-authored here) or SYSTEM (observed).")
+    subjects: Optional[List[QuerySubjectRef]] = Field(
+        default=None, description="Datasets/columns this query reads."
+    )
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -735,6 +758,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "DATASET": DatasetDoc,
     "CHART": ChartDoc,
     "DASHBOARD": DashboardDoc,
+    "QUERY": QueryDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -754,6 +778,7 @@ EntityDoc = Union[
     DatasetDoc,
     ChartDoc,
     DashboardDoc,
+    QueryDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

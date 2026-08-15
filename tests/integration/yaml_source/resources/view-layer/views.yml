@@ -77,3 +77,21 @@ upstreamLineage:
         fieldPath: DRUGNAME
       operation: IDENTITY
       confidence: 1.0
+---
+kind: QUERY
+id: q_prescriptions_recuperees
+name: Prescriptions recuperees
+description: Extraction des prescriptions signees pour les sejours en cours
+statement: |-
+  SELECT T132_MEDICATION.DRUGNAME, T157_NATPERSON.PID
+  FROM MEDICATION T132_MEDICATION, NATPERSON T157_NATPERSON
+language: SQL
+source: MANUAL
+subjects:
+  - platform: oracle
+    name: or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2
+    env: PROD
+  - platform: oracle
+    name: or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2
+    env: PROD
+    fieldPath: DRUGNAME

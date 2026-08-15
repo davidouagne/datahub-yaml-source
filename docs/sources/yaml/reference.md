@@ -16,6 +16,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`DATASET`](#dataset)
 - [`CHART`](#chart)
 - [`DASHBOARD`](#dashboard)
+- [`QUERY`](#query)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -306,6 +307,27 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `subTypes` | string or list of string | no | - |  |
 
+## QUERY
+
+A saved/observed query (e.g. the SQL behind a dashboard or a dbt model). `query` only permits `subTypes` among the cross-cutting aspects.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "QUERY" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:query:<id>. |
+| `name` | string | no | - |  |
+| `description` | string | no | - |  |
+| `statement` | string | **yes** | - | The query text, e.g. a SQL SELECT statement. |
+| `language` | string | no | `SQL` | SQL or UNKNOWN. |
+| `source` | string | no | `MANUAL` | MANUAL (hand-authored here) or SYSTEM (observed). |
+| `subjects` | list of [QuerySubjectRef](#querysubjectref) | no | - | Datasets/columns this query reads. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `subTypes` | string or list of string | no | - |  |
+
 ## DATA_PRODUCT
 
 A data product: a curated bundle of datasets/jobs presented as a single discoverable asset, with its own domain/tags/owners.
@@ -497,6 +519,18 @@ Reference to a dataset by its natural (platform, name, env) key.
 | `name` | string | **yes** | - |  |
 | `env` | string | no | `PROD` |  |
 | `instance` | string | no | - |  |
+
+### QuerySubjectRef
+
+A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+| `env` | string | no | `PROD` |  |
+| `instance` | string | no | - |  |
+| `fieldPath` | string | no | - |  |
 
 ### DatasetFieldRef
 

@@ -503,7 +503,16 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. 
     against declared `DATASET` docs either. `builders/dashboard.py` uses `datahub.sdk.dashboard.Dashboard`
     the same way `chart.py` uses `Chart`. Exercised in the integration fixture alongside the CHART it
     references.
-  - `QUERY`, `INCIDENT`, `DOCUMENT` — not yet started.
+  - ~~`QUERY`~~ **Done, 2026-08-15.** `QueryDoc` gets only `HasSubTypes` -- the registry permits
+    nothing else transverse on `query`. No SDK V2 wrapper exists for it, so `builders/query.py` emits
+    raw MCPs (`queryProperties`, and `querySubjects` only when `subjects:` is non-empty), like
+    `domain.py`/`data_product.py`. New `QuerySubjectRef` (a `DatasetRef` with an optional `fieldPath`)
+    resolves to either the dataset URN or, when `fieldPath` is set, a `schemaField` URN via the
+    already-imported `make_schema_field_urn()`. `created`/`lastModified` use the same deterministic
+    `ZERO_AUDIT_STAMP` already defined in `builders/common.py` for glossary terms/links. Exercised in
+    the integration fixture (`view-layer/views.yml`, referencing the existing view dataset both at the
+    table level and one column).
+  - `INCIDENT`, `DOCUMENT` — not yet started.
 
 ### Verification run
 

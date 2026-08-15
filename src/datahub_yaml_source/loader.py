@@ -24,6 +24,7 @@ from datahub_yaml_source.models import (
     DomainDoc,
     GlossaryNodeDoc,
     GlossaryTermDoc,
+    QueryDoc,
     RawAspectDoc,
     StructuredPropertyDoc,
     TagDoc,
@@ -57,6 +58,7 @@ class ParsedRepository:
     datasets: List[DatasetDoc] = field(default_factory=list)
     charts: List[ChartDoc] = field(default_factory=list)
     dashboards: List[DashboardDoc] = field(default_factory=list)
+    queries: List[QueryDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -87,6 +89,8 @@ class ParsedRepository:
             self.charts.append(doc)
         elif isinstance(doc, DashboardDoc):
             self.dashboards.append(doc)
+        elif isinstance(doc, QueryDoc):
+            self.queries.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

@@ -33,6 +33,7 @@ from datahub_yaml_source.builders.dataset import build_dataset
 from datahub_yaml_source.builders.domain import build_domain, topological_sort_domains
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
 from datahub_yaml_source.builders.platform import build_data_platform
+from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
 from datahub_yaml_source.builders.structured_property import build_structured_property
 from datahub_yaml_source.builders.tag import build_tag
@@ -200,6 +201,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.dashboards_scanned += 1
             yield from self._safe_build(
                 "DASHBOARD", dashboard_doc.name, build_dashboard, dashboard_doc, index, self.report
+            )
+
+        for query_doc in repository.queries:
+            self.report.queries_scanned += 1
+            yield from self._safe_build(
+                "QUERY", query_doc.id, build_query, query_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

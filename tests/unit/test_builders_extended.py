@@ -3,6 +3,7 @@ import pytest
 from datahub_yaml_source.builders.assertion import build_assertion
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
 from datahub_yaml_source.builders.data_product import build_data_product
+from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
 from datahub_yaml_source.loader import ParsedRepository
 from datahub_yaml_source.models import (
@@ -11,6 +12,7 @@ from datahub_yaml_source.models import (
     DataProductDoc,
     DomainDoc,
     GlossaryTermDoc,
+    QueryDoc,
     RawAspectDoc,
     StructuredPropertyDoc,
     TagDoc,
@@ -326,6 +328,66 @@ def test_build_assertion_reports_dangling_tag():
     report = YamlSourceReport()
     list(build_assertion(doc, index, report))
     assert len(report.dangling_references) == 1
+
+
+def test_build_query_emits_properties_and_subjects():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = QueryDoc.model_validate(
+        {
+            "kind": "QUERY",
+            "id": "q_patients_actifs",
+            "name": "Patients actifs",
+            "description": "Liste des patients actifs",
+            "statement": "select * from ehr_public_patient where actif",
+            "language": "SQL",
+            "source": "MANUAL",
+            "subjects": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"},
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "nom"},
+            ],
+            "subTypes": "View query",
+        }
+    )
+
+    wus = list(build_query(doc, index, report))
+    assert not report.dangling_references
+    assert wus[0].metadata.entityUrn == "urn:li:query:q_patients_actifs"
+
+    props = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "QueryPropertiesClass"
+    )
+    assert props.statement.value == "select * from ehr_public_patient where actif"
+    assert props.name == "Patients actifs"
+
+    subjects = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "QuerySubjectsClass"
+    )
+    assert subjects.subjects[0].entity == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert subjects.subjects[1].entity == (
+        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),nom)"
+    )
+
+    subtypes = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "SubTypesClass"
+    )
+    assert subtypes.typeNames == ["View query"]
+
+
+def test_build_query_without_subjects_emits_no_subjects_aspect():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = QueryDoc.model_validate(
+        {"kind": "QUERY", "id": "q1", "statement": "select 1"}
+    )
+
+    wus = list(build_query(doc, index, report))
+    aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
+    assert "QuerySubjectsClass" not in aspect_names
 
 
 def test_build_raw_aspect_dataset_profile():

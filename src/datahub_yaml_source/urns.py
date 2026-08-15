@@ -30,6 +30,7 @@ from datahub.metadata.urns import (
     DataProductUrn,
     GlossaryNodeUrn,
     GlossaryTermUrn,
+    QueryUrn,
     StructuredPropertyUrn,
     TagUrn,
 )
@@ -119,6 +120,10 @@ def tag_urn(name: str) -> str:
 
 def glossary_term_urn(term_id: str) -> str:
     return _passthrough_if_urn(term_id, lambda v: GlossaryTermUrn(v).urn())
+
+
+def query_urn(query_id: str) -> str:
+    return _passthrough_if_urn(query_id, lambda v: QueryUrn(v).urn())
 
 
 def glossary_node_urn(node_id: str) -> str:

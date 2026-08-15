@@ -37,6 +37,9 @@
       "$ref": "#/$defs/DashboardDoc"
     },
     {
+      "$ref": "#/$defs/QueryDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -3674,6 +3677,152 @@
         "owner"
       ],
       "title": "OwnerEntry",
+      "type": "object"
+    },
+    "QueryDoc": {
+      "additionalProperties": true,
+      "description": "A saved/observed query (e.g. the SQL behind a dashboard or a dbt model).\n`query` only permits `subTypes` among the cross-cutting aspects.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "kind": {
+          "const": "QUERY",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:query:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "statement": {
+          "description": "The query text, e.g. a SQL SELECT statement.",
+          "title": "Statement",
+          "type": "string"
+        },
+        "language": {
+          "default": "SQL",
+          "description": "SQL or UNKNOWN.",
+          "title": "Language",
+          "type": "string"
+        },
+        "source": {
+          "default": "MANUAL",
+          "description": "MANUAL (hand-authored here) or SYSTEM (observed).",
+          "title": "Source",
+          "type": "string"
+        },
+        "subjects": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/QuerySubjectRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Datasets/columns this query reads.",
+          "title": "Subjects"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "statement"
+      ],
+      "title": "QueryDoc",
+      "type": "object"
+    },
+    "QuerySubjectRef": {
+      "description": "A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "fieldPath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fieldpath"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "QuerySubjectRef",
       "type": "object"
     },
     "RawAspectDoc": {

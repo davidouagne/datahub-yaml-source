@@ -9,6 +9,7 @@ import yaml
 from pydantic import ValidationError
 
 from datahub_yaml_source.models import (
+    ApplicationDoc,
     AssertionDoc,
     ContainerDoc,
     DataFlowDoc,
@@ -44,6 +45,7 @@ class ParsedRepository:
     glossary_terms: List[GlossaryTermDoc] = field(default_factory=list)
     structured_properties: List[StructuredPropertyDoc] = field(default_factory=list)
     domains: List[DomainDoc] = field(default_factory=list)
+    applications: List[ApplicationDoc] = field(default_factory=list)
     containers: List[ContainerDoc] = field(default_factory=list)
     datasets: List[DatasetDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
@@ -66,6 +68,8 @@ class ParsedRepository:
             self.structured_properties.append(doc)
         elif isinstance(doc, DomainDoc):
             self.domains.append(doc)
+        elif isinstance(doc, ApplicationDoc):
+            self.applications.append(doc)
         elif isinstance(doc, ContainerDoc):
             self.containers.append(doc)
         elif isinstance(doc, DatasetDoc):

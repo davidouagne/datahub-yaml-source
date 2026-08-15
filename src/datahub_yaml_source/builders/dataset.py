@@ -3,6 +3,7 @@ from typing import Iterable
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
+    ApplicationsClass,
     DatasetLineageTypeClass,
     ForeignKeyConstraintClass,
     OtherSchemaClass,
@@ -10,6 +11,7 @@ from datahub.metadata.schema_classes import (
     SchemaMetadataClass,
     UpstreamClass,
     UpstreamLineageClass,
+    ViewPropertiesClass,
 )
 from datahub.sdk.dataset import Dataset
 
@@ -25,11 +27,13 @@ from datahub_yaml_source.models import (
     SchemaBlock,
     SchemaFieldDoc,
     UpstreamLineageDoc,
+    ViewPropertiesDoc,
     normalize_owners,
     normalize_sub_types,
 )
 from datahub_yaml_source.urns import (
     ReferenceIndex,
+    application_urn,
     container_key,
     data_platform_urn,
     dataset_urn,
@@ -93,6 +97,15 @@ def build_upstream_lineage(doc: UpstreamLineageDoc) -> UpstreamLineageClass:
     return UpstreamLineageClass(upstreams=upstreams, fineGrainedLineages=fine_grained)
 
 
+def build_view_properties(doc: ViewPropertiesDoc) -> ViewPropertiesClass:
+    return ViewPropertiesClass(
+        materialized=doc.materialized,
+        viewLogic=doc.viewLogic,
+        viewLanguage=doc.viewLanguage,
+        formattedViewLogic=doc.formattedViewLogic,
+    )
+
+
 def build_dataset(
     doc: DatasetDoc, index: ReferenceIndex, report: YamlSourceReport
 ) -> Iterable[MetadataWorkUnit]:
@@ -138,6 +151,14 @@ def build_dataset(
 
     upstreams = build_upstream_lineage(doc.upstreamLineage) if doc.upstreamLineage else None
 
+    application_urns = []
+    for app_id in doc.applications or []:
+        if not index.has_application(app_id):
+            report.report_dangling_reference(
+                f"DATASET '{doc.name}' references undeclared application '{app_id}'"
+            )
+        application_urns.append(application_urn(app_id))
+
     sub_types = normalize_sub_types(doc.subTypes)
     subtype = sub_types[0] if sub_types else None
 
@@ -158,5 +179,12 @@ def build_dataset(
         parent_container=parent_container,
         schema=schema_metadata,
         upstreams=upstreams,
+        view_definition=(
+            build_view_properties(doc.viewProperties) if doc.viewProperties else None
+        ),
+        parse_view_lineage=False,
+        extra_aspects=(
+            [ApplicationsClass(applications=application_urns)] if application_urns else None
+        ),
     )
     yield from dataset.as_workunits()

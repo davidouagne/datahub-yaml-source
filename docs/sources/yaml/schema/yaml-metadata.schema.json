@@ -22,6 +22,9 @@
       "$ref": "#/$defs/DomainDoc"
     },
     {
+      "$ref": "#/$defs/ApplicationDoc"
+    },
+    {
       "$ref": "#/$defs/ContainerDoc"
     },
     {
@@ -69,6 +72,44 @@
         "value"
       ],
       "title": "AllowedValueDoc",
+      "type": "object"
+    },
+    "ApplicationDoc": {
+      "description": "A source application/system (e.g. an EHR, an ERP). Referenced elsewhere\nvia `applications: [<id>]`.",
+      "properties": {
+        "kind": {
+          "const": "APPLICATION",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:application:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "ApplicationDoc",
       "type": "object"
     },
     "AssertionAssertionDoc": {
@@ -1420,6 +1461,34 @@
             }
           ],
           "default": null
+        },
+        "viewProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ViewPropertiesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For views: the view's SQL definition. Set subTypes: View alongside it. No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed."
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this dataset belongs to.",
+          "title": "Applications"
         }
       },
       "required": [
@@ -2169,6 +2238,46 @@
         }
       },
       "title": "UpstreamLineageDoc",
+      "type": "object"
+    },
+    "ViewPropertiesDoc": {
+      "description": "The definition (usually SQL) behind a view. Pair with `subTypes: View`.",
+      "properties": {
+        "viewLogic": {
+          "description": "The view's definition, e.g. its SELECT statement.",
+          "title": "Viewlogic",
+          "type": "string"
+        },
+        "viewLanguage": {
+          "default": "SQL",
+          "description": "e.g. 'SQL'.",
+          "title": "Viewlanguage",
+          "type": "string"
+        },
+        "materialized": {
+          "default": false,
+          "description": "True for a materialized view.",
+          "title": "Materialized",
+          "type": "boolean"
+        },
+        "formattedViewLogic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional pretty-printed/formatted version of viewLogic.",
+          "title": "Formattedviewlogic"
+        }
+      },
+      "required": [
+        "viewLogic"
+      ],
+      "title": "ViewPropertiesDoc",
       "type": "object"
     }
   }

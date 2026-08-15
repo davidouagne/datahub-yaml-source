@@ -61,8 +61,9 @@ YAML document) plus a separate **raw-aspect passthrough** format (discriminated 
 | `GLOSSARY_TERM`       | `GlossaryTerm`                     | id, name, definition, optional `parentNode`                                              |
 | `STRUCTURED_PROPERTY` | `StructuredPropertyDefinition`     | qualifiedName, cardinality, valueType, allowedValues, `entityTypes`, `settings`, `typeQualifier` |
 | `DOMAIN`              | `Domain`                           | id, name, description                                                                    |
+| `APPLICATION`         | `applicationProperties` (raw MCP)  | id, name, description                                                                    |
 | `CONTAINER`           | `Container` (via `gen_containers()`) | platform/instance/database/(schema), `parentContainer`, `subTypes`, `owners`, `tags`   |
-| `DATASET`             | `Dataset` (SDK V2)                 | schema fields (+ `foreignKeys`), `container`, `properties`, `subTypes`, `tags`, `glossaryTerms`, `owners`, `domains`, `upstreamLineage` |
+| `DATASET`             | `Dataset` (SDK V2)                 | schema fields (+ `foreignKeys`), `container`, `properties`, `subTypes`, `tags`, `glossaryTerms`, `owners`, `domains`, `upstreamLineage`, `viewProperties`, `applications` (raw `ApplicationsClass` via `extra_aspects`) |
 | `DATA_PRODUCT`        | `DataProduct`                      | description, `domains`, `glossaryTerms`, `tags`, `owners`, `structuredProperties`, `assets` (raw URNs) |
 | `DATA_FLOW`           | `DataFlow` (SDK V2)                | orchestrator/flowId/cluster, `project`, `externalUrl`, `domains`, `owners`               |
 | `DATA_JOB`            | `DataJob` (SDK V2)                 | jobId + `dataFlow` ref, `inputDatasets`/`outputDatasets`, `fineGrainedLineages`           |

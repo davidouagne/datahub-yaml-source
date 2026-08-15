@@ -11,6 +11,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`GLOSSARY_TERM`](#glossary-term)
 - [`STRUCTURED_PROPERTY`](#structured-property)
 - [`DOMAIN`](#domain)
+- [`APPLICATION`](#application)
 - [`CONTAINER`](#container)
 - [`DATASET`](#dataset)
 - [`DATA_PRODUCT`](#data-product)
@@ -95,6 +96,17 @@ A business domain, used to group related datasets/data products. Referenced else
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
 
+## APPLICATION
+
+A source application/system (e.g. an EHR, an ERP). Referenced elsewhere via `applications: [<id>]`.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "APPLICATION" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:application:<id>. |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+
 ## CONTAINER
 
 A container (database, schema, bucket, ...). Emitted with parents before children automatically, regardless of declaration order across files. See `ContainerRef` for how the URN is computed.
@@ -139,6 +151,8 @@ A dataset (table, view, topic, file, ...).
 | `domains` | string | no | - |  |
 | `externalUrl` | string | no | - |  |
 | `upstreamLineage` | [UpstreamLineageDoc](#upstreamlineagedoc) | no | - |  |
+| `viewProperties` | [ViewPropertiesDoc](#viewpropertiesdoc) | no | - | For views: the view's SQL definition. Set subTypes: View alongside it. No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed. |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this dataset belongs to. |
 
 ## DATA_PRODUCT
 
@@ -336,6 +350,17 @@ A single column-level lineage edge.
 | `downstream` | [DatasetFieldRef](#datasetfieldref) | **yes** | - |  |
 | `operation` | string | no | - | Free-text transform description, e.g. IDENTITY, CONSTANT. |
 | `confidence` | number | no | `1.0` |  |
+
+### ViewPropertiesDoc
+
+The definition (usually SQL) behind a view. Pair with `subTypes: View`.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `viewLogic` | string | **yes** | - | The view's definition, e.g. its SELECT statement. |
+| `viewLanguage` | string | no | `SQL` | e.g. 'SQL'. |
+| `materialized` | boolean | no | `False` | True for a materialized view. |
+| `formattedViewLogic` | string | no | - | Optional pretty-printed/formatted version of viewLogic. |
 
 ### OwnerEntry
 

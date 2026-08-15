@@ -1,3 +1,4 @@
+from datahub_yaml_source.builders.application import build_application
 from datahub_yaml_source.builders.container import build_container, topological_sort_containers
 from datahub_yaml_source.builders.domain import build_domain
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
@@ -6,6 +7,7 @@ from datahub_yaml_source.builders.structured_property import build_structured_pr
 from datahub_yaml_source.builders.tag import build_tag
 from datahub_yaml_source.loader import ParsedRepository
 from datahub_yaml_source.models import (
+    ApplicationDoc,
     ContainerDoc,
     DataPlatformDoc,
     DomainDoc,
@@ -54,6 +56,13 @@ def test_build_domain_emits_domain_properties():
     wus = list(build_domain(doc))
     assert wus[0].metadata.entityUrn == "urn:li:domain:abc123"
     assert wus[0].metadata.aspect.name == "Biologie"
+
+
+def test_build_application_emits_application_properties():
+    doc = ApplicationDoc(kind="APPLICATION", id="ORBIS", name="ORBIS", description="EHR")
+    wus = list(build_application(doc))
+    assert wus[0].metadata.entityUrn == "urn:li:application:ORBIS"
+    assert wus[0].metadata.aspect.name == "ORBIS"
 
 
 def test_build_glossary_node_and_term_link_parent(monkeypatch):

@@ -19,6 +19,12 @@ def test_parse_document_dispatches_by_kind():
     assert doc.name == "pii"
 
 
+def test_parse_document_dispatches_application_kind():
+    doc = parse_document({"kind": "APPLICATION", "id": "ORBIS", "name": "ORBIS"})
+    assert doc.__class__.__name__ == "ApplicationDoc"
+    assert doc.id == "ORBIS"
+
+
 def test_parse_document_dispatches_raw_aspect_by_aspect_name():
     doc = parse_document(
         {
@@ -142,6 +148,28 @@ def test_dataset_doc_coerces_bare_string_glossary_terms_and_tags_to_list():
     )
     assert doc.tags == ["fhir-r4"]
     assert doc.glossaryTerms == ["fhir:Condition"]
+
+
+def test_dataset_doc_coerces_bare_string_applications_to_list():
+    doc = DatasetDoc.model_validate(
+        {"kind": "DATASET", "name": "x", "platform": "postgres", "applications": "ORBIS"}
+    )
+    assert doc.applications == ["ORBIS"]
+
+
+def test_dataset_doc_parses_view_properties():
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "v1",
+            "platform": "oracle",
+            "subTypes": "View",
+            "viewProperties": {"viewLogic": "SELECT 1 FROM dual"},
+        }
+    )
+    assert doc.viewProperties.viewLogic == "SELECT 1 FROM dual"
+    assert doc.viewProperties.viewLanguage == "SQL"
+    assert doc.viewProperties.materialized is False
 
 
 def test_fine_grained_lineage_doc_allows_missing_upstream_for_constant_operation():

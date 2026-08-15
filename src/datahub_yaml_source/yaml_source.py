@@ -21,6 +21,7 @@ from datahub.ingestion.source.state.stateful_ingestion_base import (
     StatefulIngestionSourceBase,
 )
 
+from datahub_yaml_source.builders.application import build_application
 from datahub_yaml_source.builders.assertion import build_assertion
 from datahub_yaml_source.builders.container import build_container, topological_sort_containers
 from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_data_job
@@ -56,8 +57,8 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     """DataHub source that reads a directory tree of declarative YAML metadata
     files ("metadata as code") and emits the DataHub entities they describe:
     data platforms, tags, glossary terms, structured properties, domains,
-    containers, datasets, data products, pipelines, pipeline run history, and
-    data quality assertions.
+    applications, containers, datasets, data products, pipelines, pipeline
+    run history, and data quality assertions.
 
     This source has no connection of its own -- every platform, environment,
     and instance is declared per-entity inside the YAML files themselves.
@@ -83,7 +84,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         root = Path(self.config.path)
 
         if not root.exists():
-            self.report.report_failure(
+            self.report.failure(
                 title="Configured path does not exist",
                 message="The 'path' in your recipe does not exist on disk. Check for "
                 "typos, and note that under WSL, Windows paths must be given as "
@@ -93,7 +94,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             return ParsedRepository()
 
         if not root.is_dir():
-            self.report.report_failure(
+            self.report.failure(
                 title="Configured path is not a directory",
                 message="The 'path' in your recipe points at a file, not a directory.",
                 context=str(root),
@@ -111,7 +112,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         repository = load_repository(root, on_error=on_error, on_file_scanned=on_file_scanned)
 
         if self.report.files_scanned == 0:
-            self.report.report_warning(
+            self.report.warning(
                 title="No YAML files found",
                 message="No '*.yml' / '*.yaml' files were found under the configured "
                 "path. Check that 'path' points at the right directory.",
@@ -153,6 +154,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for domain_doc in repository.domains:
             self.report.domains_scanned += 1
             yield from self._safe_build("DOMAIN", domain_doc.id, build_domain, domain_doc)
+
+        for application_doc in repository.applications:
+            self.report.applications_scanned += 1
+            yield from self._safe_build(
+                "APPLICATION", application_doc.id, build_application, application_doc
+            )
 
         for container_doc in topological_sort_containers(repository.containers):
             self.report.containers_scanned += 1
@@ -205,7 +212,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         try:
             yield from builder(*args)
         except Exception as e:
-            self.report.report_warning(
+            self.report.warning(
                 title="Failed to build entity",
                 message="A document could not be translated into DataHub metadata and was skipped.",
                 context=f"{kind} '{identifier}': {e}",

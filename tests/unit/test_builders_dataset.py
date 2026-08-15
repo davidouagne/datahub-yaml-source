@@ -1,6 +1,6 @@
 from datahub_yaml_source.builders.dataset import build_dataset
 from datahub_yaml_source.loader import ParsedRepository
-from datahub_yaml_source.models import ContainerDoc, DatasetDoc, DomainDoc, GlossaryTermDoc, TagDoc
+from datahub_yaml_source.models import ApplicationDoc, ContainerDoc, DatasetDoc, DomainDoc, GlossaryTermDoc, TagDoc
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -211,3 +211,64 @@ def test_build_dataset_reports_dangling_tag_domain_and_container_but_still_emits
     wus = list(build_dataset(doc, index, report))
     assert len(wus) > 0
     assert len(report.dangling_references) == 3
+
+
+def test_build_dataset_emits_view_properties_and_applications_without_inferring_lineage():
+    repo = ParsedRepository()
+    repo.applications.append(ApplicationDoc(kind="APPLICATION", id="ORBIS", name="ORBIS"))
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "aph_pha_recup_prescr_v3_hc1v2",
+            "platform": "oracle",
+            "env": "PROD",
+            "subTypes": "View",
+            "applications": ["ORBIS"],
+            "viewProperties": {
+                "viewLogic": "SELECT patient_id FROM medication",
+                "viewLanguage": "SQL",
+                "materialized": False,
+            },
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    assert not report.dangling_references
+
+    aspects_by_name = {wu.metadata.aspect.__class__.__name__: wu.metadata.aspect for wu in wus}
+
+    view_properties = aspects_by_name["ViewPropertiesClass"]
+    assert view_properties.viewLogic == "SELECT patient_id FROM medication"
+    assert view_properties.viewLanguage == "SQL"
+    assert view_properties.materialized is False
+
+    applications = aspects_by_name["ApplicationsClass"]
+    assert applications.applications == ["urn:li:application:ORBIS"]
+
+    # No upstreamLineage was declared in the YAML, and the SQL in viewLogic must
+    # never be auto-parsed by the SDK's sqlglot integration (parse_view_lineage=False)
+    # -- the connector's lineage story is "fully declared in YAML", never inferred.
+    assert "UpstreamLineageClass" not in aspects_by_name
+
+
+def test_build_dataset_reports_dangling_application_but_still_emits():
+    repo = ParsedRepository()  # empty: ORBIS not declared
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DatasetDoc.model_validate(
+        {
+            "kind": "DATASET",
+            "name": "x",
+            "platform": "oracle",
+            "applications": ["ORBIS"],
+        }
+    )
+
+    wus = list(build_dataset(doc, index, report))
+    assert len(wus) > 0
+    assert len(report.dangling_references) == 1
+    assert "ORBIS" in report.dangling_references[0]

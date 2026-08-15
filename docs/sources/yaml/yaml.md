@@ -89,8 +89,9 @@ checked-in schema and the models have drifted apart.
 | `GLOSSARY_TERM`         | Glossary term                          | `id`, `name`, `definition`, `parentNode`                                                 |
 | `STRUCTURED_PROPERTY`   | Structured property definition         | `qualifiedName`, `valueType`, `cardinality`, `allowedValues`, `entityTypes`, `settings`  |
 | `DOMAIN`                | Domain                                 | `id`, `name`, `description`                                                              |
+| `APPLICATION`           | Application                            | `id`, `name`, `description`                                                              |
 | `CONTAINER`             | Container (database/schema/...)        | `platform`, `database`, `schema`, `parentContainer`, `subTypes`, `owners`                |
-| `DATASET`               | Dataset (table/view/...)               | `platform`, `name`, `schema` (fields + foreignKeys), `container`, `upstreamLineage`, ... |
+| `DATASET`               | Dataset (table/view/...)               | `platform`, `name`, `schema` (fields + foreignKeys), `container`, `upstreamLineage`, `viewProperties`, `applications`, ... |
 | `DATA_PRODUCT`          | Data product                           | `id`, `name`, `domains`, `assets`, `structuredProperties`                                |
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |
@@ -112,12 +113,19 @@ data), use `aspectName:` instead of `kind:`:
 
 All remaining fields in the document become the aspect's payload.
 
+### View definitions
+
+`viewProperties:` on a `DATASET` records the view's SQL (`viewLogic`, `viewLanguage`,
+`materialized`, `formattedViewLogic`). It's usually paired with `subTypes: View`.
+No lineage is inferred from `viewLogic` — the connector never parses SQL, so declare
+`upstreamLineage:` explicitly if the view has upstream tables.
+
 ### Cross-references and dangling references
 
-Fields like `tags:`, `glossaryTerms:`, `domains:`, and `container:`/`parentContainer:`
-reference other entities by name/id, which may be declared in a completely
-different file. The source loads the entire directory tree before emitting
-anything, so these references resolve regardless of file order.
+Fields like `tags:`, `glossaryTerms:`, `domains:`, `applications:`, and
+`container:`/`parentContainer:` reference other entities by name/id, which may be
+declared in a completely different file. The source loads the entire directory tree
+before emitting anything, so these references resolve regardless of file order.
 
 If a reference points at something that was never declared anywhere in the tree
 (e.g. a typo in a tag name), the source still emits the association using the

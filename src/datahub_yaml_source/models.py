@@ -114,6 +114,17 @@ class SchemaBlock(BaseModel):
     foreignKeys: Optional[List[ForeignKeyDoc]] = None
 
 
+class ViewPropertiesDoc(BaseModel):
+    """The definition (usually SQL) behind a view. Pair with `subTypes: View`."""
+
+    viewLogic: str = Field(description="The view's definition, e.g. its SELECT statement.")
+    viewLanguage: str = Field(default="SQL", description="e.g. 'SQL'.")
+    materialized: bool = Field(default=False, description="True for a materialized view.")
+    formattedViewLogic: Optional[str] = Field(
+        default=None, description="Optional pretty-printed/formatted version of viewLogic."
+    )
+
+
 class FineGrainedLineageDoc(BaseModel):
     """A single column-level lineage edge."""
 
@@ -232,6 +243,16 @@ class DomainDoc(BaseModel):
     description: Optional[str] = None
 
 
+class ApplicationDoc(BaseModel):
+    """A source application/system (e.g. an EHR, an ERP). Referenced elsewhere
+    via `applications: [<id>]`."""
+
+    kind: Literal["APPLICATION"]
+    id: str = Field(description="Stable identifier, becomes urn:li:application:<id>.")
+    name: str
+    description: Optional[str] = None
+
+
 class ContainerDoc(ContainerRef):
     """A container (database, schema, bucket, ...). Emitted with parents
     before children automatically, regardless of declaration order across
@@ -272,6 +293,14 @@ class DatasetDoc(BaseModel):
     domains: Optional[str] = None
     externalUrl: Optional[str] = None
     upstreamLineage: Optional[UpstreamLineageDoc] = None
+    viewProperties: Optional[ViewPropertiesDoc] = Field(
+        default=None,
+        description="For views: the view's SQL definition. Set subTypes: View alongside it. "
+        "No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed.",
+    )
+    applications: Optional[StringList] = Field(
+        default=None, description="ids of the APPLICATION documents this dataset belongs to."
+    )
 
 
 class DataProductDoc(BaseModel):
@@ -449,6 +478,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "GLOSSARY_TERM": GlossaryTermDoc,
     "STRUCTURED_PROPERTY": StructuredPropertyDoc,
     "DOMAIN": DomainDoc,
+    "APPLICATION": ApplicationDoc,
     "CONTAINER": ContainerDoc,
     "DATASET": DatasetDoc,
     "DATA_PRODUCT": DataProductDoc,
@@ -465,6 +495,7 @@ EntityDoc = Union[
     GlossaryTermDoc,
     StructuredPropertyDoc,
     DomainDoc,
+    ApplicationDoc,
     ContainerDoc,
     DatasetDoc,
     DataProductDoc,

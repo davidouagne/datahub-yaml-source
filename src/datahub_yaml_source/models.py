@@ -170,6 +170,7 @@ class DeprecationDoc(BaseModel):
 #
 #                  owners tags terms domain apps links deprecation structProps subTypes
 #   DATASET          Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   CHART            Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -439,6 +440,31 @@ class DatasetDoc(
     )
 
 
+class ChartDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A chart/visualization from a BI tool (Superset, Looker, Tableau, ...).
+    Referenced from a DASHBOARD's `charts:` field by (platform, name)."""
+
+    kind: Literal["CHART"]
+    name: str = Field(description="Chart identifier within its platform. Becomes part of the chart URN.")
+    platform: str = Field(description="The BI tool, e.g. 'superset', 'looker', 'tableau'.")
+    instance: Optional[str] = None
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    chartUrl: Optional[str] = Field(default=None, description="Link to the chart in its native BI tool.")
+    chartType: Optional[str] = Field(
+        default=None, description="One of DataHub's ChartType values, e.g. BAR, LINE, PIE, TABLE."
+    )
+    externalUrl: Optional[str] = None
+    container: Optional[ContainerRef] = Field(default=None, description="The chart's parent container, if any.")
+    inputDatasets: Optional[List[DatasetRef]] = Field(
+        default=None, description="Datasets this chart is built from."
+    )
+    properties: Optional[Dict[str, Any]] = None
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -666,6 +692,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "APPLICATION": ApplicationDoc,
     "CONTAINER": ContainerDoc,
     "DATASET": DatasetDoc,
+    "CHART": ChartDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -683,6 +710,7 @@ EntityDoc = Union[
     ApplicationDoc,
     ContainerDoc,
     DatasetDoc,
+    ChartDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

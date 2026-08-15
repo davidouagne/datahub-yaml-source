@@ -488,9 +488,15 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. 
   Phase 1 refactor was meant to enable. Dangling-reference warnings name the column
   (`"DATASET 'x' field 'ssn' references undeclared tag '...'"`). Exercised end-to-end in the
   integration fixture (`nom` column on `ehr_public_patient` tagged `pii` + linked to `fhir:Patient`).
-- **Phase 4** (new kinds `DASHBOARD`/`CHART`/`QUERY`/`INCIDENT`/`DOCUMENT`) — not started. Each is a
-  self-contained addition following the "per-addition file checklist" in the Architecture section above,
-  independent of everything else in this document.
+- **Phase 4** (new kinds `DASHBOARD`/`CHART`/`QUERY`/`INCIDENT`/`DOCUMENT`) — in progress, one kind per
+  commit. Each is a self-contained addition following the "per-addition file checklist" in the
+  Architecture section above, independent of everything else in this document.
+  - ~~`CHART`~~ **Done, 2026-08-15.** `ChartDoc` gets all nine `Has*` mixins (the registry permits the
+    full row on `chart`). `builders/chart.py` uses the SDK V2 `datahub.sdk.chart.Chart` wrapper directly
+    (all six native kwargs apply, same as `Dataset`/`DataFlow`/`DataJob`) -- no raw MCPs needed.
+    `inputDatasets:` resolves via the existing `dataset_urn()` helper; no new URN helper was needed.
+    Exercised in the integration fixture (`bi-layer/dashboards.yml`).
+  - `DASHBOARD`, `QUERY`, `INCIDENT`, `DOCUMENT` — not yet started.
 
 ### Verification run
 

@@ -14,6 +14,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`APPLICATION`](#application)
 - [`CONTAINER`](#container)
 - [`DATASET`](#dataset)
+- [`CHART`](#chart)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -222,6 +223,39 @@ A dataset (table, view, topic, file, ...).
 | `externalUrl` | string | no | - |  |
 | `upstreamLineage` | [UpstreamLineageDoc](#upstreamlineagedoc) | no | - |  |
 | `viewProperties` | [ViewPropertiesDoc](#viewpropertiesdoc) | no | - | For views: the view's SQL definition. Set subTypes: View alongside it. No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## CHART
+
+A chart/visualization from a BI tool (Superset, Looker, Tableau, ...). Referenced from a DASHBOARD's `charts:` field by (platform, name).
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "CHART" | **yes** | - |  |
+| `name` | string | **yes** | - | Chart identifier within its platform. Becomes part of the chart URN. |
+| `platform` | string | **yes** | - | The BI tool, e.g. 'superset', 'looker', 'tableau'. |
+| `instance` | string | no | - |  |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `chartUrl` | string | no | - | Link to the chart in its native BI tool. |
+| `chartType` | string | no | - | One of DataHub's ChartType values, e.g. BAR, LINE, PIE, TABLE. |
+| `externalUrl` | string | no | - |  |
+| `container` | [ContainerRef](#containerref) | no | - | The chart's parent container, if any. |
+| `inputDatasets` | list of [DatasetRef](#datasetref) | no | - | Datasets this chart is built from. |
+| `properties` | map | no | - |  |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 

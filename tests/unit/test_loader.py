@@ -136,3 +136,15 @@ def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     repo = load_repository(tmp_path, on_error=lambda path, msg: None)
 
     assert {t.name for t in repo.tags} == {"from_layer1", "from_layer2"}
+
+
+def test_load_repository_parses_chart(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: CHART\nname: patients_par_mois\nplatform: superset\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.charts) == 1
+    assert repo.charts[0].name == "patients_par_mois"
+    assert repo.charts[0].platform == "superset"

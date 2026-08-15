@@ -19,6 +19,7 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
     applications_scanned: int = 0
     containers_scanned: int = 0
     datasets_scanned: int = 0
+    charts_scanned: int = 0
     data_products_scanned: int = 0
     data_flows_scanned: int = 0
     data_jobs_scanned: int = 0

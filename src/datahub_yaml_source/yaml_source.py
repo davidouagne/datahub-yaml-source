@@ -23,6 +23,7 @@ from datahub.ingestion.source.state.stateful_ingestion_base import (
 
 from datahub_yaml_source.builders.application import build_application
 from datahub_yaml_source.builders.assertion import build_assertion
+from datahub_yaml_source.builders.chart import build_chart
 from datahub_yaml_source.builders.container import build_container, topological_sort_containers
 from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_data_job
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
@@ -186,6 +187,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.datasets_scanned += 1
             yield from self._safe_build(
                 "DATASET", dataset_doc.name, build_dataset, dataset_doc, index, self.report
+            )
+
+        for chart_doc in repository.charts:
+            self.report.charts_scanned += 1
+            yield from self._safe_build(
+                "CHART", chart_doc.name, build_chart, chart_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

@@ -33,6 +33,7 @@ source itself connecting to any of them.
 - Column-level metadata: `tags`, `glossaryTerms`, `deprecation`, and
   `structuredProperties` on an individual `schema.fields[]` entry (e.g. tagging
   a single column as PII), emitted on that column's `schemaField` entity
+- Charts (BI-tool visualizations), linked to the datasets that feed them
 - Data products
 - Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
   edges (`inputDataJobs`), and optional parent containers
@@ -104,6 +105,7 @@ checked-in schema and the models have drifted apart.
 | `APPLICATION`           | Application                            | `id`, `name`, `description`                                                              |
 | `CONTAINER`             | Container (database/schema/...)        | `platform`, `database`, `schema`, `parentContainer`, `subTypes`, `owners`                |
 | `DATASET`               | Dataset (table/view/...)               | `platform`, `name`, `schema` (fields + foreignKeys), `container`, `upstreamLineage`, `viewProperties`, `applications`, ... |
+| `CHART`                 | Chart/visualization (BI tool)          | `platform`, `name`, `chartUrl`, `chartType`, `container`, `inputDatasets`                |
 | `DATA_PRODUCT`          | Data product                           | `id`, `name`, `domains`, `assets`, `structuredProperties`                                |
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |

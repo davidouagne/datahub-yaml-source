@@ -21,6 +21,7 @@ from pydantic.json_schema import models_json_schema
 from datahub_yaml_source.models import (
     ApplicationDoc,
     AssertionDoc,
+    ChartDoc,
     ContainerDoc,
     DataFlowDoc,
     DataJobDoc,
@@ -52,6 +53,7 @@ DOCUMENT_MODELS = [
     ApplicationDoc,
     ContainerDoc,
     DatasetDoc,
+    ChartDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

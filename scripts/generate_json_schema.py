@@ -19,6 +19,9 @@ from pathlib import Path
 from pydantic.json_schema import models_json_schema
 
 from datahub_yaml_source.models import (
+    AgentSkillDoc,
+    AIAgentDoc,
+    ApiDoc,
     ApplicationDoc,
     AssertionDoc,
     ChartDoc,
@@ -43,7 +46,9 @@ from datahub_yaml_source.models import (
     MLPrimaryKeyDoc,
     QueryDoc,
     RawAspectDoc,
+    RepositoryDoc,
     SemanticModelDoc,
+    ServiceDoc,
     StructuredPropertyDoc,
     TagDoc,
 )
@@ -76,6 +81,11 @@ DOCUMENT_MODELS = [
     MLModelDoc,
     SemanticModelDoc,
     MetricDoc,
+    RepositoryDoc,
+    ApiDoc,
+    AgentSkillDoc,
+    AIAgentDoc,
+    ServiceDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

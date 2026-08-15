@@ -106,3 +106,8 @@ def test_yaml_source_reports_no_dangling_references_or_parse_failures():
     assert source_report.ml_models_scanned == 1
     assert source_report.semantic_models_scanned == 1
     assert source_report.metrics_scanned == 1
+    assert source_report.repositories_scanned == 1
+    assert source_report.apis_scanned == 1
+    assert source_report.agent_skills_scanned == 1
+    assert source_report.ai_agents_scanned == 1
+    assert source_report.services_scanned == 1

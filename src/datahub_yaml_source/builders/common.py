@@ -9,6 +9,7 @@ from datahub.metadata.schema_classes import (
     ApplicationsClass,
     BooleanTypeClass,
     BytesTypeClass,
+    DataPlatformInstanceClass,
     DateTypeClass,
     DeprecationClass,
     DomainsClass,
@@ -54,6 +55,8 @@ from datahub_yaml_source.models import (
 )
 from datahub_yaml_source.urns import (
     application_urn,
+    data_platform_instance_urn,
+    data_platform_urn,
     dataset_urn,
     domain_urn,
     glossary_term_urn,
@@ -253,6 +256,23 @@ def build_subtypes_aspect(sub_types: List[str]) -> Optional[SubTypesClass]:
     if not sub_types:
         return None
     return SubTypesClass(typeNames=sub_types)
+
+
+def build_data_platform_instance_aspect(
+    platform: Optional[str], instance: Optional[str]
+) -> Optional[DataPlatformInstanceClass]:
+    """For the software/AI catalog kinds (SERVICE/API/REPOSITORY/AI_AGENT/AGENT_SKILL,
+    Phase 5C): their URNs are a bare id with no platform component, so this is the
+    only way to say "this repository lives on GitLab" / "this service runs on
+    cluster X". No `Has*` mixin carries this -- it isn't shared by any other kind
+    in the connector -- so it's built directly by each Phase 5C builder rather
+    than dispatched from `common_sdk_kwargs()`/`common_aspect_mcps()`."""
+    if not platform:
+        return None
+    return DataPlatformInstanceClass(
+        platform=data_platform_urn(platform),
+        instance=data_platform_instance_urn(platform, instance),
+    )
 
 
 #: Every SDK V2 entity class in this connector accepts all six as constructor

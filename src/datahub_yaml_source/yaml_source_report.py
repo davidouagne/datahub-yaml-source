@@ -31,6 +31,11 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
     ml_models_scanned: int = 0
     semantic_models_scanned: int = 0
     metrics_scanned: int = 0
+    repositories_scanned: int = 0
+    apis_scanned: int = 0
+    agent_skills_scanned: int = 0
+    ai_agents_scanned: int = 0
+    services_scanned: int = 0
     data_products_scanned: int = 0
     data_flows_scanned: int = 0
     data_jobs_scanned: int = 0

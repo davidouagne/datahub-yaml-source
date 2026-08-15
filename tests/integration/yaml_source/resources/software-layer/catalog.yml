@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: REPOSITORY
+id: aphp-pathling
+name: aphp/pathling
+description: Serveur FHIR analytique
+platform: gitlab
+instance: aphp-prod
+defaultBranch: main
+languages: [Java, Kotlin]
+license: Apache-2.0
+homepageUrl: https://gitlab.example.org/ds/pathling
+archived: false
+source:
+  externalUrl: https://gitlab.example.org/ds/pathling
+  externalId: "1234"
+domains: "3667192a0a19c51419efe99aa865c1ba"
+tags: [pii]
+---
+kind: API
+id: fhir-patient-search-api
+name: Recherche de patients FHIR
+description: Recherche de patients au format FHIR
+sourceRepository: aphp-pathling
+restApi:
+  method: GET
+  path: /Patient
+signature:
+  schemaDefinition: "OpenAPI 3.0, voir /openapi.json"
+externalUrl: https://fhir.example.org/openapi.json
+platform: kong
+domains: "3667192a0a19c51419efe99aa865c1ba"
+---
+kind: AGENT_SKILL
+id: fhir-query-skill
+name: Interrogation FHIR
+description: Traduit une demande en requete FHIR search
+instructions: Toujours filtrer sur le statut actif du patient
+requiredTools: [fhir-patient-search-api]
+sourceRepository:
+  repositoryUrn: aphp-pathling
+  path: skills/fhir_query
+---
+kind: AI_AGENT
+id: cohort-builder-agent
+name: Agent de constitution de cohorte
+tagline: Construit une cohorte patient depuis une description en langage naturel
+description: Agent conversationnel de constitution de cohortes
+instructions: Toujours verifier les criteres d'inclusion avant de finaliser la cohorte
+source:
+  type: NATIVE
+dependencies:
+  skills: [fhir-query-skill]
+  models:
+    - platform: mlflow
+      name: readmission_risk_v3
+      env: PROD
+  tools: [fhir-patient-search-api]
+displayProperties:
+  colorHex: "#2E86AB"
+domains: "3667192a0a19c51419efe99aa865c1ba"
+tags: [pii]
+---
+kind: SERVICE
+id: pathling-fhir-server
+displayName: Serveur FHIR Pathling
+description: Serveur FHIR analytique expose en MCP
+lifecycle: PRODUCTION
+apis: [fhir-patient-search-api]
+sourceRepository: aphp-pathling
+mcpServer:
+  url: https://mcp.example.org/pathling
+  transport: HTTP
+definition:
+  format: OPENAPI
+  rawSpec: "openapi: 3.0.0"
+  version: "1.0"
+platform: gitlab
+instance: aphp-prod
+tags: [pii]
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER

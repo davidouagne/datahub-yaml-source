@@ -67,6 +67,21 @@
       "$ref": "#/$defs/MetricDoc"
     },
     {
+      "$ref": "#/$defs/RepositoryDoc"
+    },
+    {
+      "$ref": "#/$defs/ApiDoc"
+    },
+    {
+      "$ref": "#/$defs/AgentSkillDoc"
+    },
+    {
+      "$ref": "#/$defs/AIAgentDoc"
+    },
+    {
+      "$ref": "#/$defs/ServiceDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -86,6 +101,491 @@
     }
   ],
   "$defs": {
+    "AIAgentDependenciesDoc": {
+      "properties": {
+        "skills": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of AGENT_SKILL documents.",
+          "title": "Skills"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of API documents this agent invokes as tools.",
+          "title": "Tools"
+        },
+        "models": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MLModelRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "MLMODEL entities this agent relies on.",
+          "title": "Models"
+        }
+      },
+      "title": "AIAgentDependenciesDoc",
+      "type": "object"
+    },
+    "AIAgentDoc": {
+      "additionalProperties": true,
+      "description": "An AI agent. `aiAgent` permits owners/tags/glossaryTerms/domains/links/\nstructuredProperties, but not applications, deprecation, or subTypes.",
+      "properties": {
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "AI_AGENT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:aiAgent:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "tagline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tagline"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instructions"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AIAgentSourceDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dependencies": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AIAgentDependenciesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "displayProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__2"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Emits the dataPlatformInstance aspect.",
+          "title": "Platform"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "AIAgentDoc",
+      "type": "object"
+    },
+    "AIAgentSourceDoc": {
+      "properties": {
+        "type": {
+          "description": "SYSTEM, NATIVE, or EXTERNAL.",
+          "title": "Type",
+          "type": "string"
+        },
+        "clonedFrom": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of another AI_AGENT this one was cloned from.",
+          "title": "Clonedfrom"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "AIAgentSourceDoc",
+      "type": "object"
+    },
+    "AgentSkillDoc": {
+      "additionalProperties": true,
+      "description": "A reusable capability an AI_AGENT can invoke. `agentSkill` permits\nowners/tags/glossaryTerms/domains/links/structuredProperties, but not\napplications, deprecation, or subTypes.",
+      "properties": {
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "AGENT_SKILL",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:agentSkill:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instructions"
+        },
+        "requiredTools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of API documents this skill requires.",
+          "title": "Requiredtools"
+        },
+        "sourceRepository": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SkillSourceRepositoryDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Emits the dataPlatformInstance aspect.",
+          "title": "Platform"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "AgentSkillDoc",
+      "type": "object"
+    },
     "AiContextDoc": {
       "description": "Freeform AI-consumption hints (synonyms, instructions, examples). Emits the\n`aiContext` aspect. Valid on SEMANTIC_MODEL and METRIC.",
       "properties": {
@@ -169,6 +669,244 @@
         "value"
       ],
       "title": "AllowedValueDoc",
+      "type": "object"
+    },
+    "ApiDoc": {
+      "additionalProperties": true,
+      "description": "A callable API (e.g. a REST endpoint). `api` permits owners/tags/\nglossaryTerms/domains/links/structuredProperties/subTypes, but not\napplications or deprecation.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "API",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:api:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "sourceRepository": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a REPOSITORY document.",
+          "title": "Sourcerepository"
+        },
+        "restApi": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RestApiDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "signature": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApiSignatureDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'kong' -- emits the dataPlatformInstance aspect.",
+          "title": "Platform"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "ApiDoc",
+      "type": "object"
+    },
+    "ApiSignatureDoc": {
+      "description": "Only `schemaDefinition` (free text) is exposed -- structured input/output field\nlists are out of scope. See _PLANNING.md, Phase 5C.",
+      "properties": {
+        "schemaDefinition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Schemadefinition"
+        }
+      },
+      "title": "ApiSignatureDoc",
       "type": "object"
     },
     "ApplicationDoc": {
@@ -3128,25 +3866,6 @@
       "title": "DeprecationDoc",
       "type": "object"
     },
-    "DisplayPropertiesDoc": {
-      "description": "Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.\n(`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an\nicon library/name/style triple with no natural single-field shorthand.)",
-      "properties": {
-        "colorHex": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Colorhex"
-        }
-      },
-      "title": "DisplayPropertiesDoc",
-      "type": "object"
-    },
     "DocumentDoc": {
       "additionalProperties": true,
       "description": "A knowledge-base document (a runbook, a FAQ, an AI-context note, ...).\n`document` permits owners/tags/glossaryTerms/domains/links/\nstructuredProperties/subTypes, but not applications or deprecation.",
@@ -3508,7 +4227,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DisplayPropertiesDoc"
+              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
             },
             {
               "type": "null"
@@ -3831,7 +4550,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DisplayPropertiesDoc"
+              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
             },
             {
               "type": "null"
@@ -4134,7 +4853,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/DisplayPropertiesDoc"
+              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
             },
             {
               "type": "null"
@@ -5751,6 +6470,42 @@
       "title": "MLModelMetricsDoc",
       "type": "object"
     },
+    "MLModelRef": {
+      "description": "Reference to an MLMODEL by its natural (platform, name, env) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "platform",
+        "name"
+      ],
+      "title": "MLModelRef",
+      "type": "object"
+    },
     "MLModelSourceCodeDoc": {
       "properties": {
         "type": {
@@ -5994,6 +6749,60 @@
         "name"
       ],
       "title": "MLPrimaryKeyRef",
+      "type": "object"
+    },
+    "McpServerDoc": {
+      "description": "If a SERVICE is itself an MCP server -- emits the mcpServerProperties aspect.",
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "transport": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "HTTP, SSE, or WEBSOCKET.",
+          "title": "Transport"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "customHeaders": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Customheaders"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "McpServerDoc",
       "type": "object"
     },
     "MetricDoc": {
@@ -6539,6 +7348,314 @@
       "title": "RawAspectDoc",
       "type": "object"
     },
+    "RepositoryDoc": {
+      "additionalProperties": true,
+      "description": "A source code repository (e.g. a GitLab/GitHub project). `repository`\npermits owners/tags/glossaryTerms/domains/links/structuredProperties/subTypes,\nbut not applications or deprecation.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "REPOSITORY",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:repository:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'gitlab', 'github' -- emits the dataPlatformInstance aspect.",
+          "title": "Platform"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "defaultBranch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Defaultbranch"
+        },
+        "languages": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Languages"
+        },
+        "license": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "License"
+        },
+        "homepageUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Homepageurl"
+        },
+        "archived": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Archived"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepositorySourceDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "forkOf": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of another REPOSITORY this one was forked from.",
+          "title": "Forkof"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "name"
+      ],
+      "title": "RepositoryDoc",
+      "type": "object"
+    },
+    "RepositorySourceDoc": {
+      "properties": {
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalid"
+        }
+      },
+      "title": "RepositorySourceDoc",
+      "type": "object"
+    },
+    "RestApiDoc": {
+      "properties": {
+        "method": {
+          "description": "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, or TRACE.",
+          "title": "Method",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "path"
+      ],
+      "title": "RestApiDoc",
+      "type": "object"
+    },
     "RunEventDoc": {
       "properties": {
         "status": {
@@ -7028,6 +8145,286 @@
       "title": "SemanticModelRef",
       "type": "object"
     },
+    "ServiceDefinitionDoc": {
+      "description": "A service's machine-readable interface definition (e.g. an OpenAPI document),\nemits the serviceDefinition aspect.",
+      "properties": {
+        "format": {
+          "description": "OPENAPI, GRAPHQL_SDL, GRPC_PROTO, ASYNCAPI, JSON_SCHEMA, or OTHER.",
+          "title": "Format",
+          "type": "string"
+        },
+        "rawSpec": {
+          "description": "The raw definition text, e.g. an OpenAPI YAML document.",
+          "title": "Rawspec",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        }
+      },
+      "required": [
+        "format",
+        "rawSpec"
+      ],
+      "title": "ServiceDefinitionDoc",
+      "type": "object"
+    },
+    "ServiceDoc": {
+      "additionalProperties": true,
+      "description": "A running service (possibly an MCP server). `service` only permits\nowners/tags/subTypes among the cross-cutting aspects.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "SERVICE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:service:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "displayName": {
+          "title": "Displayname",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "lifecycle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "EXPERIMENTAL, PRODUCTION, or DEPRECATED.",
+          "title": "Lifecycle"
+        },
+        "apis": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of API documents this service exposes.",
+          "title": "Apis"
+        },
+        "sourceRepository": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a REPOSITORY document.",
+          "title": "Sourcerepository"
+        },
+        "mcpServer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/McpServerDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "definition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceDefinitionDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Emits the dataPlatformInstance aspect.",
+          "title": "Platform"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "displayName"
+      ],
+      "title": "ServiceDoc",
+      "type": "object"
+    },
+    "SkillSourceRepositoryDoc": {
+      "properties": {
+        "repositoryUrn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a REPOSITORY document; converted to a repository URN.",
+          "title": "Repositoryurn"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        }
+      },
+      "title": "SkillSourceRepositoryDoc",
+      "type": "object"
+    },
     "StructuredPropertyDoc": {
       "additionalProperties": true,
       "description": "A custom structured property definition (a typed, filterable field\nattachable to datasets/data products/etc, beyond built-in DataHub fields).",
@@ -7359,6 +8756,43 @@
         "viewLogic"
       ],
       "title": "ViewPropertiesDoc",
+      "type": "object"
+    },
+    "datahub_yaml_source__models__DisplayPropertiesDoc__1": {
+      "description": "Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.\n(`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an\nicon library/name/style triple with no natural single-field shorthand.)",
+      "properties": {
+        "colorHex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Colorhex"
+        }
+      },
+      "title": "DisplayPropertiesDoc",
+      "type": "object"
+    },
+    "datahub_yaml_source__models__DisplayPropertiesDoc__2": {
+      "properties": {
+        "colorHex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Colorhex"
+        }
+      },
+      "title": "DisplayPropertiesDoc",
       "type": "object"
     }
   }

@@ -182,6 +182,11 @@ class DeprecationDoc(BaseModel):
 #   MLPRIMARY_KEY    Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   SEMANTIC_MODEL   Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   METRIC           Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   REPOSITORY       Y     Y    Y     Y      -     Y      -            Y          Y
+#   API              Y     Y    Y     Y      -     Y      -            Y          Y
+#   AGENT_SKILL      Y     Y    Y     Y      -     Y      -            Y          -
+#   AI_AGENT         Y     Y    Y     Y      -     Y      -            Y          -
+#   SERVICE          Y     Y    -     -      -     -      -            -          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -890,6 +895,178 @@ class MetricDoc(
     aiContext: Optional[AiContextDoc] = None
 
 
+class MLModelRef(BaseModel):
+    """Reference to an MLMODEL by its natural (platform, name, env) key."""
+
+    platform: str
+    name: str
+    env: str = "PROD"
+    instance: Optional[str] = None
+
+
+class McpServerDoc(BaseModel):
+    """If a SERVICE is itself an MCP server -- emits the mcpServerProperties aspect."""
+
+    url: str
+    transport: Optional[str] = Field(default=None, description="HTTP, SSE, or WEBSOCKET.")
+    timeout: Optional[float] = None
+    customHeaders: Optional[Dict[str, str]] = None
+
+
+class ServiceDefinitionDoc(BaseModel):
+    """A service's machine-readable interface definition (e.g. an OpenAPI document),
+    emits the serviceDefinition aspect."""
+
+    format: str = Field(description="OPENAPI, GRAPHQL_SDL, GRPC_PROTO, ASYNCAPI, JSON_SCHEMA, or OTHER.")
+    rawSpec: str = Field(description="The raw definition text, e.g. an OpenAPI YAML document.")
+    version: Optional[str] = None
+    externalUrl: Optional[str] = None
+
+
+class RestApiDoc(BaseModel):
+    method: str = Field(description="GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, or TRACE.")
+    path: str
+
+
+class ApiSignatureDoc(BaseModel):
+    """Only `schemaDefinition` (free text) is exposed -- structured input/output field
+    lists are out of scope. See _PLANNING.md, Phase 5C."""
+
+    schemaDefinition: Optional[str] = None
+
+
+class RepositorySourceDoc(BaseModel):
+    externalUrl: Optional[str] = None
+    externalId: Optional[str] = None
+
+
+class SkillSourceRepositoryDoc(BaseModel):
+    repositoryUrn: Optional[str] = Field(
+        default=None, description="id of a REPOSITORY document; converted to a repository URN."
+    )
+    url: Optional[str] = None
+    path: Optional[str] = None
+
+
+class AIAgentSourceDoc(BaseModel):
+    type: str = Field(description="SYSTEM, NATIVE, or EXTERNAL.")
+    clonedFrom: Optional[str] = Field(default=None, description="id of another AI_AGENT this one was cloned from.")
+
+
+class AIAgentDependenciesDoc(BaseModel):
+    skills: Optional[StringList] = Field(default=None, description="ids of AGENT_SKILL documents.")
+    tools: Optional[StringList] = Field(
+        default=None, description="ids of API documents this agent invokes as tools."
+    )
+    models: Optional[List[MLModelRef]] = Field(default=None, description="MLMODEL entities this agent relies on.")
+
+
+class DisplayPropertiesDoc(BaseModel):
+    colorHex: Optional[str] = None
+
+
+class RepositoryDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+):
+    """A source code repository (e.g. a GitLab/GitHub project). `repository`
+    permits owners/tags/glossaryTerms/domains/links/structuredProperties/subTypes,
+    but not applications or deprecation."""
+
+    kind: Literal["REPOSITORY"]
+    id: str = Field(description="Stable identifier, becomes urn:li:repository:<id>.")
+    name: str
+    description: Optional[str] = None
+    platform: Optional[str] = Field(
+        default=None, description="e.g. 'gitlab', 'github' -- emits the dataPlatformInstance aspect."
+    )
+    instance: Optional[str] = None
+    defaultBranch: Optional[str] = None
+    languages: Optional[StringList] = None
+    license: Optional[str] = None
+    homepageUrl: Optional[str] = None
+    archived: Optional[bool] = None
+    source: Optional[RepositorySourceDoc] = None
+    forkOf: Optional[str] = Field(default=None, description="id of another REPOSITORY this one was forked from.")
+
+
+class ApiDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+):
+    """A callable API (e.g. a REST endpoint). `api` permits owners/tags/
+    glossaryTerms/domains/links/structuredProperties/subTypes, but not
+    applications or deprecation."""
+
+    kind: Literal["API"]
+    id: str = Field(description="Stable identifier, becomes urn:li:api:<id>.")
+    name: str
+    description: Optional[str] = None
+    externalUrl: Optional[str] = None
+    sourceRepository: Optional[str] = Field(default=None, description="id of a REPOSITORY document.")
+    restApi: Optional[RestApiDoc] = None
+    signature: Optional[ApiSignatureDoc] = None
+    platform: Optional[str] = Field(
+        default=None, description="e.g. 'kong' -- emits the dataPlatformInstance aspect."
+    )
+    instance: Optional[str] = None
+
+
+class AgentSkillDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, _AllowExtraFields,
+):
+    """A reusable capability an AI_AGENT can invoke. `agentSkill` permits
+    owners/tags/glossaryTerms/domains/links/structuredProperties, but not
+    applications, deprecation, or subTypes."""
+
+    kind: Literal["AGENT_SKILL"]
+    id: str = Field(description="Stable identifier, becomes urn:li:agentSkill:<id>.")
+    name: str
+    description: Optional[str] = None
+    instructions: Optional[str] = None
+    requiredTools: Optional[StringList] = Field(
+        default=None, description="ids of API documents this skill requires."
+    )
+    sourceRepository: Optional[SkillSourceRepositoryDoc] = None
+    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: Optional[str] = None
+
+
+class AIAgentDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, _AllowExtraFields,
+):
+    """An AI agent. `aiAgent` permits owners/tags/glossaryTerms/domains/links/
+    structuredProperties, but not applications, deprecation, or subTypes."""
+
+    kind: Literal["AI_AGENT"]
+    id: str = Field(description="Stable identifier, becomes urn:li:aiAgent:<id>.")
+    name: str
+    tagline: Optional[str] = None
+    description: Optional[str] = None
+    instructions: Optional[str] = None
+    source: Optional[AIAgentSourceDoc] = None
+    dependencies: Optional[AIAgentDependenciesDoc] = None
+    displayProperties: Optional[DisplayPropertiesDoc] = None
+    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: Optional[str] = None
+
+
+class ServiceDoc(HasOwners, HasTags, HasSubTypes, _AllowExtraFields):
+    """A running service (possibly an MCP server). `service` only permits
+    owners/tags/subTypes among the cross-cutting aspects."""
+
+    kind: Literal["SERVICE"]
+    id: str = Field(description="Stable identifier, becomes urn:li:service:<id>.")
+    displayName: str
+    description: Optional[str] = None
+    lifecycle: Optional[str] = Field(default=None, description="EXPERIMENTAL, PRODUCTION, or DEPRECATED.")
+    apis: Optional[StringList] = Field(default=None, description="ids of API documents this service exposes.")
+    sourceRepository: Optional[str] = Field(default=None, description="id of a REPOSITORY document.")
+    mcpServer: Optional[McpServerDoc] = None
+    definition: Optional[ServiceDefinitionDoc] = None
+    properties: Optional[Dict[str, Any]] = None
+    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: Optional[str] = None
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -1129,6 +1306,11 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "MLMODEL": MLModelDoc,
     "SEMANTIC_MODEL": SemanticModelDoc,
     "METRIC": MetricDoc,
+    "REPOSITORY": RepositoryDoc,
+    "API": ApiDoc,
+    "AGENT_SKILL": AgentSkillDoc,
+    "AI_AGENT": AIAgentDoc,
+    "SERVICE": ServiceDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -1158,6 +1340,11 @@ EntityDoc = Union[
     MLModelDoc,
     SemanticModelDoc,
     MetricDoc,
+    RepositoryDoc,
+    ApiDoc,
+    AgentSkillDoc,
+    AIAgentDoc,
+    ServiceDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

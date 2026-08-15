@@ -45,6 +45,13 @@ from datahub_yaml_source.builders.platform import build_data_platform
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
 from datahub_yaml_source.builders.semantic import build_metric, build_semantic_model
+from datahub_yaml_source.builders.software import (
+    build_agent_skill,
+    build_ai_agent,
+    build_api,
+    build_repository,
+    build_service,
+)
 from datahub_yaml_source.builders.structured_property import build_structured_property
 from datahub_yaml_source.builders.tag import build_tag
 from datahub_yaml_source.loader import ParsedRepository, load_repository
@@ -276,6 +283,36 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.metrics_scanned += 1
             yield from self._safe_build(
                 "METRIC", metric_doc.id, build_metric, metric_doc, index, self.report
+            )
+
+        # Parents before children: REPOSITORY/API/AGENT_SKILL before AI_AGENT/SERVICE,
+        # which may reference them.
+        for repository_doc in repository.repositories:
+            self.report.repositories_scanned += 1
+            yield from self._safe_build(
+                "REPOSITORY", repository_doc.id, build_repository, repository_doc, index, self.report
+            )
+
+        for api_doc in repository.apis:
+            self.report.apis_scanned += 1
+            yield from self._safe_build("API", api_doc.id, build_api, api_doc, index, self.report)
+
+        for agent_skill_doc in repository.agent_skills:
+            self.report.agent_skills_scanned += 1
+            yield from self._safe_build(
+                "AGENT_SKILL", agent_skill_doc.id, build_agent_skill, agent_skill_doc, index, self.report
+            )
+
+        for ai_agent_doc in repository.ai_agents:
+            self.report.ai_agents_scanned += 1
+            yield from self._safe_build(
+                "AI_AGENT", ai_agent_doc.id, build_ai_agent, ai_agent_doc, index, self.report
+            )
+
+        for service_doc in repository.services:
+            self.report.services_scanned += 1
+            yield from self._safe_build(
+                "SERVICE", service_doc.id, build_service, service_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

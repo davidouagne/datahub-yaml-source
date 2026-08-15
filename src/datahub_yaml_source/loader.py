@@ -9,6 +9,9 @@ import yaml
 from pydantic import ValidationError
 
 from datahub_yaml_source.models import (
+    AgentSkillDoc,
+    AIAgentDoc,
+    ApiDoc,
     ApplicationDoc,
     AssertionDoc,
     ChartDoc,
@@ -34,7 +37,9 @@ from datahub_yaml_source.models import (
     MLPrimaryKeyDoc,
     QueryDoc,
     RawAspectDoc,
+    RepositoryDoc,
     SemanticModelDoc,
+    ServiceDoc,
     StructuredPropertyDoc,
     TagDoc,
     parse_document,
@@ -77,6 +82,11 @@ class ParsedRepository:
     ml_models: List[MLModelDoc] = field(default_factory=list)
     semantic_models: List[SemanticModelDoc] = field(default_factory=list)
     metrics: List[MetricDoc] = field(default_factory=list)
+    repositories: List[RepositoryDoc] = field(default_factory=list)
+    apis: List[ApiDoc] = field(default_factory=list)
+    agent_skills: List[AgentSkillDoc] = field(default_factory=list)
+    ai_agents: List[AIAgentDoc] = field(default_factory=list)
+    services: List[ServiceDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -127,6 +137,16 @@ class ParsedRepository:
             self.semantic_models.append(doc)
         elif isinstance(doc, MetricDoc):
             self.metrics.append(doc)
+        elif isinstance(doc, RepositoryDoc):
+            self.repositories.append(doc)
+        elif isinstance(doc, ApiDoc):
+            self.apis.append(doc)
+        elif isinstance(doc, AgentSkillDoc):
+            self.agent_skills.append(doc)
+        elif isinstance(doc, AIAgentDoc):
+            self.ai_agents.append(doc)
+        elif isinstance(doc, ServiceDoc):
+            self.services.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

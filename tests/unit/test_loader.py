@@ -207,6 +207,35 @@ def test_load_repository_parses_semantic_model_and_metric(tmp_path: Path):
     assert repo.metrics[0].semanticModel.id == "patients_actifs"
 
 
+def test_load_repository_parses_software_catalog(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: REPOSITORY\nid: aphp-pathling\nname: aphp/pathling\n"
+        "---\n"
+        "kind: API\nid: fhir-patient-search-api\nname: Recherche patients\n"
+        "sourceRepository: aphp-pathling\n"
+        "---\n"
+        "kind: AGENT_SKILL\nid: fhir-query-skill\nname: Interrogation FHIR\n"
+        "---\n"
+        "kind: AI_AGENT\nid: cohort-builder-agent\nname: Agent cohorte\n"
+        "dependencies: {skills: [fhir-query-skill]}\n"
+        "---\n"
+        "kind: SERVICE\nid: pathling-fhir-server\ndisplayName: Serveur FHIR\n"
+        "apis: [fhir-patient-search-api]\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.repositories) == 1
+    assert repo.repositories[0].id == "aphp-pathling"
+    assert len(repo.apis) == 1
+    assert repo.apis[0].sourceRepository == "aphp-pathling"
+    assert len(repo.agent_skills) == 1
+    assert len(repo.ai_agents) == 1
+    assert repo.ai_agents[0].dependencies.skills == ["fhir-query-skill"]
+    assert len(repo.services) == 1
+    assert repo.services[0].apis == ["fhir-patient-search-api"]
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

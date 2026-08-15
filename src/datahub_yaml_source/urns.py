@@ -15,12 +15,16 @@ from typing import Optional, Set, Tuple, Union
 
 from datahub.emitter.mce_builder import (
     make_data_platform_urn,
+    make_dataplatform_instance_urn,
     make_dataset_urn_with_platform_instance,
     make_domain_urn,
     make_user_urn,
 )
 from datahub.emitter.mcp_builder import ContainerKey, DatabaseKey, SchemaKey
 from datahub.metadata.urns import (
+    AgentSkillUrn,
+    AiAgentUrn,
+    ApiUrn,
     ApplicationUrn,
     ChartUrn,
     DashboardUrn,
@@ -39,7 +43,9 @@ from datahub.metadata.urns import (
     MlModelUrn,
     MlPrimaryKeyUrn,
     QueryUrn,
+    RepositoryUrn,
     SemanticModelUrn,
+    ServiceUrn,
     StructuredPropertyUrn,
     TagUrn,
 )
@@ -180,6 +186,32 @@ def metric_urn(ref) -> str:
     """Accepts anything with `platform`/`path`/`id` -- a `MetricDoc` itself, or a
     `MetricRef`."""
     return MetricUrn(ref.platform, ref.path, ref.id).urn()
+
+
+def repository_urn(repository_id: str) -> str:
+    return _passthrough_if_urn(repository_id, lambda v: RepositoryUrn(v).urn())
+
+
+def api_urn(api_id: str) -> str:
+    return _passthrough_if_urn(api_id, lambda v: ApiUrn(v).urn())
+
+
+def agent_skill_urn(skill_id: str) -> str:
+    return _passthrough_if_urn(skill_id, lambda v: AgentSkillUrn(v).urn())
+
+
+def ai_agent_urn(agent_id: str) -> str:
+    return _passthrough_if_urn(agent_id, lambda v: AiAgentUrn(v).urn())
+
+
+def service_urn(service_id: str) -> str:
+    return _passthrough_if_urn(service_id, lambda v: ServiceUrn(v).urn())
+
+
+def data_platform_instance_urn(platform_name: str, instance: Optional[str]) -> Optional[str]:
+    if not instance:
+        return None
+    return make_dataplatform_instance_urn(platform_name, instance)
 
 
 def glossary_node_urn(node_id: str) -> str:

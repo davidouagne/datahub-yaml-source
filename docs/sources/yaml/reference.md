@@ -26,6 +26,11 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`MLMODEL`](#mlmodel)
 - [`SEMANTIC_MODEL`](#semantic-model)
 - [`METRIC`](#metric)
+- [`REPOSITORY`](#repository)
+- [`API`](#api)
+- [`AGENT_SKILL`](#agent-skill)
+- [`AI_AGENT`](#ai-agent)
+- [`SERVICE`](#service)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -620,6 +625,150 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `subTypes` | string or list of string | no | - |  |
 
+## REPOSITORY
+
+A source code repository (e.g. a GitLab/GitHub project). `repository` permits owners/tags/glossaryTerms/domains/links/structuredProperties/subTypes, but not applications or deprecation.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "REPOSITORY" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:repository:<id>. |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `platform` | string | no | - | e.g. 'gitlab', 'github' -- emits the dataPlatformInstance aspect. |
+| `instance` | string | no | - |  |
+| `defaultBranch` | string | no | - |  |
+| `languages` | list of string | no | - |  |
+| `license` | string | no | - |  |
+| `homepageUrl` | string | no | - |  |
+| `archived` | boolean | no | - |  |
+| `source` | [RepositorySourceDoc](#repositorysourcedoc) | no | - |  |
+| `forkOf` | string | no | - | id of another REPOSITORY this one was forked from. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## API
+
+A callable API (e.g. a REST endpoint). `api` permits owners/tags/ glossaryTerms/domains/links/structuredProperties/subTypes, but not applications or deprecation.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "API" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:api:<id>. |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `externalUrl` | string | no | - |  |
+| `sourceRepository` | string | no | - | id of a REPOSITORY document. |
+| `restApi` | [RestApiDoc](#restapidoc) | no | - |  |
+| `signature` | [ApiSignatureDoc](#apisignaturedoc) | no | - |  |
+| `platform` | string | no | - | e.g. 'kong' -- emits the dataPlatformInstance aspect. |
+| `instance` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## AGENT_SKILL
+
+A reusable capability an AI_AGENT can invoke. `agentSkill` permits owners/tags/glossaryTerms/domains/links/structuredProperties, but not applications, deprecation, or subTypes.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "AGENT_SKILL" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:agentSkill:<id>. |
+| `name` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `instructions` | string | no | - |  |
+| `requiredTools` | list of string | no | - | ids of API documents this skill requires. |
+| `sourceRepository` | [SkillSourceRepositoryDoc](#skillsourcerepositorydoc) | no | - |  |
+| `platform` | string | no | - | Emits the dataPlatformInstance aspect. |
+| `instance` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+
+## AI_AGENT
+
+An AI agent. `aiAgent` permits owners/tags/glossaryTerms/domains/links/ structuredProperties, but not applications, deprecation, or subTypes.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "AI_AGENT" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:aiAgent:<id>. |
+| `name` | string | **yes** | - |  |
+| `tagline` | string | no | - |  |
+| `description` | string | no | - |  |
+| `instructions` | string | no | - |  |
+| `source` | [AIAgentSourceDoc](#aiagentsourcedoc) | no | - |  |
+| `dependencies` | [AIAgentDependenciesDoc](#aiagentdependenciesdoc) | no | - |  |
+| `displayProperties` | [DisplayPropertiesDoc](#displaypropertiesdoc) | no | - |  |
+| `platform` | string | no | - | Emits the dataPlatformInstance aspect. |
+| `instance` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+
+## SERVICE
+
+A running service (possibly an MCP server). `service` only permits owners/tags/subTypes among the cross-cutting aspects.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "SERVICE" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:service:<id>. |
+| `displayName` | string | **yes** | - |  |
+| `description` | string | no | - |  |
+| `lifecycle` | string | no | - | EXPERIMENTAL, PRODUCTION, or DEPRECATED. |
+| `apis` | list of string | no | - | ids of API documents this service exposes. |
+| `sourceRepository` | string | no | - | id of a REPOSITORY document. |
+| `mcpServer` | [McpServerDoc](#mcpserverdoc) | no | - |  |
+| `definition` | [ServiceDefinitionDoc](#servicedefinitiondoc) | no | - |  |
+| `properties` | map | no | - |  |
+| `platform` | string | no | - | Emits the dataPlatformInstance aspect. |
+| `instance` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `subTypes` | string or list of string | no | - |  |
+
 ## DATA_PRODUCT
 
 A data product: a curated bundle of datasets/jobs presented as a single discoverable asset, with its own domain/tags/owners.
@@ -981,6 +1130,90 @@ Freeform AI-consumption hints (synonyms, instructions, examples). Emits the `aiC
 | `instructions` | string | no | - |  |
 | `examples` | list of string | no | - |  |
 | `customInstructions` | string | no | - |  |
+
+### MLModelRef
+
+Reference to an MLMODEL by its natural (platform, name, env) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `name` | string | **yes** | - |  |
+| `env` | string | no | `PROD` |  |
+| `instance` | string | no | - |  |
+
+### McpServerDoc
+
+If a SERVICE is itself an MCP server -- emits the mcpServerProperties aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `url` | string | **yes** | - |  |
+| `transport` | string | no | - | HTTP, SSE, or WEBSOCKET. |
+| `timeout` | number | no | - |  |
+| `customHeaders` | map | no | - |  |
+
+### ServiceDefinitionDoc
+
+A service's machine-readable interface definition (e.g. an OpenAPI document), emits the serviceDefinition aspect.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `format` | string | **yes** | - | OPENAPI, GRAPHQL_SDL, GRPC_PROTO, ASYNCAPI, JSON_SCHEMA, or OTHER. |
+| `rawSpec` | string | **yes** | - | The raw definition text, e.g. an OpenAPI YAML document. |
+| `version` | string | no | - |  |
+| `externalUrl` | string | no | - |  |
+
+### RestApiDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `method` | string | **yes** | - | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, or TRACE. |
+| `path` | string | **yes** | - |  |
+
+### ApiSignatureDoc
+
+Only `schemaDefinition` (free text) is exposed -- structured input/output field lists are out of scope. See _PLANNING.md, Phase 5C.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `schemaDefinition` | string | no | - |  |
+
+### RepositorySourceDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `externalUrl` | string | no | - |  |
+| `externalId` | string | no | - |  |
+
+### SkillSourceRepositoryDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `repositoryUrn` | string | no | - | id of a REPOSITORY document; converted to a repository URN. |
+| `url` | string | no | - |  |
+| `path` | string | no | - |  |
+
+### AIAgentSourceDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `type` | string | **yes** | - | SYSTEM, NATIVE, or EXTERNAL. |
+| `clonedFrom` | string | no | - | id of another AI_AGENT this one was cloned from. |
+
+### AIAgentDependenciesDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `skills` | list of string | no | - | ids of AGENT_SKILL documents. |
+| `tools` | list of string | no | - | ids of API documents this agent invokes as tools. |
+| `models` | list of [MLModelRef](#mlmodelref) | no | - | MLMODEL entities this agent relies on. |
+
+### DisplayPropertiesDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `colorHex` | string | no | - |  |
 
 ### DatasetFieldRef
 

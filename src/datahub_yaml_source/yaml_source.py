@@ -44,6 +44,7 @@ from datahub_yaml_source.builders.ml import (
 from datahub_yaml_source.builders.platform import build_data_platform
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
+from datahub_yaml_source.builders.semantic import build_metric, build_semantic_model
 from datahub_yaml_source.builders.structured_property import build_structured_property
 from datahub_yaml_source.builders.tag import build_tag
 from datahub_yaml_source.loader import ParsedRepository, load_repository
@@ -262,6 +263,19 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.ml_models_scanned += 1
             yield from self._safe_build(
                 "MLMODEL", model_doc.name, build_ml_model, model_doc, index, self.report
+            )
+
+        # SEMANTIC_MODEL before METRIC: Metric's SDK constructor requires semantic_model=.
+        for semantic_model_doc in repository.semantic_models:
+            self.report.semantic_models_scanned += 1
+            yield from self._safe_build(
+                "SEMANTIC_MODEL", semantic_model_doc.id, build_semantic_model, semantic_model_doc, index, self.report
+            )
+
+        for metric_doc in repository.metrics:
+            self.report.metrics_scanned += 1
+            yield from self._safe_build(
+                "METRIC", metric_doc.id, build_metric, metric_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

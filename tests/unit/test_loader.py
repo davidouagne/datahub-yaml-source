@@ -191,6 +191,22 @@ def test_load_repository_parses_ml_entities(tmp_path: Path):
     assert repo.ml_models[0].platform == "mlflow"
 
 
+def test_load_repository_parses_semantic_model_and_metric(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: SEMANTIC_MODEL\nplatform: dbt\npath: models/marts\nid: patients_actifs\n"
+        "---\n"
+        "kind: METRIC\nplatform: dbt\npath: models/marts\nid: taux_readmission\n"
+        "semanticModel: {platform: dbt, path: models/marts, id: patients_actifs}\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.semantic_models) == 1
+    assert repo.semantic_models[0].id == "patients_actifs"
+    assert len(repo.metrics) == 1
+    assert repo.metrics[0].semanticModel.id == "patients_actifs"
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

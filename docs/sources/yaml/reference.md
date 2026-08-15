@@ -24,6 +24,8 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`MLPRIMARY_KEY`](#mlprimary-key)
 - [`MLMODEL_GROUP`](#mlmodel-group)
 - [`MLMODEL`](#mlmodel)
+- [`SEMANTIC_MODEL`](#semantic-model)
+- [`METRIC`](#metric)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -551,6 +553,73 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `subTypes` | string or list of string | no | - |  |
 
+## SEMANTIC_MODEL
+
+A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a METRIC is defined against. `relationships` (aliased cross-dataset joins) and `semanticContent` (vector embeddings) are deliberately out of scope: the former needs an aliased-dataset sub-feature this connector doesn't model, the latter is system-computed. See _PLANNING.md, Phase 5B.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "SEMANTIC_MODEL" | **yes** | - |  |
+| `platform` | string | **yes** | - | e.g. 'dbt', 'looker'. |
+| `path` | string | **yes** | - | Logical path/folder. Part of the semanticModel URN. |
+| `id` | string | **yes** | - | Identifier. Part of the semanticModel URN. |
+| `instance` | string | no | - |  |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `externalUrl` | string | no | - |  |
+| `nativeDefinition` | string | no | - | The model's native source definition, e.g. its dbt YAML/SQL. |
+| `datasets` | list of [DatasetRef](#datasetref) | no | - | Datasets this semantic model is built from. |
+| `aiContext` | [AiContextDoc](#aicontextdoc) | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
+## METRIC
+
+A business metric definition (e.g. a dbt metric), always scoped to a SEMANTIC_MODEL.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "METRIC" | **yes** | - |  |
+| `platform` | string | **yes** | - |  |
+| `path` | string | **yes** | - | Logical path/folder. Part of the metric URN. |
+| `id` | string | **yes** | - | Identifier. Part of the metric URN. |
+| `instance` | string | no | - |  |
+| `semanticModel` | [SemanticModelRef](#semanticmodelref) | **yes** | - | The SEMANTIC_MODEL this metric is defined against. |
+| `displayName` | string | no | - |  |
+| `description` | string | no | - |  |
+| `externalUrl` | string | no | - |  |
+| `expression` | string | no | - | The metric's SQL expression, e.g. 'count(x) / count(*)'. |
+| `derivedFrom` | list of [MetricRef](#metricref) | no | - | Other metrics this one is computed from. |
+| `relatedMetrics` | list of [MetricRef](#metricref) | no | - | Loosely related metrics. |
+| `datasetUpstreams` | list of [DatasetRef](#datasetref) | no | - | Datasets this metric reads from directly. |
+| `aiContext` | [AiContextDoc](#aicontextdoc) | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
+
 ## DATA_PRODUCT
 
 A data product: a curated bundle of datasets/jobs presented as a single discoverable asset, with its own domain/tags/owners.
@@ -881,6 +950,37 @@ Reference to an MLMODEL_GROUP by its natural (platform, name, env) key.
 | --- | --- | --- | --- | --- |
 | `type` | string | **yes** | - | TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, or ML_MODEL_SOURCE_CODE. |
 | `sourceCodeUrl` | string | **yes** | - |  |
+
+### SemanticModelRef
+
+Reference to a SEMANTIC_MODEL by its natural (platform, path, id) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `path` | string | **yes** | - |  |
+| `id` | string | **yes** | - |  |
+
+### MetricRef
+
+Reference to a METRIC by its natural (platform, path, id) key.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `platform` | string | **yes** | - |  |
+| `path` | string | **yes** | - |  |
+| `id` | string | **yes** | - |  |
+
+### AiContextDoc
+
+Freeform AI-consumption hints (synonyms, instructions, examples). Emits the `aiContext` aspect. Valid on SEMANTIC_MODEL and METRIC.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `synonyms` | list of string | no | - |  |
+| `instructions` | string | no | - |  |
+| `examples` | list of string | no | - |  |
+| `customInstructions` | string | no | - |  |
 
 ### DatasetFieldRef
 

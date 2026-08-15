@@ -26,6 +26,7 @@ from datahub_yaml_source.models import (
     GlossaryNodeDoc,
     GlossaryTermDoc,
     IncidentDoc,
+    MetricDoc,
     MLFeatureDoc,
     MLFeatureTableDoc,
     MLModelDoc,
@@ -33,6 +34,7 @@ from datahub_yaml_source.models import (
     MLPrimaryKeyDoc,
     QueryDoc,
     RawAspectDoc,
+    SemanticModelDoc,
     StructuredPropertyDoc,
     TagDoc,
     parse_document,
@@ -73,6 +75,8 @@ class ParsedRepository:
     ml_primary_keys: List[MLPrimaryKeyDoc] = field(default_factory=list)
     ml_model_groups: List[MLModelGroupDoc] = field(default_factory=list)
     ml_models: List[MLModelDoc] = field(default_factory=list)
+    semantic_models: List[SemanticModelDoc] = field(default_factory=list)
+    metrics: List[MetricDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -119,6 +123,10 @@ class ParsedRepository:
             self.ml_model_groups.append(doc)
         elif isinstance(doc, MLModelDoc):
             self.ml_models.append(doc)
+        elif isinstance(doc, SemanticModelDoc):
+            self.semantic_models.append(doc)
+        elif isinstance(doc, MetricDoc):
+            self.metrics.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

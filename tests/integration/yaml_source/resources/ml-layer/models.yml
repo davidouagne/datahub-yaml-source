@@ -101,3 +101,39 @@ metrics:
 sourceCode:
   - type: ML_MODEL_SOURCE_CODE
     sourceCodeUrl: https://gitlab.example.org/ds/readmission-model
+---
+kind: SEMANTIC_MODEL
+platform: dbt
+path: models/marts
+id: patients_actifs
+displayName: Patients actifs
+description: Active patient cohort semantic model
+nativeDefinition: |-
+  select * from {{ ref('ehr_public_patient') }} where actif
+datasets:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+aiContext:
+  synonyms:
+    - active cohort
+  instructions: Use for any active-patient headcount calculation
+domains: "3667192a0a19c51419efe99aa865c1ba"
+---
+kind: METRIC
+platform: dbt
+path: models/marts
+id: taux_readmission_30j
+displayName: Taux de readmission a 30 jours
+semanticModel:
+  platform: dbt
+  path: models/marts
+  id: patients_actifs
+expression: "count(readmission_30j) / count(*)"
+datasetUpstreams:
+  - platform: postgres
+    name: ehr_public_patient
+    env: PROD
+aiContext:
+  instructions: Discharge-quality KPI, tracked monthly
+domains: "3667192a0a19c51419efe99aa865c1ba"

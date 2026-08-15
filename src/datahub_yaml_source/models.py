@@ -180,6 +180,8 @@ class DeprecationDoc(BaseModel):
 #   MLFEATURE_TABLE  Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   MLFEATURE        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   MLPRIMARY_KEY    Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   SEMANTIC_MODEL   Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   METRIC           Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -806,6 +808,88 @@ class MLModelDoc(
     sourceCode: Optional[List[MLModelSourceCodeDoc]] = None
 
 
+class AiContextDoc(BaseModel):
+    """Freeform AI-consumption hints (synonyms, instructions, examples). Emits the
+    `aiContext` aspect. Valid on SEMANTIC_MODEL and METRIC."""
+
+    synonyms: Optional[List[str]] = None
+    instructions: Optional[str] = None
+    examples: Optional[List[str]] = None
+    customInstructions: Optional[str] = None
+
+
+class SemanticModelRef(BaseModel):
+    """Reference to a SEMANTIC_MODEL by its natural (platform, path, id) key."""
+
+    platform: str
+    path: str
+    id: str
+
+
+class MetricRef(BaseModel):
+    """Reference to a METRIC by its natural (platform, path, id) key."""
+
+    platform: str
+    path: str
+    id: str
+
+
+class SemanticModelDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a
+    METRIC is defined against. `relationships` (aliased cross-dataset joins) and
+    `semanticContent` (vector embeddings) are deliberately out of scope: the former needs
+    an aliased-dataset sub-feature this connector doesn't model, the latter is
+    system-computed. See _PLANNING.md, Phase 5B."""
+
+    kind: Literal["SEMANTIC_MODEL"]
+    platform: str = Field(description="e.g. 'dbt', 'looker'.")
+    path: str = Field(description="Logical path/folder. Part of the semanticModel URN.")
+    id: str = Field(description="Identifier. Part of the semanticModel URN.")
+    instance: Optional[str] = None
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    externalUrl: Optional[str] = None
+    nativeDefinition: Optional[str] = Field(
+        default=None, description="The model's native source definition, e.g. its dbt YAML/SQL."
+    )
+    datasets: Optional[List[DatasetRef]] = Field(
+        default=None, description="Datasets this semantic model is built from."
+    )
+    aiContext: Optional[AiContextDoc] = None
+
+
+class MetricDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
+    """A business metric definition (e.g. a dbt metric), always scoped to a
+    SEMANTIC_MODEL."""
+
+    kind: Literal["METRIC"]
+    platform: str
+    path: str = Field(description="Logical path/folder. Part of the metric URN.")
+    id: str = Field(description="Identifier. Part of the metric URN.")
+    instance: Optional[str] = None
+    semanticModel: SemanticModelRef = Field(description="The SEMANTIC_MODEL this metric is defined against.")
+    displayName: Optional[str] = None
+    description: Optional[str] = None
+    externalUrl: Optional[str] = None
+    expression: Optional[str] = Field(
+        default=None, description="The metric's SQL expression, e.g. 'count(x) / count(*)'."
+    )
+    derivedFrom: Optional[List[MetricRef]] = Field(
+        default=None, description="Other metrics this one is computed from."
+    )
+    relatedMetrics: Optional[List[MetricRef]] = Field(default=None, description="Loosely related metrics.")
+    datasetUpstreams: Optional[List[DatasetRef]] = Field(
+        default=None, description="Datasets this metric reads from directly."
+    )
+    aiContext: Optional[AiContextDoc] = None
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -1043,6 +1127,8 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "MLPRIMARY_KEY": MLPrimaryKeyDoc,
     "MLMODEL_GROUP": MLModelGroupDoc,
     "MLMODEL": MLModelDoc,
+    "SEMANTIC_MODEL": SemanticModelDoc,
+    "METRIC": MetricDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -1070,6 +1156,8 @@ EntityDoc = Union[
     MLPrimaryKeyDoc,
     MLModelGroupDoc,
     MLModelDoc,
+    SemanticModelDoc,
+    MetricDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

@@ -61,6 +61,12 @@
       "$ref": "#/$defs/MLModelDoc"
     },
     {
+      "$ref": "#/$defs/SemanticModelDoc"
+    },
+    {
+      "$ref": "#/$defs/MetricDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -80,6 +86,67 @@
     }
   ],
   "$defs": {
+    "AiContextDoc": {
+      "description": "Freeform AI-consumption hints (synonyms, instructions, examples). Emits the\n`aiContext` aspect. Valid on SEMANTIC_MODEL and METRIC.",
+      "properties": {
+        "synonyms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Synonyms"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instructions"
+        },
+        "examples": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Examples"
+        },
+        "customInstructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custominstructions"
+        }
+      },
+      "title": "AiContextDoc",
+      "type": "object"
+    },
     "AllowedValueDoc": {
       "properties": {
         "value": {
@@ -5929,6 +5996,323 @@
       "title": "MLPrimaryKeyRef",
       "type": "object"
     },
+    "MetricDoc": {
+      "additionalProperties": true,
+      "description": "A business metric definition (e.g. a dbt metric), always scoped to a\nSEMANTIC_MODEL.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "METRIC",
+          "title": "Kind",
+          "type": "string"
+        },
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "path": {
+          "description": "Logical path/folder. Part of the metric URN.",
+          "title": "Path",
+          "type": "string"
+        },
+        "id": {
+          "description": "Identifier. Part of the metric URN.",
+          "title": "Id",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "semanticModel": {
+          "$ref": "#/$defs/SemanticModelRef",
+          "description": "The SEMANTIC_MODEL this metric is defined against."
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The metric's SQL expression, e.g. 'count(x) / count(*)'.",
+          "title": "Expression"
+        },
+        "derivedFrom": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MetricRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Other metrics this one is computed from.",
+          "title": "Derivedfrom"
+        },
+        "relatedMetrics": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/MetricRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Loosely related metrics.",
+          "title": "Relatedmetrics"
+        },
+        "datasetUpstreams": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Datasets this metric reads from directly.",
+          "title": "Datasetupstreams"
+        },
+        "aiContext": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AiContextDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "platform",
+        "path",
+        "id",
+        "semanticModel"
+      ],
+      "title": "MetricDoc",
+      "type": "object"
+    },
+    "MetricRef": {
+      "description": "Reference to a METRIC by its natural (platform, path, id) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "path",
+        "id"
+      ],
+      "title": "MetricRef",
+      "type": "object"
+    },
     "OwnerEntry": {
       "properties": {
         "owner": {
@@ -6361,6 +6745,287 @@
         "path"
       ],
       "title": "SchemaFieldSpecDoc",
+      "type": "object"
+    },
+    "SemanticModelDoc": {
+      "additionalProperties": true,
+      "description": "A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a\nMETRIC is defined against. `relationships` (aliased cross-dataset joins) and\n`semanticContent` (vector embeddings) are deliberately out of scope: the former needs\nan aliased-dataset sub-feature this connector doesn't model, the latter is\nsystem-computed. See _PLANNING.md, Phase 5B.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "SEMANTIC_MODEL",
+          "title": "Kind",
+          "type": "string"
+        },
+        "platform": {
+          "description": "e.g. 'dbt', 'looker'.",
+          "title": "Platform",
+          "type": "string"
+        },
+        "path": {
+          "description": "Logical path/folder. Part of the semanticModel URN.",
+          "title": "Path",
+          "type": "string"
+        },
+        "id": {
+          "description": "Identifier. Part of the semanticModel URN.",
+          "title": "Id",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "displayName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Displayname"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "nativeDefinition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The model's native source definition, e.g. its dbt YAML/SQL.",
+          "title": "Nativedefinition"
+        },
+        "datasets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Datasets this semantic model is built from.",
+          "title": "Datasets"
+        },
+        "aiContext": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AiContextDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "kind",
+        "platform",
+        "path",
+        "id"
+      ],
+      "title": "SemanticModelDoc",
+      "type": "object"
+    },
+    "SemanticModelRef": {
+      "description": "Reference to a SEMANTIC_MODEL by its natural (platform, path, id) key.",
+      "properties": {
+        "platform": {
+          "title": "Platform",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform",
+        "path",
+        "id"
+      ],
+      "title": "SemanticModelRef",
       "type": "object"
     },
     "StructuredPropertyDoc": {

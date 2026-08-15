@@ -32,12 +32,14 @@ from datahub.metadata.urns import (
     GlossaryNodeUrn,
     GlossaryTermUrn,
     IncidentUrn,
+    MetricUrn,
     MlFeatureTableUrn,
     MlFeatureUrn,
     MlModelGroupUrn,
     MlModelUrn,
     MlPrimaryKeyUrn,
     QueryUrn,
+    SemanticModelUrn,
     StructuredPropertyUrn,
     TagUrn,
 )
@@ -166,6 +168,18 @@ def ml_model_urn(ref) -> str:
     """Accepts anything with `platform`/`name`/`env` -- an `MLModelDoc` itself, or a
     future dedicated ref type."""
     return MlModelUrn(ref.platform, ref.name, ref.env).urn()
+
+
+def semantic_model_urn(ref) -> str:
+    """Accepts anything with `platform`/`path`/`id` -- a `SemanticModelDoc` itself, or a
+    `SemanticModelRef`."""
+    return SemanticModelUrn(ref.platform, ref.path, ref.id).urn()
+
+
+def metric_urn(ref) -> str:
+    """Accepts anything with `platform`/`path`/`id` -- a `MetricDoc` itself, or a
+    `MetricRef`."""
+    return MetricUrn(ref.platform, ref.path, ref.id).urn()
 
 
 def glossary_node_urn(node_id: str) -> str:

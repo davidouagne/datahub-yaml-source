@@ -3,6 +3,7 @@ import pytest
 from datahub_yaml_source.builders.assertion import build_assertion
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
 from datahub_yaml_source.builders.data_product import build_data_product
+from datahub_yaml_source.builders.document import build_document
 from datahub_yaml_source.builders.incident import build_incident
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
@@ -11,6 +12,7 @@ from datahub_yaml_source.models import (
     AssertionDoc,
     DataProcessInstanceDoc,
     DataProductDoc,
+    DocumentDoc,
     DomainDoc,
     GlossaryTermDoc,
     IncidentDoc,
@@ -453,6 +455,119 @@ def test_build_incident_defaults_status_and_reports_dangling_tag():
     info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass")
     assert info.status.state == "ACTIVE"
     assert len(report.dangling_references) == 1
+
+
+def test_build_document_native_emits_document_info_and_common_aspects():
+    repo = ParsedRepository()
+    repo.tags.append(TagDoc(kind="TAG", name="pii"))
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DocumentDoc.model_validate(
+        {
+            "kind": "DOCUMENT",
+            "id": "runbook_patient",
+            "title": "Runbook - reprise de la table patient",
+            "text": "## Etapes\n1. Verifier le job",
+            "subTypes": "Runbook",
+            "relatedAssets": ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"],
+            "tags": ["pii"],
+            "owners": {"owner": "datahub", "type": "TECHNICAL_OWNER"},
+            "links": [{"url": "https://wiki.example.org/runbooks/patient", "description": "Runbook source"}],
+        }
+    )
+
+    wus = list(build_document(doc, index, report))
+    assert not report.dangling_references
+    assert wus[0].metadata.entityUrn == "urn:li:document:runbook_patient"
+
+    aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
+    assert {"DocumentInfoClass", "SubTypesClass", "GlobalTagsClass", "OwnershipClass", "InstitutionalMemoryClass"} <= aspect_names
+
+    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    assert info.title == "Runbook - reprise de la table patient"
+    assert info.contents.text == "## Etapes\n1. Verifier le job"
+    assert info.source.sourceType == "NATIVE"
+    assert info.relatedAssets[0].asset == (
+        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
+    # created/lastModified must be pinned to the epoch for golden-file determinism.
+    assert info.created.time == 0
+    assert info.lastModified.time == 0
+
+
+def test_build_document_external_requires_platform():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DocumentDoc.model_validate(
+        {
+            "kind": "DOCUMENT",
+            "id": "external_doc",
+            "title": "External runbook",
+            "externalUrl": "https://wiki.example.org/runbooks/patient",
+        }
+    )
+
+    with pytest.raises(ValueError, match="missing 'platform'"):
+        list(build_document(doc, index, report))
+
+
+def test_build_document_external_emits_external_source():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DocumentDoc.model_validate(
+        {
+            "kind": "DOCUMENT",
+            "id": "external_doc",
+            "title": "External runbook",
+            "platform": "confluence",
+            "externalUrl": "https://wiki.example.org/runbooks/patient",
+            "externalId": "12345",
+        }
+    )
+
+    wus = list(build_document(doc, index, report))
+    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    assert info.source.sourceType == "EXTERNAL"
+    assert info.source.externalUrl == "https://wiki.example.org/runbooks/patient"
+    assert info.source.externalId == "12345"
+
+
+def test_build_document_resolves_parent_and_related_documents():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DocumentDoc.model_validate(
+        {
+            "kind": "DOCUMENT",
+            "id": "runbook_patient_detail",
+            "title": "Runbook patient - detail",
+            "text": "...",
+            "parentDocument": "runbook_patient",
+            "relatedDocuments": ["runbook_encounter"],
+        }
+    )
+
+    wus = list(build_document(doc, index, report))
+    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    assert info.parentDocument.document == "urn:li:document:runbook_patient"
+    assert info.relatedDocuments[0].document == "urn:li:document:runbook_encounter"
+
+
+def test_build_document_native_without_text_raises():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DocumentDoc.model_validate({"kind": "DOCUMENT", "id": "no_text", "title": "No text"})
+
+    with pytest.raises(ValueError, match="requires 'text'"):
+        list(build_document(doc, index, report))
 
 
 def test_build_raw_aspect_dataset_profile():

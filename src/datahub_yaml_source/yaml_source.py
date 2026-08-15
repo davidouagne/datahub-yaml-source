@@ -30,6 +30,7 @@ from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_da
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
 from datahub_yaml_source.builders.data_product import build_data_product
 from datahub_yaml_source.builders.dataset import build_dataset
+from datahub_yaml_source.builders.document import build_document
 from datahub_yaml_source.builders.domain import build_domain, topological_sort_domains
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
 from datahub_yaml_source.builders.incident import build_incident
@@ -214,6 +215,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.incidents_scanned += 1
             yield from self._safe_build(
                 "INCIDENT", incident_doc.id, build_incident, incident_doc, index, self.report
+            )
+
+        for document_doc in repository.documents:
+            self.report.documents_scanned += 1
+            yield from self._safe_build(
+                "DOCUMENT", document_doc.id, build_document, document_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

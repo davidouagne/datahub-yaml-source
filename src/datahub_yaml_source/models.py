@@ -174,6 +174,7 @@ class DeprecationDoc(BaseModel):
 #   DASHBOARD        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   QUERY            -     -    -     -      -     -      -            -          Y
 #   INCIDENT         -     Y    -     -      -     -      -            -          -
+#   DOCUMENT         Y     Y    Y     Y      -     Y      -            Y          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -568,6 +569,38 @@ class IncidentDoc(HasTags, _AllowExtraFields):
     notes: Optional[StringList] = Field(default=None, description="Free-text notes about this incident.")
 
 
+class DocumentDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+):
+    """A knowledge-base document (a runbook, a FAQ, an AI-context note, ...).
+    `document` permits owners/tags/glossaryTerms/domains/links/
+    structuredProperties/subTypes, but not applications or deprecation."""
+
+    kind: Literal["DOCUMENT"]
+    id: str = Field(description="Stable identifier, becomes urn:li:document:<id>.")
+    title: str
+    text: Optional[str] = Field(
+        default=None,
+        description="Markdown body, stored natively in DataHub. Required unless externalUrl is set.",
+    )
+    status: str = Field(default="PUBLISHED", description="PUBLISHED or UNPUBLISHED.")
+    showInGlobalContext: bool = Field(
+        default=True,
+        description="If false, only reachable via relatedAssets/relatedDocuments -- useful for AI-only context documents.",
+    )
+    platform: Optional[str] = Field(
+        default=None, description="The external system's platform, e.g. 'confluence'. Required if externalUrl is set."
+    )
+    externalUrl: Optional[str] = Field(default=None, description="Link to the document in an external system.")
+    externalId: Optional[str] = None
+    parentDocument: Optional[str] = Field(default=None, description="id of a parent DOCUMENT, for hierarchical organization.")
+    relatedAssets: Optional[List[str]] = Field(
+        default=None, description="Full URNs of related data assets (datasets, dashboards, ...)."
+    )
+    relatedDocuments: Optional[StringList] = Field(default=None, description="ids of related DOCUMENT documents.")
+    properties: Optional[Dict[str, Any]] = None
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -799,6 +832,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "DASHBOARD": DashboardDoc,
     "QUERY": QueryDoc,
     "INCIDENT": IncidentDoc,
+    "DOCUMENT": DocumentDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -820,6 +854,7 @@ EntityDoc = Union[
     DashboardDoc,
     QueryDoc,
     IncidentDoc,
+    DocumentDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

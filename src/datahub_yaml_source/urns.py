@@ -28,6 +28,7 @@ from datahub.metadata.urns import (
     DataJobUrn,
     DataProcessInstanceUrn,
     DataProductUrn,
+    DocumentUrn,
     GlossaryNodeUrn,
     GlossaryTermUrn,
     IncidentUrn,
@@ -129,6 +130,10 @@ def query_urn(query_id: str) -> str:
 
 def incident_urn(incident_id: str) -> str:
     return _passthrough_if_urn(incident_id, lambda v: IncidentUrn(v).urn())
+
+
+def document_urn(document_id: str) -> str:
+    return _passthrough_if_urn(document_id, lambda v: DocumentUrn(v).urn())
 
 
 def glossary_node_urn(node_id: str) -> str:

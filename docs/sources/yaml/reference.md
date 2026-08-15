@@ -18,6 +18,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`DASHBOARD`](#dashboard)
 - [`QUERY`](#query)
 - [`INCIDENT`](#incident)
+- [`DOCUMENT`](#document)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -343,9 +344,9 @@ A data quality/operational incident. `incident` only permits `tags` among the cr
 | `description` | string | no | - |  |
 | `priority` | integer | no | - |  |
 | `entities` | list of string | **yes** | - | Full URNs of the entities (usually datasets) affected. |
-| `status` | IncidentStatusDoc | no | - |  |
+| `status` | [IncidentStatusDoc](#incidentstatusdoc) | no | - |  |
 | `assignees` | list of string | no | - | Owner names; converted to corpuser URNs if not already URNs. |
-| `source` | IncidentSourceDoc | no | - |  |
+| `source` | [IncidentSourceDoc](#incidentsourcedoc) | no | - |  |
 | `startedAt` | integer | no | - | Epoch millis. |
 | `notes` | list of string | no | - | Free-text notes about this incident. |
 
@@ -354,6 +355,38 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `tags` | list of string | no | - |  |
+
+## DOCUMENT
+
+A knowledge-base document (a runbook, a FAQ, an AI-context note, ...). `document` permits owners/tags/glossaryTerms/domains/links/ structuredProperties/subTypes, but not applications or deprecation.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "DOCUMENT" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:document:<id>. |
+| `title` | string | **yes** | - |  |
+| `text` | string | no | - | Markdown body, stored natively in DataHub. Required unless externalUrl is set. |
+| `status` | string | no | `PUBLISHED` | PUBLISHED or UNPUBLISHED. |
+| `showInGlobalContext` | boolean | no | `True` | If false, only reachable via relatedAssets/relatedDocuments -- useful for AI-only context documents. |
+| `platform` | string | no | - | The external system's platform, e.g. 'confluence'. Required if externalUrl is set. |
+| `externalUrl` | string | no | - | Link to the document in an external system. |
+| `externalId` | string | no | - |  |
+| `parentDocument` | string | no | - | id of a parent DOCUMENT, for hierarchical organization. |
+| `relatedAssets` | list of string | no | - | Full URNs of related data assets (datasets, dashboards, ...). |
+| `relatedDocuments` | list of string | no | - | ids of related DOCUMENT documents. |
+| `properties` | map | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## DATA_PRODUCT
 
@@ -558,6 +591,21 @@ A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads.
 | `env` | string | no | `PROD` |  |
 | `instance` | string | no | - |  |
 | `fieldPath` | string | no | - |  |
+
+### IncidentStatusDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `state` | string | no | `ACTIVE` | ACTIVE or RESOLVED. |
+| `stage` | string | no | - | TRIAGE, INVESTIGATION, WORK_IN_PROGRESS, FIXED, or NO_ACTION_REQUIRED. |
+| `message` | string | no | - |  |
+
+### IncidentSourceDoc
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `type` | string | **yes** | - | MANUAL or ASSERTION_FAILURE. |
+| `sourceUrn` | string | no | - | Full URN of the triggering entity, e.g. an ASSERTION's urn, if type is ASSERTION_FAILURE. |
 
 ### DatasetFieldRef
 

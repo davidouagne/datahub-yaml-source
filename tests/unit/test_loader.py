@@ -152,6 +152,18 @@ def test_load_repository_parses_incident(tmp_path: Path):
     assert repo.incidents[0].type == "OPERATIONAL"
 
 
+def test_load_repository_parses_document(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: DOCUMENT\nid: runbook_patient\ntitle: Runbook patient\ntext: '## Steps'\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.documents) == 1
+    assert repo.documents[0].id == "runbook_patient"
+    assert repo.documents[0].title == "Runbook patient"
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

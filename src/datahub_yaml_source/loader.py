@@ -20,6 +20,7 @@ from datahub_yaml_source.models import (
     DataProcessInstanceDoc,
     DataProductDoc,
     DatasetDoc,
+    DocumentDoc,
     DocumentParseError,
     DomainDoc,
     GlossaryNodeDoc,
@@ -61,6 +62,7 @@ class ParsedRepository:
     dashboards: List[DashboardDoc] = field(default_factory=list)
     queries: List[QueryDoc] = field(default_factory=list)
     incidents: List[IncidentDoc] = field(default_factory=list)
+    documents: List[DocumentDoc] = field(default_factory=list)
     data_products: List[DataProductDoc] = field(default_factory=list)
     data_flows: List[DataFlowDoc] = field(default_factory=list)
     data_jobs: List[DataJobDoc] = field(default_factory=list)
@@ -95,6 +97,8 @@ class ParsedRepository:
             self.queries.append(doc)
         elif isinstance(doc, IncidentDoc):
             self.incidents.append(doc)
+        elif isinstance(doc, DocumentDoc):
+            self.documents.append(doc)
         elif isinstance(doc, DataProductDoc):
             self.data_products.append(doc)
         elif isinstance(doc, DataFlowDoc):

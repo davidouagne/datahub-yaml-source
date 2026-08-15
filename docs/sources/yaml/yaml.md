@@ -38,6 +38,8 @@ source itself connecting to any of them.
 - Saved/observed queries, with the dataset(s)/column(s) they read as subjects
 - Data quality/operational incidents, optionally linked back to the
   `ASSERTION` that triggered them
+- Knowledge-base documents (runbooks, FAQs, AI-context notes), authored
+  natively or referencing an external system (e.g. Confluence)
 - Data products
 - Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
   edges (`inputDataJobs`), and optional parent containers
@@ -113,6 +115,7 @@ checked-in schema and the models have drifted apart.
 | `DASHBOARD`             | Dashboard (BI tool)                    | `platform`, `name`, `dashboardUrl`, `container`, `charts`, `dashboards`, `inputDatasets` |
 | `QUERY`                 | Saved/observed query                   | `id`, `statement`, `language`, `source`, `subjects`                                      |
 | `INCIDENT`              | Data quality/operational incident      | `id`, `type`, `entities`, `status`, `assignees`, `source`, `notes`                        |
+| `DOCUMENT`              | Knowledge-base document                | `id`, `title`, `text`, `status`, `platform`+`externalUrl` (external docs), `parentDocument`, `relatedAssets`, `relatedDocuments` |
 | `DATA_PRODUCT`          | Data product                           | `id`, `name`, `domains`, `assets`, `structuredProperties`                                |
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |

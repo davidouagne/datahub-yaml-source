@@ -9,6 +9,7 @@ from datahub_yaml_source.urns import (
     data_flow_urn,
     data_job_urn,
     dataset_urn,
+    document_urn,
     domain_urn,
     glossary_term_urn,
     owner_urn,
@@ -166,6 +167,11 @@ def test_tag_domain_glossary_term_urns_are_stable_and_passthrough_full_urns():
     assert tag_urn("urn:li:tag:pii") == "urn:li:tag:pii"
     assert domain_urn("abc123") == "urn:li:domain:abc123"
     assert glossary_term_urn("fhir:Patient") == "urn:li:glossaryTerm:fhir:Patient"
+
+
+def test_document_urn_is_stable_and_passes_through_full_urns():
+    assert document_urn("runbook_patient") == "urn:li:document:runbook_patient"
+    assert document_urn("urn:li:document:runbook_patient") == "urn:li:document:runbook_patient"
 
 
 def test_owner_urn_builds_corpuser_unless_already_a_urn():

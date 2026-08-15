@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+kind: DOCUMENT
+id: runbook_patient
+title: Runbook - reprise de la table patient
+text: |-
+  ## Etapes de reprise
+
+  1. Verifier l'etat du job `ehr_patient_to_raw_layer`.
+  2. Relancer manuellement si le run a echoue.
+subTypes: Runbook
+relatedAssets:
+  - "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+tags:
+  - pii
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+links:
+  - url: https://wiki.example.org/runbooks/patient
+    description: Source du runbook

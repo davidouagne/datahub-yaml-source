@@ -521,7 +521,30 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. 
     incident reference the `ASSERTION` that triggered it (`incidentExternalLinks` was explicitly
     scoped out -- see "Explicitly out of scope" below). Exercised in the integration fixture
     (`quality-layer/quality.yml`), pointing back at the existing FRESHNESS assertion.
-  - `DOCUMENT` — not yet started.
+  - ~~`DOCUMENT`~~ **Done, 2026-08-15.** `DocumentDoc` gets 7 of the 9 mixins (owners, tags, terms,
+    domain, links, structuredProperties, subTypes -- **not** applications or deprecation, which the
+    registry doesn't permit on `document`). Uses the SDK V2 `Document.create_document()` /
+    `create_external_document()` factories (no plain constructor) rather than `Document(urn=...)`
+    directly. Neither factory has a `links=` kwarg, so `builders/document.py` passes a narrowed
+    `native={"owners","tags","terms","domain","subtype"}` to `common_sdk_kwargs()` -- the
+    `institutionalMemory` aspect for `links:` still gets emitted, just via `extra_aspects` like every
+    other kind whose SDK class doesn't natively support a mixin the document has. **New finding (C8)**:
+    unlike every other SDK V2 entity in this connector, these two factories stamp `datetime.now()` on
+    `created`/`lastModified` when `created_time`/`last_modified_time` are omitted -- pinned to the Unix
+    epoch (`_EPOCH` in `builders/document.py`) for golden-file determinism, the same problem
+    `ZERO_AUDIT_STAMP` solves elsewhere via a different code path. `platform:` is required only when
+    `externalUrl:` is set (validated in the builder, reported as a warning via `_safe_build()` like
+    `container_key()`'s missing-`database` check); a native document without `text:` is rejected the
+    same way. Exercised in the integration fixture (new `knowledge-layer/documents.yml`).
+  - **Explicitly out of scope for all five kinds** (documented, not silently dropped): `incidentExternalLinks`
+    (needs a DataHub `connection` entity, absent from this connector), `chartQuery`, `embed`,
+    `inputFields`, `editable*Properties` (UI-owned), `*UsageStatistics` (would use the existing
+    `aspectName:` raw passthrough mechanism instead, on demand).
+
+**Phase 4 complete, 2026-08-15** -- all five kinds shipped across five focused commits (one per kind:
+`f4ed4cc` CHART, `c63997a` DASHBOARD, `24490ef` QUERY, `19bafcd` INCIDENT, DOCUMENT). Full suite:
+140 tests, 97% coverage, no file below 83%. `docs/specs/entity-aspect-coverage-gaps.md` is now fully
+implemented end to end (Phases 1-4).
 
 ### Verification run
 

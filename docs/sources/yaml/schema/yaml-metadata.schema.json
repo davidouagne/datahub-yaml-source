@@ -43,6 +43,9 @@
       "$ref": "#/$defs/IncidentDoc"
     },
     {
+      "$ref": "#/$defs/DocumentDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -2970,6 +2973,262 @@
         }
       },
       "title": "DisplayPropertiesDoc",
+      "type": "object"
+    },
+    "DocumentDoc": {
+      "additionalProperties": true,
+      "description": "A knowledge-base document (a runbook, a FAQ, an AI-context note, ...).\n`document` permits owners/tags/glossaryTerms/domains/links/\nstructuredProperties/subTypes, but not applications or deprecation.",
+      "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
+        "kind": {
+          "const": "DOCUMENT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:document:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Markdown body, stored natively in DataHub. Required unless externalUrl is set.",
+          "title": "Text"
+        },
+        "status": {
+          "default": "PUBLISHED",
+          "description": "PUBLISHED or UNPUBLISHED.",
+          "title": "Status",
+          "type": "string"
+        },
+        "showInGlobalContext": {
+          "default": true,
+          "description": "If false, only reachable via relatedAssets/relatedDocuments -- useful for AI-only context documents.",
+          "title": "Showinglobalcontext",
+          "type": "boolean"
+        },
+        "platform": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The external system's platform, e.g. 'confluence'. Required if externalUrl is set.",
+          "title": "Platform"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Link to the document in an external system.",
+          "title": "Externalurl"
+        },
+        "externalId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalid"
+        },
+        "parentDocument": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a parent DOCUMENT, for hierarchical organization.",
+          "title": "Parentdocument"
+        },
+        "relatedAssets": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Full URNs of related data assets (datasets, dashboards, ...).",
+          "title": "Relatedassets"
+        },
+        "relatedDocuments": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of related DOCUMENT documents.",
+          "title": "Relateddocuments"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "title"
+      ],
+      "title": "DocumentDoc",
       "type": "object"
     },
     "DomainDoc": {

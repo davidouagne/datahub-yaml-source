@@ -98,3 +98,4 @@ def test_yaml_source_reports_no_dangling_references_or_parse_failures():
     assert source_report.dashboards_scanned == 1
     assert source_report.queries_scanned == 1
     assert source_report.incidents_scanned == 1
+    assert source_report.documents_scanned == 1

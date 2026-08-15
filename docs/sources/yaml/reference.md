@@ -17,6 +17,7 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`CHART`](#chart)
 - [`DASHBOARD`](#dashboard)
 - [`QUERY`](#query)
+- [`INCIDENT`](#incident)
 - [`DATA_PRODUCT`](#data-product)
 - [`DATA_FLOW`](#data-flow)
 - [`DATA_JOB`](#data-job)
@@ -327,6 +328,32 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `subTypes` | string or list of string | no | - |  |
+
+## INCIDENT
+
+A data quality/operational incident. `incident` only permits `tags` among the cross-cutting aspects.
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `kind` | "INCIDENT" | **yes** | - |  |
+| `id` | string | **yes** | - | Stable identifier, becomes urn:li:incident:<id>. |
+| `type` | string | **yes** | - | OPERATIONAL, FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM. |
+| `customType` | string | no | - | Free-text type name, required if type is CUSTOM. |
+| `title` | string | no | - |  |
+| `description` | string | no | - |  |
+| `priority` | integer | no | - |  |
+| `entities` | list of string | **yes** | - | Full URNs of the entities (usually datasets) affected. |
+| `status` | IncidentStatusDoc | no | - |  |
+| `assignees` | list of string | no | - | Owner names; converted to corpuser URNs if not already URNs. |
+| `source` | IncidentSourceDoc | no | - |  |
+| `startedAt` | integer | no | - | Epoch millis. |
+| `notes` | list of string | no | - | Free-text notes about this incident. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `tags` | list of string | no | - |  |
 
 ## DATA_PRODUCT
 

@@ -139,6 +139,19 @@ def test_load_repository_parses_query(tmp_path: Path):
     assert repo.queries[0].statement == "select 1"
 
 
+def test_load_repository_parses_incident(tmp_path: Path):
+    (tmp_path / "assets.yml").write_text(
+        "kind: INCIDENT\nid: inc1\ntype: OPERATIONAL\n"
+        "entities: ['urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)']\n"
+    )
+
+    repo = load_repository(tmp_path, on_error=lambda path, msg: None)
+
+    assert len(repo.incidents) == 1
+    assert repo.incidents[0].id == "inc1"
+    assert repo.incidents[0].type == "OPERATIONAL"
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

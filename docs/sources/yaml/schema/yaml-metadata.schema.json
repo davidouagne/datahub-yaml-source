@@ -40,6 +40,9 @@
       "$ref": "#/$defs/QueryDoc"
     },
     {
+      "$ref": "#/$defs/IncidentDoc"
+    },
+    {
       "$ref": "#/$defs/DataProductDoc"
     },
     {
@@ -3633,6 +3636,238 @@
         "name"
       ],
       "title": "GlossaryTermDoc",
+      "type": "object"
+    },
+    "IncidentDoc": {
+      "additionalProperties": true,
+      "description": "A data quality/operational incident. `incident` only permits `tags`\namong the cross-cutting aspects.",
+      "properties": {
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "kind": {
+          "const": "INCIDENT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:incident:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "type": {
+          "description": "OPERATIONAL, FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM.",
+          "title": "Type",
+          "type": "string"
+        },
+        "customType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text type name, required if type is CUSTOM.",
+          "title": "Customtype"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "priority": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Priority"
+        },
+        "entities": {
+          "description": "Full URNs of the entities (usually datasets) affected.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IncidentStatusDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "assignees": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owner names; converted to corpuser URNs if not already URNs.",
+          "title": "Assignees"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IncidentSourceDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "startedAt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Epoch millis.",
+          "title": "Startedat"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text notes about this incident.",
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "kind",
+        "id",
+        "type",
+        "entities"
+      ],
+      "title": "IncidentDoc",
+      "type": "object"
+    },
+    "IncidentSourceDoc": {
+      "properties": {
+        "type": {
+          "description": "MANUAL or ASSERTION_FAILURE.",
+          "title": "Type",
+          "type": "string"
+        },
+        "sourceUrn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Full URN of the triggering entity, e.g. an ASSERTION's urn, if type is ASSERTION_FAILURE.",
+          "title": "Sourceurn"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "IncidentSourceDoc",
+      "type": "object"
+    },
+    "IncidentStatusDoc": {
+      "properties": {
+        "state": {
+          "default": "ACTIVE",
+          "description": "ACTIVE or RESOLVED.",
+          "title": "State",
+          "type": "string"
+        },
+        "stage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TRIAGE, INVESTIGATION, WORK_IN_PROGRESS, FIXED, or NO_ACTION_REQUIRED.",
+          "title": "Stage"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        }
+      },
+      "title": "IncidentStatusDoc",
       "type": "object"
     },
     "LinkDoc": {

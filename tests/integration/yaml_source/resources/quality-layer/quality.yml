@@ -46,3 +46,26 @@ assertion:
   operator: EQUAL_TO
   value: 0
   changeType: ABSOLUTE
+---
+kind: INCIDENT
+id: inc-patient-freshness-2026-08-15
+type: FRESHNESS
+title: Patient table missed its refresh window
+description: The 08:00 CRON refresh of ehr_public_patient did not complete
+priority: 1
+entities:
+  - "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+status:
+  state: ACTIVE
+  stage: TRIAGE
+  message: Investigating a warehouse outage
+assignees:
+  - datahub
+source:
+  type: ASSERTION_FAILURE
+  sourceUrn: "urn:li:assertion:ehr-patient-freshness-check"
+startedAt: 1830297600000
+notes:
+  - Warehouse outage confirmed at 08:05
+tags:
+  - pii

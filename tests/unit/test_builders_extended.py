@@ -3,6 +3,7 @@ import pytest
 from datahub_yaml_source.builders.assertion import build_assertion
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
 from datahub_yaml_source.builders.data_product import build_data_product
+from datahub_yaml_source.builders.incident import build_incident
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
 from datahub_yaml_source.loader import ParsedRepository
@@ -12,6 +13,7 @@ from datahub_yaml_source.models import (
     DataProductDoc,
     DomainDoc,
     GlossaryTermDoc,
+    IncidentDoc,
     QueryDoc,
     RawAspectDoc,
     StructuredPropertyDoc,
@@ -388,6 +390,69 @@ def test_build_query_without_subjects_emits_no_subjects_aspect():
     wus = list(build_query(doc, index, report))
     aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
     assert "QuerySubjectsClass" not in aspect_names
+
+
+def test_build_incident_emits_info_and_notes():
+    repo = ParsedRepository()
+    repo.tags.append(TagDoc(kind="TAG", name="pii"))
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = IncidentDoc.model_validate(
+        {
+            "kind": "INCIDENT",
+            "id": "inc-patient-freshness",
+            "type": "FRESHNESS",
+            "title": "Patient table late",
+            "description": "The patient table missed its 08:00 refresh window",
+            "priority": 1,
+            "entities": ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"],
+            "status": {"state": "ACTIVE", "stage": "TRIAGE", "message": "Investigating warehouse outage"},
+            "assignees": ["datahub"],
+            "source": {"type": "ASSERTION_FAILURE", "sourceUrn": "urn:li:assertion:ehr-patient-freshness-check"},
+            "startedAt": 1830297600000,
+            "notes": ["Warehouse outage confirmed at 08:05"],
+            "tags": ["pii"],
+        }
+    )
+
+    wus = list(build_incident(doc, index, report))
+    assert not report.dangling_references
+    assert wus[0].metadata.entityUrn == "urn:li:incident:inc-patient-freshness"
+
+    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass")
+    assert info.type == "FRESHNESS"
+    assert info.title == "Patient table late"
+    assert info.status.stage == "TRIAGE"
+    assert info.assignees[0].actor == "urn:li:corpuser:datahub"
+    assert info.source.sourceUrn == "urn:li:assertion:ehr-patient-freshness-check"
+
+    notes = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentNotesClass")
+    assert notes.notes[0].message == "Warehouse outage confirmed at 08:05"
+
+    tags = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass")
+    assert tags.tags[0].tag == "urn:li:tag:pii"
+
+
+def test_build_incident_defaults_status_and_reports_dangling_tag():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = IncidentDoc.model_validate(
+        {
+            "kind": "INCIDENT",
+            "id": "inc2",
+            "type": "OPERATIONAL",
+            "entities": ["urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)"],
+            "tags": ["unknown-tag"],
+        }
+    )
+
+    wus = list(build_incident(doc, index, report))
+    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass")
+    assert info.status.state == "ACTIVE"
+    assert len(report.dangling_references) == 1
 
 
 def test_build_raw_aspect_dataset_profile():

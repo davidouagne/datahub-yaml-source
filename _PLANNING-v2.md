@@ -512,7 +512,16 @@ _As of 2026-08-15, re-verified against `acryl-datahub==1.7.0.3`, Phase 3 added. 
     `ZERO_AUDIT_STAMP` already defined in `builders/common.py` for glossary terms/links. Exercised in
     the integration fixture (`view-layer/views.yml`, referencing the existing view dataset both at the
     table level and one column).
-  - `INCIDENT`, `DOCUMENT` — not yet started.
+  - ~~`INCIDENT`~~ **Done, 2026-08-15.** `IncidentDoc` gets only `HasTags` -- the registry permits
+    nothing else transverse on `incident`. Raw MCPs again (`incidentInfo`, and `incidentNotes` only
+    when `notes:` is non-empty), same shape as `QUERY`. `entities:` takes full URNs directly (no
+    `ReferenceIndex` validation), matching `DataProductDoc.assets`'s existing precedent, since the
+    entities an incident points at are typically datasets that aren't necessarily declared as their
+    own `DATASET` document in this tree. `assignees:` reuses `owner_urn()`. `source.sourceUrn` lets an
+    incident reference the `ASSERTION` that triggered it (`incidentExternalLinks` was explicitly
+    scoped out -- see "Explicitly out of scope" below). Exercised in the integration fixture
+    (`quality-layer/quality.yml`), pointing back at the existing FRESHNESS assertion.
+  - `DOCUMENT` — not yet started.
 
 ### Verification run
 

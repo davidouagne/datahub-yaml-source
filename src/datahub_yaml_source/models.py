@@ -173,6 +173,7 @@ class DeprecationDoc(BaseModel):
 #   CHART            Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DASHBOARD        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   QUERY            -     -    -     -      -     -      -            -          Y
+#   INCIDENT         -     Y    -     -      -     -      -            -          -
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
@@ -529,6 +530,44 @@ class QueryDoc(HasSubTypes, _AllowExtraFields):
     )
 
 
+class IncidentStatusDoc(BaseModel):
+    state: str = Field(default="ACTIVE", description="ACTIVE or RESOLVED.")
+    stage: Optional[str] = Field(
+        default=None, description="TRIAGE, INVESTIGATION, WORK_IN_PROGRESS, FIXED, or NO_ACTION_REQUIRED."
+    )
+    message: Optional[str] = None
+
+
+class IncidentSourceDoc(BaseModel):
+    type: str = Field(description="MANUAL or ASSERTION_FAILURE.")
+    sourceUrn: Optional[str] = Field(
+        default=None, description="Full URN of the triggering entity, e.g. an ASSERTION's urn, if type is ASSERTION_FAILURE."
+    )
+
+
+class IncidentDoc(HasTags, _AllowExtraFields):
+    """A data quality/operational incident. `incident` only permits `tags`
+    among the cross-cutting aspects."""
+
+    kind: Literal["INCIDENT"]
+    id: str = Field(description="Stable identifier, becomes urn:li:incident:<id>.")
+    type: str = Field(
+        description="OPERATIONAL, FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM."
+    )
+    customType: Optional[str] = Field(default=None, description="Free-text type name, required if type is CUSTOM.")
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[int] = None
+    entities: List[str] = Field(description="Full URNs of the entities (usually datasets) affected.")
+    status: Optional[IncidentStatusDoc] = None
+    assignees: Optional[StringList] = Field(
+        default=None, description="Owner names; converted to corpuser URNs if not already URNs."
+    )
+    source: Optional[IncidentSourceDoc] = None
+    startedAt: Optional[int] = Field(default=None, description="Epoch millis.")
+    notes: Optional[StringList] = Field(default=None, description="Free-text notes about this incident.")
+
+
 class DataProductDoc(
     HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
     HasSubTypes, _AllowExtraFields,
@@ -759,6 +798,7 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "CHART": ChartDoc,
     "DASHBOARD": DashboardDoc,
     "QUERY": QueryDoc,
+    "INCIDENT": IncidentDoc,
     "DATA_PRODUCT": DataProductDoc,
     "DATA_FLOW": DataFlowDoc,
     "DATA_JOB": DataJobDoc,
@@ -779,6 +819,7 @@ EntityDoc = Union[
     ChartDoc,
     DashboardDoc,
     QueryDoc,
+    IncidentDoc,
     DataProductDoc,
     DataFlowDoc,
     DataJobDoc,

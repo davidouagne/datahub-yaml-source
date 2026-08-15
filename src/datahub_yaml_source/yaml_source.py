@@ -32,6 +32,7 @@ from datahub_yaml_source.builders.data_product import build_data_product
 from datahub_yaml_source.builders.dataset import build_dataset
 from datahub_yaml_source.builders.domain import build_domain, topological_sort_domains
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
+from datahub_yaml_source.builders.incident import build_incident
 from datahub_yaml_source.builders.platform import build_data_platform
 from datahub_yaml_source.builders.query import build_query
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
@@ -207,6 +208,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.queries_scanned += 1
             yield from self._safe_build(
                 "QUERY", query_doc.id, build_query, query_doc, index, self.report
+            )
+
+        for incident_doc in repository.incidents:
+            self.report.incidents_scanned += 1
+            yield from self._safe_build(
+                "INCIDENT", incident_doc.id, build_incident, incident_doc, index, self.report
             )
 
         for product_doc in repository.data_products:

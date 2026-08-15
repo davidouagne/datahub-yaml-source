@@ -168,3 +168,24 @@ runEvents:
   - status: COMPLETE
     timestampMillis: 1779696180000
     attempt: 1
+---
+kind: DATA_PROCESS_INSTANCE
+id: "airflow_patient_quality_check__2026-05-25T08:05:00"
+name: "Patient quality check @ 2026-05-25T08:05:00"
+type: BATCH_SCHEDULED
+created:
+  timestampMillis: 1779696300000
+  actor: svc-airflow
+parentTemplate:
+  orchestrator: airflow
+  flowId: ehr_to_warehouse
+  cluster: PROD
+  jobId: patient_quality_check
+inputs:
+  - platform: duckdb
+    name: warehouse_raw_layer_patient
+    env: PROD
+runEvents:
+  - status: STARTED
+    timestampMillis: 1779696300000
+    attempt: 1

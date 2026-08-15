@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+aspectName: DATA_PROCESS_INSTANCE_RUN_EVENT
+dataProcessInstanceUrn: "urn:li:dataProcessInstance:airflow_patient_quality_check__2026-05-25T08:05:00"
+timestampMillis: 1779696420000
+status: COMPLETE
+attempt: 1
+durationMillis: 120000
+result:
+  type: FAILURE
+  nativeResultType: airflow

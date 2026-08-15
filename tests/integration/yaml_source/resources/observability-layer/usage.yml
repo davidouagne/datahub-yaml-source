@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+aspectName: DATASET_USAGE_STATISTICS
+dataset:
+  platform: postgres
+  name: ehr_public_patient
+  env: PROD
+timestampMillis: 1777662127622
+messageId: "usage-ehr_public_patient-20260501"
+eventGranularity:
+  unit: DAY
+  multiple: 1
+uniqueUserCount: 1
+totalSqlQueries: 3
+topSqlQueries:
+  - "SELECT * FROM ehr_public_patient WHERE patient_id = ?"
+userCounts:
+  - user: "urn:li:corpuser:datahub"
+    count: 3
+    userEmail: "datahub@example.org"
+fieldCounts:
+  - fieldPath: "patient_id"
+    count: 3
+  - fieldPath: "nom"
+    count: 1

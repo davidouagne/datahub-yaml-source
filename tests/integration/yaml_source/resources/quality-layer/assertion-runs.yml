@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../../../docs/sources/yaml/schema/yaml-metadata.schema.json
+aspectName: ASSERTION_RUN_EVENT
+assertionUrn: "urn:li:assertion:ehr-patient-freshness-check"
+timestampMillis: 1830297600000
+runId: "airflow_patient_to_raw_layer__2026-08-15T08:00:00"
+asserteeUrn: "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+result:
+  type: FAILURE
+  nativeResults:
+    lastRefreshed: "2026-08-14T07:58:00Z"

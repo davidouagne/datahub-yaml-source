@@ -16,16 +16,25 @@ source itself connecting to any of them.
 ## Capabilities
 
 - Data platforms (registers custom platforms not built into DataHub)
-- Tags, glossary terms/nodes, structured property definitions, domains
+- Tags, glossary terms/nodes (incl. related-term relationships), structured
+  property definitions, domains (nestable via `parentDomain`)
 - Containers (databases, schemas, ...), with automatic parent/child ordering
 - Datasets: schema (columns, types, foreign keys), containers, tags, glossary
-  terms, ownership, domains, custom properties
+  terms, ownership, domains, applications, custom properties
+- **Cross-cutting metadata uniformly on every kind that DataHub's entity
+  registry permits it for**: `owners`, `tags`, `glossaryTerms`, `domains`,
+  `applications`, `links` (institutional memory), `deprecation`,
+  `structuredProperties`, `subTypes`. Which of these a given `kind` accepts is
+  listed in that kind's own section of [reference.md](reference.md) — an
+  unrecognized or not-applicable field is reported as a warning (or a hard
+  error under `fail_on_unresolved_reference`), never silently dropped.
 - Table-level and column-level lineage (`upstreamLineage`), fully hand-declared
   in the YAML — no SQL parsing is involved
 - Data products
-- Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage
+- Pipelines (`DataFlow`/`DataJob`) with fine-grained lineage, job-to-job DAG
+  edges (`inputDataJobs`), and optional parent containers
 - Pipeline run history (`DataProcessInstance`, including incremental run events)
-- Data quality assertions (freshness, SQL, field-level)
+- Data quality assertions (freshness, volume, SQL, field-level, schema, custom)
 - A small set of raw DataHub aspects that don't have their own `kind` (dataset
   profiles, usage statistics, operations, assertion/process-instance run events)
 
@@ -96,7 +105,7 @@ checked-in schema and the models have drifted apart.
 | `DATA_FLOW`             | Pipeline                               | `orchestrator`, `flowId`, `cluster`, `name`                                              |
 | `DATA_JOB`              | Pipeline task                          | `jobId`, `dataFlow`, `inputDatasets`, `outputDatasets`, `fineGrainedLineages`             |
 | `DATA_PROCESS_INSTANCE` | Pipeline run                           | `id`, `parentTemplate`, `inputs`, `outputs`, `runEvents`                                  |
-| `ASSERTION`             | Data quality assertion                 | `id`, `assertion` (discriminated by `assertion.type`: `FRESHNESS` / `SQL` / `FIELD`)     |
+| `ASSERTION`             | Data quality assertion                 | `id`, `assertion` (discriminated by `assertion.type`: `FRESHNESS` / `VOLUME` / `SQL` / `FIELD` / `DATA_SCHEMA` / `CUSTOM`), `assertionActions` |
 
 ### Raw aspect documents
 
@@ -131,6 +140,15 @@ If a reference points at something that was never declared anywhere in the tree
 (e.g. a typo in a tag name), the source still emits the association using the
 deterministically-computed URN, but reports a warning — set
 `fail_on_unresolved_reference: true` to turn that into a hard error instead.
+
+### Unrecognized fields
+
+A field that's either misspelled or not valid for its `kind` (DataHub's entity
+registry doesn't permit that aspect on that entity type — e.g. `glossaryTerms:`
+on a `TAG`) is also reported as a warning rather than silently ignored, naming
+the file, the `kind`, and the field. `fail_on_unresolved_reference: true` turns
+this into a hard error too. Check that kind's field table in
+[reference.md](reference.md) to see exactly which fields it accepts.
 
 ### Container hierarchy ordering
 

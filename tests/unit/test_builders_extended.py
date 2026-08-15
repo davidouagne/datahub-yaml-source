@@ -140,7 +140,10 @@ def test_build_assertion_freshness():
             },
         }
     )
-    wus = list(build_assertion(doc))
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
     aspect = wus[0].metadata.aspect
     assert aspect.type == "FRESHNESS"
     assert aspect.freshnessAssertion.schedule.cron.cron == "0 8 * * *"
@@ -161,7 +164,10 @@ def test_build_assertion_sql():
             },
         }
     )
-    wus = list(build_assertion(doc))
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
     aspect = wus[0].metadata.aspect
     assert aspect.sqlAssertion.statement == "SELECT COUNT(*) FROM t"
     assert aspect.sqlAssertion.parameters.value.value == "0"
@@ -185,22 +191,141 @@ def test_build_assertion_field_metric():
             },
         }
     )
-    wus = list(build_assertion(doc))
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
     aspect = wus[0].metadata.aspect
     assert aspect.fieldAssertion.fieldMetricAssertion.metric == "UNIQUE_PERCENTAGE"
     assert aspect.fieldAssertion.fieldValuesAssertion is None
 
 
 def test_build_assertion_rejects_unsupported_type():
+    # DATASET is deliberately unsupported: deprecated upstream in favor of VOLUME.
     doc = AssertionDoc.model_validate(
         {
             "kind": "ASSERTION",
             "id": "id4",
-            "assertion": {"type": "VOLUME", "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:x,y,PROD)"},
+            "assertion": {"type": "DATASET", "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:x,y,PROD)"},
         }
     )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
     with pytest.raises(ValueError, match="Unsupported assertion type"):
-        list(build_assertion(doc))
+        list(build_assertion(doc, index, report))
+
+
+def test_build_assertion_volume_row_count_total():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id5",
+            "assertion": {
+                "type": "VOLUME",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+                "volumeType": "ROW_COUNT_TOTAL",
+                "operator": "GREATER_THAN_OR_EQUAL_TO",
+                "value": 100,
+            },
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
+    aspect = wus[0].metadata.aspect
+    assert aspect.volumeAssertion.type == "ROW_COUNT_TOTAL"
+    assert aspect.volumeAssertion.rowCountTotal.operator == "GREATER_THAN_OR_EQUAL_TO"
+
+
+def test_build_assertion_data_schema():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id7",
+            "assertion": {
+                "type": "DATA_SCHEMA",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+                "compatibility": "EXACT_MATCH",
+                "schemaFields": [{"path": "patient_id", "type": "number", "nativeType": "BIGINT"}],
+            },
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
+    aspect = wus[0].metadata.aspect
+    assert aspect.schemaAssertion.compatibility == "EXACT_MATCH"
+    assert aspect.schemaAssertion.schema.fields[0].fieldPath == "patient_id"
+    assert aspect.schemaAssertion.schema.platform == "urn:li:dataPlatform:postgres"
+
+
+def test_build_assertion_custom():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id8",
+            "assertion": {
+                "type": "CUSTOM",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+                "customType": "GREAT_EXPECTATIONS",
+                "logic": "expect_column_values_to_not_be_null(patient_id)",
+            },
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
+    aspect = wus[0].metadata.aspect
+    assert aspect.customAssertion.type == "GREAT_EXPECTATIONS"
+    assert "not_be_null" in aspect.customAssertion.logic
+
+
+def test_build_assertion_emits_note_and_actions():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id9",
+            "assertion": {
+                "type": "FRESHNESS",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+            },
+            "assertionNote": "Last run failed due to a warehouse outage",
+            "assertionActions": {"onFailure": [{"type": "RAISE_INCIDENT"}]},
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
+    note = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "AssertionNoteClass")
+    assert note.content == "Last run failed due to a warehouse outage"
+    actions = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "AssertionActionsClass"
+    )
+    assert actions.onFailure[0].type == "RAISE_INCIDENT"
+
+
+def test_build_assertion_reports_dangling_tag():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id6",
+            "tags": ["unknown"],
+            "assertion": {
+                "type": "FRESHNESS",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+            },
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    list(build_assertion(doc, index, report))
+    assert len(report.dangling_references) == 1
 
 
 def test_build_raw_aspect_dataset_profile():

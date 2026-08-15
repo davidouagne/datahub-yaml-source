@@ -24,6 +24,14 @@ subTypes: Schema
 owners:
   owner: datahub
   type: TECHNICAL_OWNER
+domains: "3667192a0a19c51419efe99aa865c1ba"
+glossaryTerms:
+  - fhir:Patient
+links:
+  - url: https://wiki.example.org/schemas/ehr-public
+    description: Schema documentation
+structuredProperties:
+  "org.example.legalBasis": consent
 ---
 kind: DATASET
 name: ehr_public_patient
@@ -64,6 +72,15 @@ owners:
   owner: datahub
   type: TECHNICAL_OWNER
 domains: "3667192a0a19c51419efe99aa865c1ba"
+links:
+  - url: https://wiki.example.org/datasets/ehr-public-patient
+    description: Data dictionary entry
+deprecation:
+  deprecated: true
+  note: Superseded by warehouse_raw_layer_patient; kept for read compatibility
+  decommissionTime: 1830297600000
+structuredProperties:
+  "org.example.legalBasis": consent
 ---
 kind: DATASET
 name: ehr_public_encounter

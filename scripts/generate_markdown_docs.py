@@ -160,15 +160,48 @@ def _render_default(field: FieldInfo) -> str:
     return f"`{field.default}`"
 
 
+# Field names contributed by the cross-cutting `Has*` mixins in models.py, in
+# the canonical order they should render. Pydantic lists inherited fields
+# before a class's own fields, which would otherwise bury `kind`/`name`/etc.
+# under nine common fields on every single kind; render each kind's own
+# fields first instead, with common ones broken out into their own rows below
+# a divider so a kind's *distinctive* shape is what a reader sees first.
+_COMMON_ASPECT_FIELD_ORDER = [
+    "owners", "tags", "glossaryTerms", "domains", "applications",
+    "links", "deprecation", "structuredProperties", "subTypes",
+]
+
+
+def _render_field_row(model: Type[BaseModel], py_name: str, field: FieldInfo) -> str:
+    yaml_name = field.alias or py_name
+    required = "**yes**" if field.is_required() else "no"
+    type_str = _render_type(field.annotation)
+    default = _render_default(field)
+    description = (field.description or "").replace("\n", " ")
+    return f"| `{yaml_name}` | {type_str} | {required} | {default} | {description} |"
+
+
 def _render_field_table(model: Type[BaseModel]) -> str:
-    lines = ["| Field | Type | Required | Default | Description |", "| --- | --- | --- | --- | --- |"]
-    for py_name, field in model.model_fields.items():
-        yaml_name = field.alias or py_name
-        required = "**yes**" if field.is_required() else "no"
-        type_str = _render_type(field.annotation)
-        default = _render_default(field)
-        description = (field.description or "").replace("\n", " ")
-        lines.append(f"| `{yaml_name}` | {type_str} | {required} | {default} | {description} |")
+    header = ["| Field | Type | Required | Default | Description |", "| --- | --- | --- | --- | --- |"]
+    all_fields = model.model_fields
+    common_present = [name for name in _COMMON_ASPECT_FIELD_ORDER if name in all_fields]
+    own_fields = [name for name in all_fields if name not in _COMMON_ASPECT_FIELD_ORDER]
+
+    lines = list(header)
+    for py_name in own_fields:
+        lines.append(_render_field_row(model, py_name, all_fields[py_name]))
+
+    if common_present:
+        lines.append("")
+        lines.append(
+            "Plus these [common metadata fields](#common-metadata-fields), which every "
+            "kind accepts a subset of depending on what DataHub's entity registry permits:"
+        )
+        lines.append("")
+        lines.extend(header)
+        for py_name in common_present:
+            lines.append(_render_field_row(model, py_name, all_fields[py_name]))
+
     return "\n".join(lines)
 
 
@@ -195,6 +228,17 @@ def build_markdown() -> str:
     lines.append("")
     for kind, _ in DOCUMENT_MODELS:
         lines.append(f"- [`{kind}`](#{_anchor(kind)})")
+    lines.append("")
+    lines.append("## Common metadata fields")
+    lines.append("")
+    lines.append(
+        "`owners`, `tags`, `glossaryTerms`, `domains`, `applications`, `links`, "
+        "`deprecation`, `structuredProperties`, and `subTypes` behave identically "
+        "wherever they're accepted -- which kind accepts which is determined by "
+        "DataHub's entity registry, not by this connector, so it varies per kind. "
+        "Each kind's own section below lists exactly the subset it accepts, after "
+        "that kind's distinctive fields."
+    )
     lines.append("")
 
     for kind, model in DOCUMENT_MODELS:

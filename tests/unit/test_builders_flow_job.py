@@ -1,6 +1,6 @@
 from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_data_job
 from datahub_yaml_source.loader import ParsedRepository
-from datahub_yaml_source.models import DataFlowDoc, DataJobDoc, TagDoc
+from datahub_yaml_source.models import ContainerDoc, DataFlowDoc, DataJobDoc, TagDoc
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -20,7 +20,10 @@ def test_build_data_flow_emits_expected_urn_and_properties():
             ],
         }
     )
-    wus = list(build_data_flow(doc))
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_data_flow(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:dataFlow:(airflow,ehr_to_duckdb_raw_layer,PROD)"
     info = next(
         wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataFlowInfoClass"
@@ -75,6 +78,68 @@ def test_build_data_job_links_to_flow_and_datasets():
         "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw-layer_patient,PROD)"
     ]
     assert len(io_aspect.fineGrainedLineages) == 1
+
+
+def test_build_data_job_sets_input_data_jobs():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DataJobDoc.model_validate(
+        {
+            "kind": "DATA_JOB",
+            "jobId": "quality_check",
+            "dataFlow": {"orchestrator": "airflow", "flowId": "f1", "cluster": "PROD"},
+            "name": "Quality check",
+            "inputDataJobs": [
+                {"orchestrator": "airflow", "flowId": "f1", "cluster": "PROD", "jobId": "upstream_job"}
+            ],
+        }
+    )
+
+    wus = list(build_data_job(doc, index, report))
+    io_aspect = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataJobInputOutputClass"
+    )
+    assert io_aspect.inputDatajobs == [
+        "urn:li:dataJob:(urn:li:dataFlow:(airflow,f1,PROD),upstream_job)"
+    ]
+
+
+def test_build_data_flow_with_container(monkeypatch):
+    repo = ParsedRepository()
+    repo.containers.append(
+        ContainerDoc.model_validate(
+            {
+                "kind": "CONTAINER",
+                "platform": "duckdb",
+                "database": "warehouse",
+                "env": "PROD",
+                "name": "Warehouse",
+                "subTypes": "Database",
+            }
+        )
+    )
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DataFlowDoc.model_validate(
+        {
+            "kind": "DATA_FLOW",
+            "orchestrator": "airflow",
+            "flowId": "f1",
+            "cluster": "PROD",
+            "name": "F1",
+            "container": {"platform": "duckdb", "database": "warehouse", "env": "PROD"},
+        }
+    )
+
+    wus = list(build_data_flow(doc, index, report))
+    assert not report.dangling_references
+    container_aspect = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "ContainerClass"
+    )
+    assert container_aspect.container is not None
 
 
 def test_build_data_job_reports_dangling_tag():

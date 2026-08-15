@@ -91,6 +91,42 @@ def test_load_repository_invokes_on_file_scanned_once_per_file(tmp_path: Path):
     assert len(scanned) == 2
 
 
+def test_load_repository_reports_unknown_field_but_still_parses_document(tmp_path: Path):
+    # `glossaryTerms` is not a valid field on TAG per the entity registry
+    # (see models.py's Has* mixin matrix) -- neither is the misspelled `nam`.
+    (tmp_path / "assets.yml").write_text(
+        "kind: TAG\nname: pii\nglossaryTerms: [oops]\n---\nkind: TAG\nnam: typo\nname: ok\n"
+    )
+
+    unknown = []
+    repo = load_repository(
+        tmp_path,
+        on_error=lambda path, msg: None,
+        on_unknown_fields=lambda path, kind, fields: unknown.append((kind, fields)),
+    )
+
+    assert len(repo.tags) == 2
+    assert unknown == [("TAG", ["glossaryTerms"]), ("TAG", ["nam"])]
+
+
+def test_load_repository_does_not_flag_raw_aspect_extra_fields_as_unknown(tmp_path: Path):
+    # RawAspectDoc's extra fields ARE its payload -- must never be reported.
+    (tmp_path / "assets.yml").write_text(
+        "aspectName: DATASET_PROFILE\n"
+        "dataset: {platform: postgres, name: x, env: PROD}\n"
+        "rowCount: 100\n"
+    )
+
+    unknown = []
+    load_repository(
+        tmp_path,
+        on_error=lambda path, msg: None,
+        on_unknown_fields=lambda path, kind, fields: unknown.append((kind, fields)),
+    )
+
+    assert unknown == []
+
+
 def test_load_repository_aggregates_across_multiple_files(tmp_path: Path):
     (tmp_path / "layer1").mkdir()
     (tmp_path / "layer1" / "assets.yml").write_text("kind: TAG\nname: from_layer1\n")

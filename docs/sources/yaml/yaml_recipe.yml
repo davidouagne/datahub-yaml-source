@@ -6,7 +6,7 @@ source:
   config:
     # Root directory to scan recursively for '*.yml' / '*.yaml' files.
     # Typically a checked-out git repository of hand-authored metadata.
-    path: /mnt/c/Users/4087446/Projects/aphp/datahub-sample/observability-layer
+    path: /mnt/c/Users/4087446/Projects/aphp/datahub-sample
 
     # Optional: turn dangling references (a tag/domain/glossaryTerm/container
     # that's referenced but never declared anywhere in the scanned files) into

@@ -8,7 +8,10 @@ setup(
     packages=find_packages(where="src"),
     python_requires=">=3.9",
     install_requires=[
-        "acryl-datahub>=1.0.0",
+        # >=1.6.0 for the SDK V2 constructor kwargs the cross-cutting aspect
+        # helpers in builders/common.py depend on (e.g. DataFlow/DataJob's
+        # `parent_container=`, `links=`, `structured_properties=`).
+        "acryl-datahub>=1.7.0",
         "pyyaml>=6.0",
     ],
     extras_require={

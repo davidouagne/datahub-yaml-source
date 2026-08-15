@@ -151,7 +151,115 @@ class UpstreamLineageDoc(BaseModel):
     )
 
 
-class DataPlatformDoc(BaseModel):
+class LinkDoc(BaseModel):
+    """A link surfaced in DataHub's "Links" panel (the `institutionalMemory` aspect)."""
+
+    url: str
+    description: Optional[str] = None
+
+
+class DeprecationDoc(BaseModel):
+    """Marks an entity deprecated. Emits the `deprecation` aspect."""
+
+    deprecated: bool = Field(default=True, description="Set to false to explicitly un-deprecate an entity.")
+    note: Optional[str] = None
+    decommissionTime: Optional[int] = Field(
+        default=None, description="Planned removal time, epoch millis."
+    )
+    actor: Optional[str] = Field(default=None, description="Owner name; converted to a corpuser URN if not already one.")
+
+
+# --- Cross-cutting aspect mixins --------------------------------------------
+#
+# Every entity `kind:` inherits exactly the mixins below that DataHub's entity
+# registry (metadata-models/src/main/resources/entity-registry.yml, verified
+# cell-by-cell against v1.7.0rc1-111-gb9890a0912) actually permits for that
+# entity type. This makes per-kind validity static: a field that isn't valid
+# on a kind simply isn't a field on that Pydantic model, rather than being a
+# separate allowlist that has to be kept in sync with the class declarations.
+# See docs/specs/entity-aspect-coverage-gaps.md and _PLANNING-v2.md.
+#
+# Verified matrix (Y = mixin included, blank/'-' = not permitted on that kind):
+#
+#                  owners tags terms domain apps links deprecation structProps subTypes
+#   DATASET          Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
+#   DATA_PRODUCT     Y     Y    Y     Y      Y     Y      Y            Y          Y
+#   DOMAIN           Y     -    -     -      -     Y      Y            Y          -
+#   APPLICATION      Y     Y    -     Y      -     Y      -            Y          Y
+#   GLOSSARY_TERM    Y     Y    -     Y      Y     Y      Y            Y          Y
+#   GLOSSARY_NODE    Y     Y    -     Y      -     Y      -            Y          Y
+#   TAG              Y     -    -     -      -     -      Y            -          -
+#   ASSERTION        Y     Y    -     -      -     -      -            -          -
+
+
+class _AllowExtraFields(BaseModel):
+    """Base for every kind-discriminated entity document.
+
+    `extra="allow"` so a typo'd or unsupported field doesn't hard-fail parsing
+    -- kept consistent with the connector's warn-and-skip philosophy. The
+    loader inspects `model_extra` after validation and reports it as a
+    warning (escalated to an error under `fail_on_unresolved_reference`), so
+    authors are never *silently* ignored, which was the connector's original
+    behavior.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+
+class HasOwners(BaseModel):
+    owners: Optional[OwnersField] = None
+
+
+class HasTags(BaseModel):
+    tags: Optional[StringList] = None
+
+
+class HasTerms(BaseModel):
+    glossaryTerms: Optional[StringList] = None
+
+
+class HasDomain(BaseModel):
+    domains: Optional[str] = None
+
+
+class HasApplications(BaseModel):
+    applications: Optional[StringList] = Field(
+        default=None, description="ids of the APPLICATION documents this entity belongs to."
+    )
+
+
+class HasLinks(BaseModel):
+    links: Optional[List[LinkDoc]] = Field(
+        default=None, description="Links shown in DataHub's 'Links' panel (the institutionalMemory aspect)."
+    )
+
+
+class HasDeprecation(BaseModel):
+    deprecation: Optional[DeprecationDoc] = None
+
+
+class HasStructuredProps(BaseModel):
+    structuredProperties: Optional[Dict[str, Any]] = Field(
+        default=None, description="Map of structuredProperty qualifiedName -> value (or list of values)."
+    )
+
+
+class HasSubTypes(BaseModel):
+    subTypes: Optional[SubTypesField] = None
+
+
+class DisplayPropertiesDoc(BaseModel):
+    """Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.
+    (`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an
+    icon library/name/style triple with no natural single-field shorthand.)"""
+
+    colorHex: Optional[str] = None
+
+
+class DataPlatformDoc(_AllowExtraFields):
     """Registers a custom data platform (e.g. one not built into DataHub's
     core platform list). Not needed for well-known platforms like `postgres`
     or `duckdb` -- only for platforms DataHub doesn't already know about."""
@@ -164,15 +272,16 @@ class DataPlatformDoc(BaseModel):
     datasetNameDelimiter: str = "."
 
 
-class TagDoc(BaseModel):
+class TagDoc(HasOwners, HasDeprecation, _AllowExtraFields):
     """A tag definition. Referenced elsewhere via `tags: [<name>]`."""
 
     kind: Literal["TAG"]
     name: str
     description: Optional[str] = None
+    colorHex: Optional[str] = None
 
 
-class GlossaryNodeDoc(BaseModel):
+class GlossaryNodeDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields):
     """A glossary category/folder that groups related glossary terms."""
 
     kind: Literal["GLOSSARY_NODE"]
@@ -180,9 +289,23 @@ class GlossaryNodeDoc(BaseModel):
     name: str
     definition: Optional[str] = None
     parentNode: Optional[str] = Field(default=None, description="id of a parent GLOSSARY_NODE, for nested categories.")
+    displayProperties: Optional[DisplayPropertiesDoc] = None
 
 
-class GlossaryTermDoc(BaseModel):
+class GlossaryRelatedTermsDoc(BaseModel):
+    """Relationships to other glossary terms. Emits the `glossaryRelatedTerms`
+    aspect. Each list holds ids of other GLOSSARY_TERM documents."""
+
+    isRelatedTerms: Optional[StringList] = Field(default=None, description="'is a' relationships, e.g. this term is a kind of the related term.")
+    hasRelatedTerms: Optional[StringList] = Field(default=None, description="'has a' relationships, e.g. this term has the related term as a part.")
+    values: Optional[StringList] = Field(default=None, description="Related terms representing possible values of this term.")
+    relatedTerms: Optional[StringList] = Field(default=None, description="General 'is related to' relationships.")
+
+
+class GlossaryTermDoc(
+    HasOwners, HasTags, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps, HasSubTypes,
+    _AllowExtraFields,
+):
     """A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`."""
 
     kind: Literal["GLOSSARY_TERM"]
@@ -190,6 +313,11 @@ class GlossaryTermDoc(BaseModel):
     name: str
     definition: Optional[str] = None
     parentNode: Optional[str] = Field(default=None, description="id of the GLOSSARY_NODE this term belongs to.")
+    glossaryRelatedTerms: Optional[GlossaryRelatedTermsDoc] = None
+    termSource: Optional[str] = Field(default=None, description="e.g. 'EXTERNAL' or 'INTERNAL'.")
+    sourceRef: Optional[str] = Field(default=None, description="Name of the external source this term came from, if termSource is EXTERNAL.")
+    sourceUrl: Optional[str] = None
+    displayProperties: Optional[DisplayPropertiesDoc] = None
 
 
 class AllowedValueDoc(BaseModel):
@@ -205,7 +333,7 @@ class StructuredPropertySettingsDoc(BaseModel):
     isHidden: Optional[bool] = None
 
 
-class StructuredPropertyDoc(BaseModel):
+class StructuredPropertyDoc(_AllowExtraFields):
     """A custom structured property definition (a typed, filterable field
     attachable to datasets/data products/etc, beyond built-in DataHub fields).
     """
@@ -233,7 +361,7 @@ class StructuredPropertyDoc(BaseModel):
     )
 
 
-class DomainDoc(BaseModel):
+class DomainDoc(HasOwners, HasLinks, HasDeprecation, HasStructuredProps, _AllowExtraFields):
     """A business domain, used to group related datasets/data products.
     Referenced elsewhere via `domains: <id>`."""
 
@@ -241,9 +369,11 @@ class DomainDoc(BaseModel):
     id: str = Field(description="Stable identifier, becomes urn:li:domain:<id>.")
     name: str
     description: Optional[str] = None
+    parentDomain: Optional[str] = Field(default=None, description="id of a parent DOMAIN, for nested domain trees.")
+    displayProperties: Optional[DisplayPropertiesDoc] = None
 
 
-class ApplicationDoc(BaseModel):
+class ApplicationDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields):
     """A source application/system (e.g. an EHR, an ERP). Referenced elsewhere
     via `applications: [<id>]`."""
 
@@ -253,7 +383,10 @@ class ApplicationDoc(BaseModel):
     description: Optional[str] = None
 
 
-class ContainerDoc(ContainerRef):
+class ContainerDoc(
+    ContainerRef, HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation,
+    HasStructuredProps, HasSubTypes, _AllowExtraFields,
+):
     """A container (database, schema, bucket, ...). Emitted with parents
     before children automatically, regardless of declaration order across
     files. See `ContainerRef` for how the URN is computed."""
@@ -265,13 +398,13 @@ class ContainerDoc(ContainerRef):
     parentContainer: Optional[ContainerRef] = Field(
         default=None, description="Reference to the parent container, if any (e.g. a schema's parent database)."
     )
-    subTypes: Optional[SubTypesField] = Field(default=None, description="e.g. 'Database', 'Schema', 'S3_BUCKET'.")
-    owners: Optional[OwnersField] = None
-    tags: Optional[StringList] = None
     properties: Optional[Dict[str, Any]] = None
 
 
-class DatasetDoc(BaseModel):
+class DatasetDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
     """A dataset (table, view, topic, file, ...)."""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -286,11 +419,6 @@ class DatasetDoc(BaseModel):
     container: Optional[ContainerRef] = Field(default=None, description="The dataset's parent container.")
     schema_block: Optional[SchemaBlock] = Field(default=None, alias="schema")
     properties: Optional[Dict[str, Any]] = None
-    subTypes: Optional[SubTypesField] = Field(default=None, description="e.g. 'Table', 'View', 'Topic'.")
-    tags: Optional[StringList] = None
-    glossaryTerms: Optional[StringList] = None
-    owners: Optional[OwnersField] = None
-    domains: Optional[str] = None
     externalUrl: Optional[str] = None
     upstreamLineage: Optional[UpstreamLineageDoc] = None
     viewProperties: Optional[ViewPropertiesDoc] = Field(
@@ -298,12 +426,12 @@ class DatasetDoc(BaseModel):
         description="For views: the view's SQL definition. Set subTypes: View alongside it. "
         "No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed.",
     )
-    applications: Optional[StringList] = Field(
-        default=None, description="ids of the APPLICATION documents this dataset belongs to."
-    )
 
 
-class DataProductDoc(BaseModel):
+class DataProductDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
     """A data product: a curated bundle of datasets/jobs presented as a
     single discoverable asset, with its own domain/tags/owners."""
 
@@ -311,19 +439,15 @@ class DataProductDoc(BaseModel):
     id: str = Field(description="Stable identifier, becomes urn:li:dataProduct:<id>.")
     name: str
     description: Optional[str] = None
-    domains: Optional[str] = None
-    glossaryTerms: Optional[StringList] = None
-    tags: Optional[StringList] = None
-    owners: Optional[OwnersField] = None
-    structuredProperties: Optional[Dict[str, Any]] = Field(
-        default=None, description="Map of structuredProperty qualifiedName -> value (or list of values)."
-    )
     assets: Optional[List[str]] = Field(
         default=None, description="Full URNs of the entities (datasets, dataJobs, ...) that make up this product."
     )
 
 
-class DataFlowDoc(BaseModel):
+class DataFlowDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasSubTypes, _AllowExtraFields,
+):
     """A pipeline (e.g. an Airflow DAG, a dbt project run)."""
 
     kind: Literal["DATA_FLOW"]
@@ -334,9 +458,7 @@ class DataFlowDoc(BaseModel):
     description: Optional[str] = None
     project: Optional[str] = None
     externalUrl: Optional[str] = None
-    domains: Optional[str] = None
-    owners: Optional[OwnersField] = None
-    tags: Optional[StringList] = None
+    container: Optional[ContainerRef] = Field(default=None, description="The pipeline's parent container, if any.")
 
 
 class DataFlowRef(BaseModel):
@@ -347,28 +469,41 @@ class DataFlowRef(BaseModel):
     cluster: str = "PROD"
 
 
-class DataJobDoc(BaseModel):
-    """A task within a pipeline (DATA_FLOW)."""
+class DataFlowJobRef(DataFlowRef):
+    """Reference to a DATA_JOB by its natural (orchestrator, flowId, cluster, jobId) key."""
+
+    jobId: str
+
+
+class DataJobDoc(
+    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    _AllowExtraFields,
+):
+    """A task within a pipeline (DATA_FLOW).
+
+    No `HasSubTypes` mixin: `type` below already fills that role (it was
+    wired to the same `subTypes` aspect before this mixin existed), so adding
+    a second `subTypes:` field would just give authors two names for one
+    thing.
+    """
 
     kind: Literal["DATA_JOB"]
     jobId: str
     dataFlow: DataFlowRef = Field(description="Reference to the parent DATA_FLOW this task belongs to.")
     name: str
     description: Optional[str] = None
-    type: Optional[str] = None
+    type: Optional[str] = Field(default=None, description="The job's subtype, e.g. 'RawCopy', 'Transform'.")
+    externalUrl: Optional[str] = None
+    properties: Optional[Dict[str, Any]] = None
+    container: Optional[ContainerRef] = Field(default=None, description="The job's parent container, if any.")
     inputDatasets: Optional[List[DatasetRef]] = None
     outputDatasets: Optional[List[DatasetRef]] = None
+    inputDataJobs: Optional[List[DataFlowJobRef]] = Field(
+        default=None, description="Other DATA_JOBs this one depends on -- job-to-job DAG edges with no dataset in between."
+    )
     fineGrainedLineages: Optional[List[FineGrainedLineageDoc]] = Field(
         default=None, description="Column-level lineage edges from inputDatasets to outputDatasets."
     )
-    owners: Optional[OwnersField] = None
-    tags: Optional[StringList] = None
-
-
-class DataFlowJobRef(DataFlowRef):
-    """Reference to a DATA_JOB by its natural (orchestrator, flowId, cluster, jobId) key."""
-
-    jobId: str
 
 
 class CreatedDoc(BaseModel):
@@ -382,7 +517,7 @@ class RunEventDoc(BaseModel):
     attempt: Optional[int] = None
 
 
-class DataProcessInstanceDoc(BaseModel):
+class DataProcessInstanceDoc(_AllowExtraFields):
     """A single run of a DATA_JOB, with its own run-event history. For
     ongoing/incremental run events after the initial run, prefer an
     `aspectName: DATA_PROCESS_INSTANCE_RUN_EVENT` raw-aspect document instead
@@ -405,14 +540,25 @@ class AssertionPropertiesDoc(BaseModel):
     dbt_test: Optional[str] = None
 
 
+class SchemaFieldSpecDoc(BaseModel):
+    """[DATA_SCHEMA assertions] One expected column."""
+
+    path: str
+    type: str = "string"
+    nativeType: Optional[str] = None
+
+
 class AssertionAssertionDoc(BaseModel):
-    """Union of the FRESHNESS / SQL / FIELD assertion shapes, kept flat.
+    """Union of the FRESHNESS / VOLUME / SQL / FIELD / DATA_SCHEMA / CUSTOM
+    assertion shapes, kept flat.
 
     Only the fields relevant to `type` will be populated by the author; the
-    assertion builder picks which ones to read based on `type`.
+    assertion builder picks which ones to read based on `type`. `DATASET` is
+    deliberately not a supported value -- it is deprecated upstream
+    (`AssertionType.pdl`) in favor of `VOLUME`.
     """
 
-    type: str = Field(description="FRESHNESS, SQL, or FIELD -- selects which fields below apply.")
+    type: str = Field(description="FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM -- selects which fields below apply.")
     entityUrn: str = Field(description="Full URN of the dataset this assertion checks.")
 
     # FRESHNESS
@@ -421,12 +567,17 @@ class AssertionAssertionDoc(BaseModel):
     cron: Optional[str] = Field(default=None, description="[FRESHNESS] cron expression, if scheduleType is CRON.")
     timezone: Optional[str] = Field(default=None, description="[FRESHNESS] IANA timezone for the cron schedule.")
 
-    # SQL
+    # VOLUME
+    volumeType: Optional[str] = Field(
+        default=None, description="[VOLUME] ROW_COUNT_TOTAL or ROW_COUNT_CHANGE -- reuses 'operator'/'value'/'changeType' below."
+    )
+
+    # SQL / VOLUME
     sqlType: Optional[str] = Field(default=None, description="[SQL] e.g. METRIC.")
     statement: Optional[str] = Field(default=None, description="[SQL] the SQL query to evaluate.")
-    operator: Optional[str] = Field(default=None, description="[SQL/FIELD] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.")
-    value: Optional[Any] = Field(default=None, description="[SQL] the comparison value for 'operator'.")
-    changeType: Optional[str] = Field(default=None, description="[SQL] e.g. ABSOLUTE, PERCENTAGE.")
+    operator: Optional[str] = Field(default=None, description="[SQL/FIELD/VOLUME] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.")
+    value: Optional[Any] = Field(default=None, description="[SQL/VOLUME] the comparison value for 'operator'.")
+    changeType: Optional[str] = Field(default=None, description="[SQL/VOLUME] e.g. ABSOLUTE, PERCENTAGE.")
 
     # FIELD
     fieldType: Optional[str] = Field(default=None, description="[FIELD] FIELD_METRIC or FIELD_VALUES.")
@@ -438,9 +589,28 @@ class AssertionAssertionDoc(BaseModel):
     metricValue: Optional[Any] = Field(default=None, description="[FIELD, FIELD_METRIC] the comparison value.")
     excludeNulls: Optional[bool] = Field(default=None, description="[FIELD, FIELD_VALUES] ignore nulls when checking 'operator'.")
 
+    # DATA_SCHEMA
+    schemaFields: Optional[List[SchemaFieldSpecDoc]] = Field(default=None, description="[DATA_SCHEMA] the expected columns.")
+    compatibility: Optional[str] = Field(default=None, description="[DATA_SCHEMA] e.g. EXACT_MATCH, SUPERSET.")
 
-class AssertionDoc(BaseModel):
-    """A data quality assertion (freshness, SQL-based, or field-level check)."""
+    # CUSTOM
+    customType: Optional[str] = Field(default=None, description="[CUSTOM] free-text assertion type name.")
+    logic: Optional[str] = Field(default=None, description="[CUSTOM] free-text description of the custom check's logic.")
+
+
+class AssertionActionDoc(BaseModel):
+    type: str = Field(description="e.g. RAISE_INCIDENT, RESOLVE_INCIDENT.")
+
+
+class AssertionActionsDoc(BaseModel):
+    """Declarative on-failure/on-success actions. Emits the `assertionActions` aspect."""
+
+    onSuccess: Optional[List[AssertionActionDoc]] = None
+    onFailure: Optional[List[AssertionActionDoc]] = None
+
+
+class AssertionDoc(HasOwners, HasTags, _AllowExtraFields):
+    """A data quality assertion (freshness, volume, SQL-based, field-level, schema, or custom check)."""
 
     kind: Literal["ASSERTION"]
     id: str = Field(description="Stable identifier, becomes urn:li:assertion:<id>.")
@@ -448,6 +618,8 @@ class AssertionDoc(BaseModel):
     sourceType: str = "NATIVE"
     properties: Optional[AssertionPropertiesDoc] = None
     assertion: AssertionAssertionDoc
+    assertionNote: Optional[str] = Field(default=None, description="Free-text note about this assertion's most recent run.")
+    assertionActions: Optional[AssertionActionsDoc] = None
 
 
 class RawAspectDoc(BaseModel):
@@ -461,6 +633,7 @@ class RawAspectDoc(BaseModel):
       - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...)
       - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string)
       - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string)
+      - `entityUrn`: generic fallback -- a full URN string for any other entity type
     """
 
     model_config = ConfigDict(extra="allow")
@@ -469,6 +642,7 @@ class RawAspectDoc(BaseModel):
     dataset: Optional[DatasetRef] = None
     assertionUrn: Optional[str] = None
     dataProcessInstanceUrn: Optional[str] = None
+    entityUrn: Optional[str] = None
 
 
 ENTITY_DOC_TYPES_BY_KIND = {

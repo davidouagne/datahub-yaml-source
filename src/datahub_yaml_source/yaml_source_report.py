@@ -28,6 +28,7 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
 
     documents_failed_to_parse: int = 0
     dangling_references: LossyList[str] = field(default_factory=LossyList)
+    unknown_fields: LossyList[str] = field(default_factory=LossyList)
 
     def report_document_parse_failure(self, path: str, message: str) -> None:
         self.documents_failed_to_parse += 1
@@ -45,5 +46,18 @@ class YamlSourceReport(StaleEntityRemovalSourceReport):
             "that was never declared as its own document anywhere in the "
             "scanned files. The association is still emitted using the "
             "computed URN, but double check for a typo or a missing file.",
+            context=context,
+        )
+
+    def report_unknown_fields(self, context: str) -> None:
+        self.unknown_fields.append(context)
+        self.warning(
+            title="Unrecognized field on a document",
+            message="A document has a field that is either misspelled or not "
+            "valid for its 'kind' (DataHub's entity registry doesn't permit "
+            "that aspect on that entity type). The document was still "
+            "processed, ignoring only that field. Set "
+            "'fail_on_unresolved_reference: true' to turn this into a hard "
+            "error instead.",
             context=context,
         )

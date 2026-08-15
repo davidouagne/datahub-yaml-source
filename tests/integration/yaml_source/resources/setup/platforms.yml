@@ -9,6 +9,12 @@ datasetNameDelimiter: "."
 kind: TAG
 name: pii
 description: Contains personally identifiable information
+colorHex: "#FF0000"
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+deprecation:
+  deprecated: false
 ---
 kind: TAG
 name: fhir-r4
@@ -24,6 +30,15 @@ id: fhir:Patient
 name: HL7 FHIR Patient
 definition: A person receiving care
 parentNode: fhir:Resource
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+domains: "3667192a0a19c51419efe99aa865c1ba"
+applications:
+  - ORBIS
+glossaryRelatedTerms:
+  hasRelatedTerms:
+    - fhir:Encounter
 ---
 kind: GLOSSARY_TERM
 id: fhir:Encounter
@@ -42,7 +57,32 @@ allowedValues:
   - value: "MONTHLY"
 entityTypes: [dataProduct]
 ---
+kind: STRUCTURED_PROPERTY
+qualifiedName: "org.example.legalBasis"
+displayName: Legal basis
+description: Legal basis under which this dataset's data was collected
+cardinality: SINGLE
+valueType: string
+entityTypes: [dataset, container]
+---
 kind: DOMAIN
 id: "3667192a0a19c51419efe99aa865c1ba"
 name: Patient Identity
 description: Patient identity and demographics
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+links:
+  - url: https://wiki.example.org/domains/patient-identity
+    description: Domain charter
+---
+kind: DOMAIN
+id: "9c9a6e6e2f6d4d2fbf6a2e6a6f6a2e6a"
+name: Identite
+description: Parent domain grouping identity-related sub-domains
+---
+kind: DOMAIN
+id: "3667192a0a19c51419efe99aa865c1ba-child-test"
+name: Patient Identity (detail)
+description: Nested example under Identite, to exercise parentDomain resolution
+parentDomain: "9c9a6e6e2f6d4d2fbf6a2e6a6f6a2e6a"

@@ -45,22 +45,85 @@ def test_build_data_platform_emits_data_platform_info():
 
 
 def test_build_tag_emits_tag_entity():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
     doc = TagDoc(kind="TAG", name="pii", description="Personally identifiable information")
-    wus = list(build_tag(doc))
+    wus = list(build_tag(doc, index, report))
     urns = {wu.metadata.entityUrn for wu in wus}
     assert "urn:li:tag:pii" in urns
 
 
 def test_build_domain_emits_domain_properties():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
     doc = DomainDoc(kind="DOMAIN", id="abc123", name="Biologie", description="Analyses")
-    wus = list(build_domain(doc))
+    wus = list(build_domain(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:domain:abc123"
     assert wus[0].metadata.aspect.name == "Biologie"
 
 
+def test_build_domain_with_parent_domain_and_display_properties():
+    repo = ParsedRepository()
+    repo.domains.append(DomainDoc(kind="DOMAIN", id="parent", name="Parent"))
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DomainDoc(
+        kind="DOMAIN", id="child", name="Child", parentDomain="parent",
+        displayProperties={"colorHex": "#00FF00"},
+    )
+    wus = list(build_domain(doc, index, report))
+    assert not report.dangling_references
+    props = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DomainPropertiesClass"
+    )
+    assert props.parentDomain == "urn:li:domain:parent"
+    display = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DisplayPropertiesClass"
+    )
+    assert display.colorHex == "#00FF00"
+
+
+def test_build_domain_reports_dangling_parent_domain():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    doc = DomainDoc(kind="DOMAIN", id="child", name="Child", parentDomain="does-not-exist")
+    list(build_domain(doc, index, report))
+    assert len(report.dangling_references) == 1
+
+
+def test_topological_sort_domains_orders_parent_before_child():
+    from datahub_yaml_source.builders.domain import topological_sort_domains
+
+    parent = DomainDoc(kind="DOMAIN", id="parent", name="Parent")
+    child = DomainDoc(kind="DOMAIN", id="child", name="Child", parentDomain="parent")
+    ordered = topological_sort_domains([child, parent])
+    assert ordered == [parent, child]
+
+
+def test_build_container_reports_dangling_domain():
+    doc = _container("public", "ehr", schema="public")
+    doc = ContainerDoc.model_validate({**doc.model_dump(by_alias=True), "domains": "does-not-exist"})
+    repo = ParsedRepository()
+    repo.containers.append(doc)
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    wus = list(build_container(doc, index, report))
+    assert len(wus) > 0
+    assert len(report.dangling_references) == 1
+
+
 def test_build_application_emits_application_properties():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
     doc = ApplicationDoc(kind="APPLICATION", id="ORBIS", name="ORBIS", description="EHR")
-    wus = list(build_application(doc))
+    wus = list(build_application(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:application:ORBIS"
     assert wus[0].metadata.aspect.name == "ORBIS"
 
@@ -82,6 +145,55 @@ def test_build_glossary_node_and_term_link_parent(monkeypatch):
     assert "urn:li:glossaryTerm:fhir:Patient" in urns
     assert report.documents_failed_to_parse == 0
     assert len(report.dangling_references) == 0
+
+
+def test_build_glossary_term_with_related_terms_and_source():
+    repo = ParsedRepository()
+    repo.glossary_terms.append(GlossaryTermDoc(kind="GLOSSARY_TERM", id="fhir:Encounter", name="Encounter"))
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    term_doc = GlossaryTermDoc(
+        kind="GLOSSARY_TERM",
+        id="fhir:Patient",
+        name="Patient",
+        termSource="EXTERNAL",
+        sourceRef="FHIR",
+        sourceUrl="https://hl7.org/fhir/patient.html",
+        glossaryRelatedTerms={"hasRelatedTerms": ["fhir:Encounter"]},
+    )
+    wus = list(build_glossary_term(term_doc, index, report))
+    assert not report.dangling_references
+    related = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "GlossaryRelatedTermsClass"
+    )
+    assert related.hasRelatedTerms == ["urn:li:glossaryTerm:fhir:Encounter"]
+
+
+def test_build_glossary_term_reports_dangling_related_term():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    term_doc = GlossaryTermDoc(
+        kind="GLOSSARY_TERM",
+        id="fhir:Patient",
+        name="Patient",
+        glossaryRelatedTerms={"isRelatedTerms": ["does:not:exist"]},
+    )
+    list(build_glossary_term(term_doc, index, report))
+    assert len(report.dangling_references) == 1
+    assert "does:not:exist" in report.dangling_references[0]
+
+
+def test_build_glossary_node_reports_dangling_parent_node():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    node_doc = GlossaryNodeDoc(kind="GLOSSARY_NODE", id="child", name="Child", parentNode="does:not:exist")
+    list(build_glossary_node(node_doc, index, report))
+    assert len(report.dangling_references) == 1
 
 
 def test_build_glossary_term_reports_dangling_parent_node():

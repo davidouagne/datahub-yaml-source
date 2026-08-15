@@ -28,7 +28,7 @@ from datahub_yaml_source.builders.data_flow_job import build_data_flow, build_da
 from datahub_yaml_source.builders.data_process_instance import build_data_process_instance
 from datahub_yaml_source.builders.data_product import build_data_product
 from datahub_yaml_source.builders.dataset import build_dataset
-from datahub_yaml_source.builders.domain import build_domain
+from datahub_yaml_source.builders.domain import build_domain, topological_sort_domains
 from datahub_yaml_source.builders.glossary import build_glossary_node, build_glossary_term
 from datahub_yaml_source.builders.platform import build_data_platform
 from datahub_yaml_source.builders.raw_aspect import build_raw_aspect
@@ -51,6 +51,13 @@ logger = logging.getLogger(__name__)
 @capability(SourceCapability.LINEAGE_FINE, "Fully declared in YAML via fineGrainedLineages")
 @capability(SourceCapability.OWNERSHIP, "Enabled by default via 'owners' fields")
 @capability(SourceCapability.TAGS, "Enabled by default via TAG documents and 'tags' references")
+@capability(SourceCapability.DOMAINS, "Enabled by default via DOMAIN documents and 'domains' references")
+@capability(SourceCapability.GLOSSARY_TERMS, "Enabled by default via GLOSSARY_TERM documents and 'glossaryTerms' references")
+@capability(SourceCapability.DESCRIPTIONS, "Enabled by default via 'description' fields")
+@capability(SourceCapability.PLATFORM_INSTANCE, "Enabled via 'instance' fields on DATASET/CONTAINER")
+@capability(SourceCapability.DATA_PROFILING, "Via 'aspectName: DATASET_PROFILE' raw-aspect passthrough documents")
+@capability(SourceCapability.USAGE_STATS, "Via 'aspectName: DATASET_USAGE_STATISTICS' raw-aspect passthrough documents")
+@capability(SourceCapability.OPERATION_CAPTURE, "Via 'aspectName: OPERATION' raw-aspect passthrough documents")
 @capability(SourceCapability.DELETION_DETECTION, "Enabled via stateful ingestion")
 @capability(SourceCapability.TEST_CONNECTION, "Enabled by default")
 class YamlSource(StatefulIngestionSourceBase, TestableSource):
@@ -109,7 +116,15 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         def on_file_scanned(path: Path) -> None:
             self.report.files_scanned += 1
 
-        repository = load_repository(root, on_error=on_error, on_file_scanned=on_file_scanned)
+        def on_unknown_fields(path: str, kind: str, field_names: list) -> None:
+            message = f"{path}: kind={kind} unexpected field(s): {sorted(field_names)}"
+            if self.config.fail_on_unresolved_reference:
+                raise ValueError(message)
+            self.report.report_unknown_fields(message)
+
+        repository = load_repository(
+            root, on_error=on_error, on_file_scanned=on_file_scanned, on_unknown_fields=on_unknown_fields
+        )
 
         if self.report.files_scanned == 0:
             self.report.warning(
@@ -131,7 +146,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for tag_doc in repository.tags:
             self.report.tags_scanned += 1
-            yield from self._safe_build("TAG", tag_doc.name, build_tag, tag_doc)
+            yield from self._safe_build("TAG", tag_doc.name, build_tag, tag_doc, index, self.report)
 
         for node_doc in repository.glossary_nodes:
             self.report.glossary_nodes_scanned += 1
@@ -151,14 +166,14 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
                 "STRUCTURED_PROPERTY", prop_doc.qualifiedName, build_structured_property, prop_doc
             )
 
-        for domain_doc in repository.domains:
+        for domain_doc in topological_sort_domains(repository.domains):
             self.report.domains_scanned += 1
-            yield from self._safe_build("DOMAIN", domain_doc.id, build_domain, domain_doc)
+            yield from self._safe_build("DOMAIN", domain_doc.id, build_domain, domain_doc, index, self.report)
 
         for application_doc in repository.applications:
             self.report.applications_scanned += 1
             yield from self._safe_build(
-                "APPLICATION", application_doc.id, build_application, application_doc
+                "APPLICATION", application_doc.id, build_application, application_doc, index, self.report
             )
 
         for container_doc in topological_sort_containers(repository.containers):
@@ -181,7 +196,9 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for flow_doc in repository.data_flows:
             self.report.data_flows_scanned += 1
-            yield from self._safe_build("DATA_FLOW", flow_doc.flowId, build_data_flow, flow_doc)
+            yield from self._safe_build(
+                "DATA_FLOW", flow_doc.flowId, build_data_flow, flow_doc, index, self.report
+            )
 
         for job_doc in repository.data_jobs:
             self.report.data_jobs_scanned += 1
@@ -197,7 +214,9 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for assertion_doc in repository.assertions:
             self.report.assertions_scanned += 1
-            yield from self._safe_build("ASSERTION", assertion_doc.id, build_assertion, assertion_doc)
+            yield from self._safe_build(
+                "ASSERTION", assertion_doc.id, build_assertion, assertion_doc, index, self.report
+            )
 
         for raw_doc in repository.raw_aspects:
             self.report.raw_aspects_scanned += 1

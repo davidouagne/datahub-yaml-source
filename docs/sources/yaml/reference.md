@@ -21,6 +21,10 @@ Complete field-by-field reference for every document `kind` and the raw aspect p
 - [`ASSERTION`](#assertion)
 - [`(aspectName: ...)`](#aspectname-)
 
+## Common metadata fields
+
+`owners`, `tags`, `glossaryTerms`, `domains`, `applications`, `links`, `deprecation`, `structuredProperties`, and `subTypes` behave identically wherever they're accepted -- which kind accepts which is determined by DataHub's entity registry, not by this connector, so it varies per kind. Each kind's own section below lists exactly the subset it accepts, after that kind's distinctive fields.
+
 ## DATA_PLATFORM
 
 Registers a custom data platform (e.g. one not built into DataHub's core platform list). Not needed for well-known platforms like `postgres` or `duckdb` -- only for platforms DataHub doesn't already know about.
@@ -43,6 +47,14 @@ A tag definition. Referenced elsewhere via `tags: [<name>]`.
 | `kind` | "TAG" | **yes** | - |  |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
+| `colorHex` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `deprecation` | DeprecationDoc | no | - |  |
 
 ## GLOSSARY_NODE
 
@@ -55,6 +67,18 @@ A glossary category/folder that groups related glossary terms.
 | `name` | string | **yes** | - |  |
 | `definition` | string | no | - |  |
 | `parentNode` | string | no | - | id of a parent GLOSSARY_NODE, for nested categories. |
+| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## GLOSSARY_TERM
 
@@ -67,6 +91,24 @@ A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`.
 | `name` | string | **yes** | - |  |
 | `definition` | string | no | - |  |
 | `parentNode` | string | no | - | id of the GLOSSARY_NODE this term belongs to. |
+| `glossaryRelatedTerms` | GlossaryRelatedTermsDoc | no | - |  |
+| `termSource` | string | no | - | e.g. 'EXTERNAL' or 'INTERNAL'. |
+| `sourceRef` | string | no | - | Name of the external source this term came from, if termSource is EXTERNAL. |
+| `sourceUrl` | string | no | - |  |
+| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## STRUCTURED_PROPERTY
 
@@ -95,6 +137,17 @@ A business domain, used to group related datasets/data products. Referenced else
 | `id` | string | **yes** | - | Stable identifier, becomes urn:li:domain:<id>. |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
+| `parentDomain` | string | no | - | id of a parent DOMAIN, for nested domain trees. |
+| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 
 ## APPLICATION
 
@@ -106,6 +159,17 @@ A source application/system (e.g. an EHR, an ERP). Referenced elsewhere via `app
 | `id` | string | **yes** | - | Stable identifier, becomes urn:li:application:<id>. |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## CONTAINER
 
@@ -123,10 +187,21 @@ A container (database, schema, bucket, ...). Emitted with parents before childre
 | `description` | string | no | - |  |
 | `externalUrl` | string | no | - |  |
 | `parentContainer` | [ContainerRef](#containerref) | no | - | Reference to the parent container, if any (e.g. a schema's parent database). |
-| `subTypes` | string or list of string | no | - | e.g. 'Database', 'Schema', 'S3_BUCKET'. |
+| `properties` | map | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
 | `tags` | list of string | no | - |  |
-| `properties` | map | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## DATASET
 
@@ -144,15 +219,23 @@ A dataset (table, view, topic, file, ...).
 | `container` | [ContainerRef](#containerref) | no | - | The dataset's parent container. |
 | `schema` | [SchemaBlock](#schemablock) | no | - |  |
 | `properties` | map | no | - |  |
-| `subTypes` | string or list of string | no | - | e.g. 'Table', 'View', 'Topic'. |
-| `tags` | list of string | no | - |  |
-| `glossaryTerms` | list of string | no | - |  |
-| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
-| `domains` | string | no | - |  |
 | `externalUrl` | string | no | - |  |
 | `upstreamLineage` | [UpstreamLineageDoc](#upstreamlineagedoc) | no | - |  |
 | `viewProperties` | [ViewPropertiesDoc](#viewpropertiesdoc) | no | - | For views: the view's SQL definition. Set subTypes: View alongside it. No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed. |
-| `applications` | list of string | no | - | ids of the APPLICATION documents this dataset belongs to. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## DATA_PRODUCT
 
@@ -164,12 +247,21 @@ A data product: a curated bundle of datasets/jobs presented as a single discover
 | `id` | string | **yes** | - | Stable identifier, becomes urn:li:dataProduct:<id>. |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
-| `domains` | string | no | - |  |
-| `glossaryTerms` | list of string | no | - |  |
-| `tags` | list of string | no | - |  |
-| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
-| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 | `assets` | list of string | no | - | Full URNs of the entities (datasets, dataJobs, ...) that make up this product. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## DATA_FLOW
 
@@ -185,13 +277,25 @@ A pipeline (e.g. an Airflow DAG, a dbt project run).
 | `description` | string | no | - |  |
 | `project` | string | no | - |  |
 | `externalUrl` | string | no | - |  |
-| `domains` | string | no | - |  |
+| `container` | [ContainerRef](#containerref) | no | - | The pipeline's parent container, if any. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
 | `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
+| `subTypes` | string or list of string | no | - |  |
 
 ## DATA_JOB
 
-A task within a pipeline (DATA_FLOW).
+A task within a pipeline (DATA_FLOW).  No `HasSubTypes` mixin: `type` below already fills that role (it was wired to the same `subTypes` aspect before this mixin existed), so adding a second `subTypes:` field would just give authors two names for one thing.
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -200,12 +304,27 @@ A task within a pipeline (DATA_FLOW).
 | `dataFlow` | [DataFlowRef](#dataflowref) | **yes** | - | Reference to the parent DATA_FLOW this task belongs to. |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
-| `type` | string | no | - |  |
+| `type` | string | no | - | The job's subtype, e.g. 'RawCopy', 'Transform'. |
+| `externalUrl` | string | no | - |  |
+| `properties` | map | no | - |  |
+| `container` | [ContainerRef](#containerref) | no | - | The job's parent container, if any. |
 | `inputDatasets` | list of [DatasetRef](#datasetref) | no | - |  |
 | `outputDatasets` | list of [DatasetRef](#datasetref) | no | - |  |
+| `inputDataJobs` | list of [DataFlowJobRef](#dataflowjobref) | no | - | Other DATA_JOBs this one depends on -- job-to-job DAG edges with no dataset in between. |
 | `fineGrainedLineages` | list of [FineGrainedLineageDoc](#finegrainedlineagedoc) | no | - | Column-level lineage edges from inputDatasets to outputDatasets. |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
 | `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
 | `tags` | list of string | no | - |  |
+| `glossaryTerms` | list of string | no | - |  |
+| `domains` | string | no | - |  |
+| `applications` | list of string | no | - | ids of the APPLICATION documents this entity belongs to. |
+| `links` | list of LinkDoc | no | - | Links shown in DataHub's 'Links' panel (the institutionalMemory aspect). |
+| `deprecation` | DeprecationDoc | no | - |  |
+| `structuredProperties` | map | no | - | Map of structuredProperty qualifiedName -> value (or list of values). |
 
 ## DATA_PROCESS_INSTANCE
 
@@ -226,7 +345,7 @@ A single run of a DATA_JOB, with its own run-event history. For ongoing/incremen
 
 ## ASSERTION
 
-A data quality assertion (freshness, SQL-based, or field-level check).
+A data quality assertion (freshness, volume, SQL-based, field-level, schema, or custom check).
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -236,10 +355,19 @@ A data quality assertion (freshness, SQL-based, or field-level check).
 | `sourceType` | string | no | `NATIVE` |  |
 | `properties` | [AssertionPropertiesDoc](#assertionpropertiesdoc) | no | - |  |
 | `assertion` | [AssertionAssertionDoc](#assertionassertiondoc) | **yes** | - |  |
+| `assertionNote` | string | no | - | Free-text note about this assertion's most recent run. |
+| `assertionActions` | AssertionActionsDoc | no | - |  |
+
+Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `owners` | [OwnerEntry](#ownerentry) or list of [OwnerEntry](#ownerentry) | no | - |  |
+| `tags` | list of string | no | - |  |
 
 ## (aspectName: ...)
 
-Passthrough document for directly emitting an existing DataHub aspect.  Discriminated by the presence of `aspectName` rather than `kind`. All fields other than `aspectName` and the entity reference are treated as the raw payload for that aspect class. Different aspects attach to different entity types, so the entity reference is one of several mutually-exclusive fields depending on `aspectName`: - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...) - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string) - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string)
+Passthrough document for directly emitting an existing DataHub aspect.  Discriminated by the presence of `aspectName` rather than `kind`. All fields other than `aspectName` and the entity reference are treated as the raw payload for that aspect class. Different aspects attach to different entity types, so the entity reference is one of several mutually-exclusive fields depending on `aspectName`: - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...) - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string) - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string) - `entityUrn`: generic fallback -- a full URN string for any other entity type
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -247,6 +375,7 @@ Passthrough document for directly emitting an existing DataHub aspect.  Discrimi
 | `dataset` | [DatasetRef](#datasetref) | no | - |  |
 | `assertionUrn` | string | no | - |  |
 | `dataProcessInstanceUrn` | string | no | - |  |
+| `entityUrn` | string | no | - |  |
 
 ## Supporting types
 
@@ -414,21 +543,22 @@ Reference to a DATA_JOB by its natural (orchestrator, flowId, cluster, jobId) ke
 
 ### AssertionAssertionDoc
 
-Union of the FRESHNESS / SQL / FIELD assertion shapes, kept flat.  Only the fields relevant to `type` will be populated by the author; the assertion builder picks which ones to read based on `type`.
+Union of the FRESHNESS / VOLUME / SQL / FIELD / DATA_SCHEMA / CUSTOM assertion shapes, kept flat.  Only the fields relevant to `type` will be populated by the author; the assertion builder picks which ones to read based on `type`. `DATASET` is deliberately not a supported value -- it is deprecated upstream (`AssertionType.pdl`) in favor of `VOLUME`.
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `type` | string | **yes** | - | FRESHNESS, SQL, or FIELD -- selects which fields below apply. |
+| `type` | string | **yes** | - | FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM -- selects which fields below apply. |
 | `entityUrn` | string | **yes** | - | Full URN of the dataset this assertion checks. |
 | `freshnessType` | string | no | - | [FRESHNESS] e.g. DATASET_CHANGE. |
 | `scheduleType` | string | no | - | [FRESHNESS] e.g. CRON. |
 | `cron` | string | no | - | [FRESHNESS] cron expression, if scheduleType is CRON. |
 | `timezone` | string | no | - | [FRESHNESS] IANA timezone for the cron schedule. |
+| `volumeType` | string | no | - | [VOLUME] ROW_COUNT_TOTAL or ROW_COUNT_CHANGE -- reuses 'operator'/'value'/'changeType' below. |
 | `sqlType` | string | no | - | [SQL] e.g. METRIC. |
 | `statement` | string | no | - | [SQL] the SQL query to evaluate. |
-| `operator` | string | no | - | [SQL/FIELD] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL. |
-| `value` | any | no | - | [SQL] the comparison value for 'operator'. |
-| `changeType` | string | no | - | [SQL] e.g. ABSOLUTE, PERCENTAGE. |
+| `operator` | string | no | - | [SQL/FIELD/VOLUME] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL. |
+| `value` | any | no | - | [SQL/VOLUME] the comparison value for 'operator'. |
+| `changeType` | string | no | - | [SQL/VOLUME] e.g. ABSOLUTE, PERCENTAGE. |
 | `fieldType` | string | no | - | [FIELD] FIELD_METRIC or FIELD_VALUES. |
 | `fieldPath` | string | no | - | [FIELD] the column this assertion checks. |
 | `dataType` | string | no | - | [FIELD] the column's DataHub schema type. |
@@ -437,6 +567,10 @@ Union of the FRESHNESS / SQL / FIELD assertion shapes, kept flat.  Only the fiel
 | `metricOperator` | string | no | - | [FIELD, FIELD_METRIC] comparison operator for 'metric'. |
 | `metricValue` | any | no | - | [FIELD, FIELD_METRIC] the comparison value. |
 | `excludeNulls` | boolean | no | - | [FIELD, FIELD_VALUES] ignore nulls when checking 'operator'. |
+| `schemaFields` | list of SchemaFieldSpecDoc | no | - | [DATA_SCHEMA] the expected columns. |
+| `compatibility` | string | no | - | [DATA_SCHEMA] e.g. EXACT_MATCH, SUPERSET. |
+| `customType` | string | no | - | [CUSTOM] free-text assertion type name. |
+| `logic` | string | no | - | [CUSTOM] free-text description of the custom check's logic. |
 
 ### StructuredPropertySettingsDoc
 

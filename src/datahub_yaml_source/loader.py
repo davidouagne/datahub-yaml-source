@@ -36,6 +36,11 @@ OnErrorCallback = Callable[[str, str], None]
 # Callback invoked once for every discovered YAML file, before it's read.
 OnFileScannedCallback = Callable[[Path], None]
 
+# Callback invoked for every entity document with a field that's either
+# misspelled or not valid for its `kind`: (file_path, kind, field_names) -> None.
+# Not used for RawAspectDoc, whose extra fields *are* the intended payload.
+OnUnknownFieldsCallback = Callable[[str, str, List[str]], None]
+
 
 @dataclass
 class ParsedRepository:
@@ -100,11 +105,16 @@ def load_repository(
     root: Path,
     on_error: OnErrorCallback,
     on_file_scanned: Optional[OnFileScannedCallback] = None,
+    on_unknown_fields: Optional[OnUnknownFieldsCallback] = None,
 ) -> ParsedRepository:
     """Walk `root` for YAML files and parse every document into a ParsedRepository.
 
     A document that fails to parse is reported via `on_error` and skipped; it
-    never aborts parsing of the rest of the file or the rest of the tree.
+    never aborts parsing of the rest of the file or the rest of the tree. A
+    document that parses but carries a field its `kind` doesn't recognize
+    (typo, or a common aspect the entity registry doesn't permit on that
+    kind) is reported via `on_unknown_fields` and still processed, ignoring
+    only that field.
     """
     repository = ParsedRepository()
 
@@ -133,6 +143,14 @@ def load_repository(
             except (DocumentParseError, ValidationError) as e:
                 on_error(str(path), f"Invalid document: {e}")
                 continue
+
+            if (
+                on_unknown_fields is not None
+                and not isinstance(parsed, RawAspectDoc)
+                and parsed.model_extra
+            ):
+                on_unknown_fields(str(path), raw_doc.get("kind", "?"), sorted(parsed.model_extra))
+
             repository.add(parsed)
 
     return repository

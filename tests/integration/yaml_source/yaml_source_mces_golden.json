@@ -14,7 +14,25 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859735,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:pii",
+    "changeType": "UPSERT",
+    "aspectName": "deprecation",
+    "aspect": {
+        "json": {
+            "deprecated": false,
+            "note": "",
+            "actor": "urn:li:corpuser:datahub"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859735,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -27,11 +45,38 @@
     "aspect": {
         "json": {
             "name": "pii",
-            "description": "Contains personally identifiable information"
+            "description": "Contains personally identifiable information",
+            "colorHex": "#FF0000"
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859735,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "tag",
+    "entityUrn": "urn:li:tag:pii",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859735,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -48,7 +93,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859735,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -66,7 +111,25 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859744,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "applications",
+    "aspect": {
+        "json": {
+            "applications": [
+                "urn:li:application:ORBIS"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859744,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -86,7 +149,69 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859744,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryRelatedTerms",
+    "aspect": {
+        "json": {
+            "hasRelatedTerms": [
+                "urn:li:glossaryTerm:fhir:Encounter"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859744,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859744,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "glossaryTerm",
+    "entityUrn": "urn:li:glossaryTerm:fhir:Patient",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859746,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -106,7 +231,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859746,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -142,7 +267,32 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859746,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "structuredProperty",
+    "entityUrn": "urn:li:structuredProperty:org.example.legalBasis",
+    "changeType": "UPSERT",
+    "aspectName": "propertyDefinition",
+    "aspect": {
+        "json": {
+            "qualifiedName": "org.example.legalBasis",
+            "displayName": "Legal basis",
+            "valueType": "urn:li:dataType:datahub.string",
+            "cardinality": "SINGLE",
+            "entityTypes": [
+                "urn:li:entityType:datahub.dataset",
+                "urn:li:entityType:datahub.container"
+            ],
+            "description": "Legal basis under which this dataset's data was collected",
+            "immutable": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859746,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -160,7 +310,95 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859746,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "domain",
+    "entityUrn": "urn:li:domain:3667192a0a19c51419efe99aa865c1ba",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859746,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "domain",
+    "entityUrn": "urn:li:domain:3667192a0a19c51419efe99aa865c1ba",
+    "changeType": "UPSERT",
+    "aspectName": "institutionalMemory",
+    "aspect": {
+        "json": {
+            "elements": [
+                {
+                    "url": "https://wiki.example.org/domains/patient-identity",
+                    "description": "Domain charter",
+                    "createStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:datahub"
+                    }
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859748,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "domain",
+    "entityUrn": "urn:li:domain:9c9a6e6e2f6d4d2fbf6a2e6a6f6a2e6a",
+    "changeType": "UPSERT",
+    "aspectName": "domainProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Identite",
+            "description": "Parent domain grouping identity-related sub-domains"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859748,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "domain",
+    "entityUrn": "urn:li:domain:3667192a0a19c51419efe99aa865c1ba-child-test",
+    "changeType": "UPSERT",
+    "aspectName": "domainProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient Identity (detail)",
+            "description": "Nested example under Identite, to exercise parentDomain resolution",
+            "parentDomain": "urn:li:domain:9c9a6e6e2f6d4d2fbf6a2e6a6f6a2e6a"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859748,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -178,7 +416,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859748,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -201,7 +439,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859748,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -217,7 +455,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -233,7 +471,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -251,7 +489,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -277,7 +515,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -293,7 +531,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829856,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -315,7 +553,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -331,7 +569,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -347,7 +585,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -365,7 +603,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -391,7 +629,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -407,7 +645,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -430,7 +668,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -446,7 +684,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -462,7 +700,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -480,7 +718,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -496,7 +734,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -512,7 +750,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -535,7 +773,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -551,7 +789,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -567,7 +805,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -585,7 +823,25 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -611,7 +867,81 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTerms",
+    "aspect": {
+        "json": {
+            "terms": [
+                {
+                    "urn": "urn:li:glossaryTerm:fhir:Patient"
+                }
+            ],
+            "auditStamp": {
+                "time": 0,
+                "actor": "urn:li:corpuser:datahub"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "institutionalMemory",
+    "aspect": {
+        "json": {
+            "elements": [
+                {
+                    "url": "https://wiki.example.org/schemas/ehr-public",
+                    "description": "Schema documentation",
+                    "createStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:datahub"
+                    }
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:1e900ca2865924d6b5f71e29908940c5",
+    "changeType": "UPSERT",
+    "aspectName": "structuredProperties",
+    "aspect": {
+        "json": {
+            "properties": [
+                {
+                    "propertyUrn": "urn:li:structuredProperty:org.example.legalBasis",
+                    "values": [
+                        {
+                            "string": "consent"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -632,7 +962,51 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829862,
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "deprecation",
+    "aspect": {
+        "json": {
+            "deprecated": true,
+            "decommissionTime": 1830297600000,
+            "note": "Superseded by warehouse_raw_layer_patient; kept for read compatibility",
+            "actor": "urn:li:corpuser:datahub"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "structuredProperties",
+    "aspect": {
+        "json": {
+            "properties": [
+                {
+                    "propertyUrn": "urn:li:structuredProperty:org.example.legalBasis",
+                    "values": [
+                        {
+                            "string": "consent"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -648,7 +1022,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -721,7 +1095,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -741,7 +1115,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -757,7 +1131,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -775,7 +1149,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -801,7 +1175,32 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "institutionalMemory",
+    "aspect": {
+        "json": {
+            "elements": [
+                {
+                    "url": "https://wiki.example.org/datasets/ehr-public-patient",
+                    "description": "Data dictionary entry",
+                    "createStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:datahub"
+                    }
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -821,7 +1220,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -845,7 +1244,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -863,7 +1262,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -888,7 +1287,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859750,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -904,7 +1303,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859761,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -989,7 +1388,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859761,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1007,7 +1406,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1023,7 +1422,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829867,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1041,7 +1440,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829872,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1067,7 +1466,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829872,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1087,7 +1486,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829872,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1111,7 +1510,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829874,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1129,7 +1528,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829874,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1154,7 +1553,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829874,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1170,7 +1569,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829874,
+        "lastObserved": 1786804859763,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1228,7 +1627,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829876,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1279,7 +1678,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829876,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1297,7 +1696,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829878,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1313,7 +1712,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829878,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1331,7 +1730,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829878,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1357,7 +1756,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829878,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1377,7 +1776,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829880,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1395,7 +1794,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829880,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1416,7 +1815,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829880,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1434,7 +1833,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1450,7 +1849,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1510,7 +1909,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1549,7 +1948,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1568,7 +1967,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1586,7 +1985,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1602,7 +2001,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1620,7 +2019,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1646,7 +2045,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1666,7 +2065,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1684,7 +2083,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1709,7 +2108,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1741,69 +2140,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829882,
-        "runId": "yaml-source-golden-test",
-        "lastRunId": "no-run-id-provided"
-    }
-},
-{
-    "entityType": "dataProduct",
-    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
-    "changeType": "UPSERT",
-    "aspectName": "domains",
-    "aspect": {
-        "json": {
-            "domains": [
-                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
-            ]
-        }
-    },
-    "systemMetadata": {
-        "lastObserved": 1786615829888,
-        "runId": "yaml-source-golden-test",
-        "lastRunId": "no-run-id-provided"
-    }
-},
-{
-    "entityType": "dataProduct",
-    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
-    "changeType": "UPSERT",
-    "aspectName": "globalTags",
-    "aspect": {
-        "json": {
-            "tags": [
-                {
-                    "tag": "urn:li:tag:pii"
-                }
-            ]
-        }
-    },
-    "systemMetadata": {
-        "lastObserved": 1786615829888,
-        "runId": "yaml-source-golden-test",
-        "lastRunId": "no-run-id-provided"
-    }
-},
-{
-    "entityType": "dataProduct",
-    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
-    "changeType": "UPSERT",
-    "aspectName": "glossaryTerms",
-    "aspect": {
-        "json": {
-            "terms": [
-                {
-                    "urn": "urn:li:glossaryTerm:fhir:Patient"
-                }
-            ],
-            "auditStamp": {
-                "time": 0,
-                "actor": "urn:li:corpuser:datahub"
-            }
-        }
-    },
-    "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1829,7 +2166,69 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859766,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859766,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "glossaryTerms",
+    "aspect": {
+        "json": {
+            "terms": [
+                {
+                    "urn": "urn:li:glossaryTerm:fhir:Patient"
+                }
+            ],
+            "auditStamp": {
+                "time": 0,
+                "actor": "urn:li:corpuser:datahub"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859766,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataProduct",
+    "entityUrn": "urn:li:dataProduct:b78435bfad26dab4c11e6e41c2a72b53",
+    "changeType": "UPSERT",
+    "aspectName": "domains",
+    "aspect": {
+        "json": {
+            "domains": [
+                "urn:li:domain:3667192a0a19c51419efe99aa865c1ba"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1854,7 +2253,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859766,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1870,7 +2269,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859779,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1891,7 +2290,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859779,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1917,7 +2316,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859779,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1935,7 +2334,44 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859779,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "container",
+    "aspect": {
+        "json": {
+            "container": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859779,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataFlow",
+    "entityUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+                    "urn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859779,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1951,7 +2387,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859780,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1974,7 +2410,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859780,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -1992,7 +2428,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829888,
+        "lastObserved": 1786804859780,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2018,7 +2454,32 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859780,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)",
+    "changeType": "UPSERT",
+    "aspectName": "institutionalMemory",
+    "aspect": {
+        "json": {
+            "elements": [
+                {
+                    "url": "https://airflow.example.org/dags/ehr_to_warehouse/patient_to_raw_layer",
+                    "description": "Airflow task page",
+                    "createStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:datahub"
+                    }
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859780,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2053,7 +2514,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859782,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2074,7 +2535,131 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859782,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:airflow"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859782,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "dataJobInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "name": "Patient quality check",
+            "description": "Runs data quality checks after the patient copy completes",
+            "type": {
+                "string": "COMMAND"
+            },
+            "flowUrn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
+            "env": "PROD"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859782,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Quality"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859782,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:eds-data-engineering",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859782,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "dataJobInputOutput",
+    "aspect": {
+        "json": {
+            "inputDatasets": [],
+            "outputDatasets": [],
+            "inputDatajobs": [
+                "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_to_raw_layer)"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859784,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "browsePathsV2",
+    "aspect": {
+        "json": {
+            "path": [
+                {
+                    "id": "ehr_to_warehouse",
+                    "urn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859784,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2096,7 +2681,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859784,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2113,7 +2698,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859786,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2131,7 +2716,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859786,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2149,7 +2734,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859786,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2171,7 +2756,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859786,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2193,7 +2778,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859789,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2222,7 +2807,104 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859790,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:ehr-patient-freshness-check",
+    "changeType": "UPSERT",
+    "aspectName": "ownership",
+    "aspect": {
+        "json": {
+            "owners": [
+                {
+                    "owner": "urn:li:corpuser:datahub",
+                    "type": "TECHNICAL_OWNER"
+                }
+            ],
+            "ownerTypes": {},
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859791,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:ehr-patient-freshness-check",
+    "changeType": "UPSERT",
+    "aspectName": "globalTags",
+    "aspect": {
+        "json": {
+            "tags": [
+                {
+                    "tag": "urn:li:tag:pii"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859792,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:warehouse-patient-row-count-check",
+    "changeType": "UPSERT",
+    "aspectName": "assertionInfo",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "type": "VOLUME",
+            "volumeAssertion": {
+                "type": "ROW_COUNT_TOTAL",
+                "entity": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
+                "rowCountTotal": {
+                    "operator": "GREATER_THAN_OR_EQUAL_TO",
+                    "parameters": {
+                        "value": {
+                            "value": "1",
+                            "type": "NUMBER"
+                        }
+                    }
+                }
+            },
+            "description": "The warehouse copy must have at least as many rows as the source"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859793,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:warehouse-patient-row-count-check",
+    "changeType": "UPSERT",
+    "aspectName": "assertionNote",
+    "aspect": {
+        "json": {
+            "content": "Last checked green on 2026-08-14; row count was 1.48M.",
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:datahub"
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859793,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2253,7 +2935,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859795,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2299,7 +2981,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859796,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2315,7 +2997,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859797,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2331,7 +3013,23 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859797,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "assertion",
+    "entityUrn": "urn:li:assertion:warehouse-patient-row-count-check",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859798,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2347,7 +3045,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859798,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2363,7 +3061,23 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859798,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataJob",
+    "entityUrn": "urn:li:dataJob:(urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD),patient_quality_check)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859798,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2379,7 +3093,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2395,7 +3109,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2411,7 +3125,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2427,7 +3141,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2443,7 +3157,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2459,7 +3173,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2475,7 +3189,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2491,7 +3205,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2507,7 +3221,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2523,7 +3237,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2539,7 +3253,23 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859799,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "structuredProperty",
+    "entityUrn": "urn:li:structuredProperty:org.example.legalBasis",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786804859804,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2555,7 +3285,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859804,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -2571,7 +3301,7 @@
         }
     },
     "systemMetadata": {
-        "lastObserved": 1786615829892,
+        "lastObserved": 1786804859804,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }

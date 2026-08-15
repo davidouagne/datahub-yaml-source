@@ -12,6 +12,25 @@ assertion:
   scheduleType: CRON
   cron: "0 8 * * *"
   timezone: "UTC"
+owners:
+  owner: datahub
+  type: TECHNICAL_OWNER
+tags:
+  - pii
+---
+kind: ASSERTION
+id: warehouse-patient-row-count-check
+description: "The warehouse copy must have at least as many rows as the source"
+sourceType: NATIVE
+properties:
+  name: "Volume - patient row count"
+assertion:
+  type: VOLUME
+  entityUrn: "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)"
+  volumeType: ROW_COUNT_TOTAL
+  operator: GREATER_THAN_OR_EQUAL_TO
+  value: 1
+assertionNote: "Last checked green on 2026-08-14; row count was 1.48M."
 ---
 kind: ASSERTION
 id: warehouse-patient-uniqueness-check

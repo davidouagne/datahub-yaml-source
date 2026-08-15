@@ -2,16 +2,18 @@ from collections import defaultdict, deque
 from typing import Dict, Iterable, List, Tuple
 
 from datahub.emitter.mcp_builder import gen_containers
+
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 
 from datahub_yaml_source.builders.common import (
     build_ownership_aspect,
+    common_aspect_mcps,
     mcp_workunit,
     owner_urn,
     stringify_custom_properties,
 )
 from datahub_yaml_source.models import ContainerDoc, normalize_owners, normalize_sub_types
-from datahub_yaml_source.urns import ReferenceIndex, container_key, container_natural_key
+from datahub_yaml_source.urns import ReferenceIndex, container_key, container_natural_key, domain_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 NaturalKey = Tuple[str, object, str, object, str]
@@ -61,6 +63,7 @@ def topological_sort_containers(containers: List[ContainerDoc]) -> List[Containe
 def build_container(
     doc: ContainerDoc, index: ReferenceIndex, report: YamlSourceReport
 ) -> Iterable[MetadataWorkUnit]:
+    context = f"CONTAINER '{doc.name}'"
     key = container_key(doc)
     parent_key = None
     if doc.parentContainer is not None:
@@ -78,6 +81,12 @@ def build_container(
     primary_owner_urn = owner_urn(owners[0].owner) if len(owners) == 1 else None
     primary_ownership_type = owners[0].type if len(owners) == 1 else None
 
+    domain = None
+    if doc.domains:
+        if not index.has_domain(doc.domains):
+            report.report_dangling_reference(f"{context} references undeclared domain '{doc.domains}'")
+        domain = domain_urn(doc.domains)
+
     sub_types = normalize_sub_types(doc.subTypes) or ["container"]
 
     yield from gen_containers(
@@ -91,9 +100,23 @@ def build_container(
         ownership_type=primary_ownership_type,
         external_url=doc.externalUrl,
         tags=doc.tags,
+        domain_urn=domain,
+        # `structured_properties=` is deliberately not passed here: it only
+        # accepts a single value per property (`add_structured_properties_to_entity_wu`
+        # builds `values=[value]`), which silently drops all but one value for
+        # a MULTIPLE-cardinality property. Emitted as a follow-up MCP below instead.
     )
 
     # gen_containers() only supports a single owner; emit the full ownership
     # aspect afterward (overwriting the single-owner one) when there's more than one.
     if len(owners) > 1:
         yield mcp_workunit(key.as_urn(), build_ownership_aspect(owners))
+
+    # terms/applications/links/deprecation/structuredProperties have no
+    # gen_containers() kwarg at all; owners/tags/subTypes/domain were just
+    # handled above (natively or via the multi-owner fallback), so skip them
+    # here to avoid emitting the same aspect twice.
+    yield from common_aspect_mcps(
+        key.as_urn(), doc, index, report, context,
+        skip=frozenset({"owners", "tags", "subTypes", "domain"}),
+    )

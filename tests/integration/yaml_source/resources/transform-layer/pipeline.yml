@@ -80,6 +80,11 @@ domains: "3667192a0a19c51419efe99aa865c1ba"
 owners:
   - owner: eds-data-engineering
     type: TECHNICAL_OWNER
+container:
+  platform: duckdb
+  instance: duckdb
+  database: warehouse
+  env: PROD
 ---
 kind: DATA_JOB
 jobId: patient_to_raw_layer
@@ -111,6 +116,27 @@ fineGrainedLineages:
       fieldPath: patient_id
     operation: "IDENTITY"
     confidence: 1.0
+owners:
+  - owner: eds-data-engineering
+    type: TECHNICAL_OWNER
+links:
+  - url: https://airflow.example.org/dags/ehr_to_warehouse/patient_to_raw_layer
+    description: Airflow task page
+---
+kind: DATA_JOB
+jobId: patient_quality_check
+dataFlow:
+  orchestrator: airflow
+  flowId: ehr_to_warehouse
+  cluster: PROD
+name: Patient quality check
+description: Runs data quality checks after the patient copy completes
+type: Quality
+inputDataJobs:
+  - orchestrator: airflow
+    flowId: ehr_to_warehouse
+    cluster: PROD
+    jobId: patient_to_raw_layer
 owners:
   - owner: eds-data-engineering
     type: TECHNICAL_OWNER

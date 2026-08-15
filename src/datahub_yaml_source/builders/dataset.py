@@ -3,7 +3,6 @@ from typing import Iterable
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
-    ApplicationsClass,
     DatasetLineageTypeClass,
     ForeignKeyConstraintClass,
     OtherSchemaClass,
@@ -17,7 +16,7 @@ from datahub.sdk.dataset import Dataset
 
 from datahub_yaml_source.builders.common import (
     build_fine_grained_lineage_list,
-    owners_to_sdk_input,
+    common_sdk_kwargs,
     schema_field_data_type,
     stringify_custom_properties,
 )
@@ -28,19 +27,8 @@ from datahub_yaml_source.models import (
     SchemaFieldDoc,
     UpstreamLineageDoc,
     ViewPropertiesDoc,
-    normalize_owners,
-    normalize_sub_types,
 )
-from datahub_yaml_source.urns import (
-    ReferenceIndex,
-    application_urn,
-    container_key,
-    data_platform_urn,
-    dataset_urn,
-    domain_urn,
-    glossary_term_urn,
-    tag_urn,
-)
+from datahub_yaml_source.urns import ReferenceIndex, container_key, data_platform_urn, dataset_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 
@@ -109,37 +97,14 @@ def build_view_properties(doc: ViewPropertiesDoc) -> ViewPropertiesClass:
 def build_dataset(
     doc: DatasetDoc, index: ReferenceIndex, report: YamlSourceReport
 ) -> Iterable[MetadataWorkUnit]:
-    owners = normalize_owners(doc.owners)
-
-    tags = []
-    for tag_name in doc.tags or []:
-        if not index.has_tag(tag_name):
-            report.report_dangling_reference(
-                f"DATASET '{doc.name}' references undeclared tag '{tag_name}'"
-            )
-        tags.append(tag_urn(tag_name))
-
-    terms = []
-    for term_id in doc.glossaryTerms or []:
-        if not index.has_glossary_term(term_id):
-            report.report_dangling_reference(
-                f"DATASET '{doc.name}' references undeclared glossaryTerm '{term_id}'"
-            )
-        terms.append(glossary_term_urn(term_id))
-
-    domain = None
-    if doc.domains:
-        if not index.has_domain(doc.domains):
-            report.report_dangling_reference(
-                f"DATASET '{doc.name}' references undeclared domain '{doc.domains}'"
-            )
-        domain = domain_urn(doc.domains)
+    context = f"DATASET '{doc.name}'"
+    common = common_sdk_kwargs(doc, index, report, context)
 
     parent_container = None
     if doc.container is not None:
         if not index.has_container(doc.container):
             report.report_dangling_reference(
-                f"DATASET '{doc.name}' references an undeclared container "
+                f"{context} references an undeclared container "
                 f"(platform={doc.container.platform}, database={doc.container.database}, "
                 f"schema={doc.container.schema_name})"
             )
@@ -151,17 +116,6 @@ def build_dataset(
 
     upstreams = build_upstream_lineage(doc.upstreamLineage) if doc.upstreamLineage else None
 
-    application_urns = []
-    for app_id in doc.applications or []:
-        if not index.has_application(app_id):
-            report.report_dangling_reference(
-                f"DATASET '{doc.name}' references undeclared application '{app_id}'"
-            )
-        application_urns.append(application_urn(app_id))
-
-    sub_types = normalize_sub_types(doc.subTypes)
-    subtype = sub_types[0] if sub_types else None
-
     dataset = Dataset(
         platform=doc.platform,
         name=doc.name,
@@ -171,11 +125,6 @@ def build_dataset(
         display_name=doc.displayName,
         external_url=doc.externalUrl,
         custom_properties=stringify_custom_properties(doc.properties),
-        subtype=subtype,
-        owners=owners_to_sdk_input(owners) or None,
-        tags=tags or None,
-        terms=terms or None,
-        domain=domain,
         parent_container=parent_container,
         schema=schema_metadata,
         upstreams=upstreams,
@@ -183,8 +132,6 @@ def build_dataset(
             build_view_properties(doc.viewProperties) if doc.viewProperties else None
         ),
         parse_view_lineage=False,
-        extra_aspects=(
-            [ApplicationsClass(applications=application_urns)] if application_urns else None
-        ),
+        **common,
     )
     yield from dataset.as_workunits()

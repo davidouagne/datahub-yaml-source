@@ -84,11 +84,12 @@ def test_get_workunits_internal_reports_warning_and_continues_when_builder_raise
     # A dataset whose upstreamLineage references a dataset ref without a platform
     # would fail model validation already; instead force a builder-time failure
     # via an assertion with an unsupported type, which raises inside the builder.
+    # DATASET is deliberately unsupported: deprecated upstream in favor of VOLUME.
     (tmp_path / "assets.yml").write_text(
         "kind: ASSERTION\n"
         "id: bad-assertion\n"
         "assertion:\n"
-        "  type: VOLUME\n"
+        "  type: DATASET\n"
         "  entityUrn: 'urn:li:dataset:(urn:li:dataPlatform:x,y,PROD)'\n"
         "---\n"
         "kind: TAG\n"

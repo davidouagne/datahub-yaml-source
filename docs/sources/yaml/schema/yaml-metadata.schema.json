@@ -75,8 +75,102 @@
       "type": "object"
     },
     "ApplicationDoc": {
+      "additionalProperties": true,
       "description": "A source application/system (e.g. an EHR, an ERP). Referenced elsewhere\nvia `applications: [<id>]`.",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "APPLICATION",
           "title": "Kind",
@@ -112,11 +206,62 @@
       "title": "ApplicationDoc",
       "type": "object"
     },
-    "AssertionAssertionDoc": {
-      "description": "Union of the FRESHNESS / SQL / FIELD assertion shapes, kept flat.\n\nOnly the fields relevant to `type` will be populated by the author; the\nassertion builder picks which ones to read based on `type`.",
+    "AssertionActionDoc": {
       "properties": {
         "type": {
-          "description": "FRESHNESS, SQL, or FIELD -- selects which fields below apply.",
+          "description": "e.g. RAISE_INCIDENT, RESOLVE_INCIDENT.",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "AssertionActionDoc",
+      "type": "object"
+    },
+    "AssertionActionsDoc": {
+      "description": "Declarative on-failure/on-success actions. Emits the `assertionActions` aspect.",
+      "properties": {
+        "onSuccess": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AssertionActionDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onsuccess"
+        },
+        "onFailure": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AssertionActionDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Onfailure"
+        }
+      },
+      "title": "AssertionActionsDoc",
+      "type": "object"
+    },
+    "AssertionAssertionDoc": {
+      "description": "Union of the FRESHNESS / VOLUME / SQL / FIELD / DATA_SCHEMA / CUSTOM\nassertion shapes, kept flat.\n\nOnly the fields relevant to `type` will be populated by the author; the\nassertion builder picks which ones to read based on `type`. `DATASET` is\ndeliberately not a supported value -- it is deprecated upstream\n(`AssertionType.pdl`) in favor of `VOLUME`.",
+      "properties": {
+        "type": {
+          "description": "FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM -- selects which fields below apply.",
           "title": "Type",
           "type": "string"
         },
@@ -177,6 +322,19 @@
           "description": "[FRESHNESS] IANA timezone for the cron schedule.",
           "title": "Timezone"
         },
+        "volumeType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[VOLUME] ROW_COUNT_TOTAL or ROW_COUNT_CHANGE -- reuses 'operator'/'value'/'changeType' below.",
+          "title": "Volumetype"
+        },
         "sqlType": {
           "anyOf": [
             {
@@ -213,7 +371,7 @@
             }
           ],
           "default": null,
-          "description": "[SQL/FIELD] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.",
+          "description": "[SQL/FIELD/VOLUME] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.",
           "title": "Operator"
         },
         "value": {
@@ -224,7 +382,7 @@
             }
           ],
           "default": null,
-          "description": "[SQL] the comparison value for 'operator'.",
+          "description": "[SQL/VOLUME] the comparison value for 'operator'.",
           "title": "Value"
         },
         "changeType": {
@@ -237,7 +395,7 @@
             }
           ],
           "default": null,
-          "description": "[SQL] e.g. ABSOLUTE, PERCENTAGE.",
+          "description": "[SQL/VOLUME] e.g. ABSOLUTE, PERCENTAGE.",
           "title": "Changetype"
         },
         "fieldType": {
@@ -341,6 +499,61 @@
           "default": null,
           "description": "[FIELD, FIELD_VALUES] ignore nulls when checking 'operator'.",
           "title": "Excludenulls"
+        },
+        "schemaFields": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SchemaFieldSpecDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[DATA_SCHEMA] the expected columns.",
+          "title": "Schemafields"
+        },
+        "compatibility": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[DATA_SCHEMA] e.g. EXACT_MATCH, SUPERSET.",
+          "title": "Compatibility"
+        },
+        "customType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[CUSTOM] free-text assertion type name.",
+          "title": "Customtype"
+        },
+        "logic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "[CUSTOM] free-text description of the custom check's logic.",
+          "title": "Logic"
         }
       },
       "required": [
@@ -351,8 +564,42 @@
       "type": "object"
     },
     "AssertionDoc": {
-      "description": "A data quality assertion (freshness, SQL-based, or field-level check).",
+      "additionalProperties": true,
+      "description": "A data quality assertion (freshness, volume, SQL-based, field-level, schema, or custom check).",
       "properties": {
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "ASSERTION",
           "title": "Kind",
@@ -393,6 +640,30 @@
         },
         "assertion": {
           "$ref": "#/$defs/AssertionAssertionDoc"
+        },
+        "assertionNote": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text note about this assertion's most recent run.",
+          "title": "Assertionnote"
+        },
+        "assertionActions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AssertionActionsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -429,8 +700,144 @@
       "type": "object"
     },
     "ContainerDoc": {
+      "additionalProperties": true,
       "description": "A container (database, schema, bucket, ...). Emitted with parents\nbefore children automatically, regardless of declaration order across\nfiles. See `ContainerRef` for how the URN is computed.",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "platform": {
           "description": "Platform of the container, e.g. 'postgres', 'duckdb', 's3'.",
           "title": "Platform",
@@ -523,58 +930,6 @@
           ],
           "default": null,
           "description": "Reference to the parent container, if any (e.g. a schema's parent database)."
-        },
-        "subTypes": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "e.g. 'Database', 'Schema', 'S3_BUCKET'.",
-          "title": "Subtypes"
-        },
-        "owners": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OwnerEntry"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/OwnerEntry"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Owners"
-        },
-        "tags": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Tags"
         },
         "properties": {
           "anyOf": [
@@ -683,8 +1038,144 @@
       "type": "object"
     },
     "DataFlowDoc": {
+      "additionalProperties": true,
       "description": "A pipeline (e.g. an Airflow DAG, a dbt project run).",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "DATA_FLOW",
           "title": "Kind",
@@ -745,50 +1236,17 @@
           "default": null,
           "title": "Externalurl"
         },
-        "domains": {
+        "container": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/$defs/ContainerRef"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "title": "Domains"
-        },
-        "owners": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OwnerEntry"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/OwnerEntry"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Owners"
-        },
-        "tags": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Tags"
+          "description": "The pipeline's parent container, if any."
         }
       },
       "required": [
@@ -854,8 +1312,126 @@
       "type": "object"
     },
     "DataJobDoc": {
-      "description": "A task within a pipeline (DATA_FLOW).",
+      "additionalProperties": true,
+      "description": "A task within a pipeline (DATA_FLOW).\n\nNo `HasSubTypes` mixin: `type` below already fills that role (it was\nwired to the same `subTypes` aspect before this mixin existed), so adding\na second `subTypes:` field would just give authors two names for one\nthing.",
       "properties": {
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "DATA_JOB",
           "title": "Kind",
@@ -895,7 +1471,45 @@
             }
           ],
           "default": null,
+          "description": "The job's subtype, e.g. 'RawCopy', 'Transform'.",
           "title": "Type"
+        },
+        "externalUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Externalurl"
+        },
+        "properties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Properties"
+        },
+        "container": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContainerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The job's parent container, if any."
         },
         "inputDatasets": {
           "anyOf": [
@@ -927,6 +1541,22 @@
           "default": null,
           "title": "Outputdatasets"
         },
+        "inputDataJobs": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DataFlowJobRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Other DATA_JOBs this one depends on -- job-to-job DAG edges with no dataset in between.",
+          "title": "Inputdatajobs"
+        },
         "fineGrainedLineages": {
           "anyOf": [
             {
@@ -942,39 +1572,6 @@
           "default": null,
           "description": "Column-level lineage edges from inputDatasets to outputDatasets.",
           "title": "Finegrainedlineages"
-        },
-        "owners": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OwnerEntry"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/OwnerEntry"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Owners"
-        },
-        "tags": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Tags"
         }
       },
       "required": [
@@ -987,6 +1584,7 @@
       "type": "object"
     },
     "DataPlatformDoc": {
+      "additionalProperties": true,
       "description": "Registers a custom data platform (e.g. one not built into DataHub's\ncore platform list). Not needed for well-known platforms like `postgres`\nor `duckdb` -- only for platforms DataHub doesn't already know about.",
       "properties": {
         "kind": {
@@ -1043,6 +1641,7 @@
       "type": "object"
     },
     "DataProcessInstanceDoc": {
+      "additionalProperties": true,
       "description": "A single run of a DATA_JOB, with its own run-event history. For\nongoing/incremental run events after the initial run, prefer an\n`aspectName: DATA_PROCESS_INSTANCE_RUN_EVENT` raw-aspect document instead\nof appending to `runEvents` here.",
       "properties": {
         "kind": {
@@ -1140,33 +1739,83 @@
       "type": "object"
     },
     "DataProductDoc": {
+      "additionalProperties": true,
       "description": "A data product: a curated bundle of datasets/jobs presented as a\nsingle discoverable asset, with its own domain/tags/owners.",
       "properties": {
-        "kind": {
-          "const": "DATA_PRODUCT",
-          "title": "Kind",
-          "type": "string"
-        },
-        "id": {
-          "description": "Stable identifier, becomes urn:li:dataProduct:<id>.",
-          "title": "Id",
-          "type": "string"
-        },
-        "name": {
-          "title": "Name",
-          "type": "string"
-        },
-        "description": {
+        "subTypes": {
           "anyOf": [
             {
               "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "title": "Description"
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
         },
         "domains": {
           "anyOf": [
@@ -1228,19 +1877,31 @@
           "default": null,
           "title": "Owners"
         },
-        "structuredProperties": {
+        "kind": {
+          "const": "DATA_PRODUCT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable identifier, becomes urn:li:dataProduct:<id>.",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
           "anyOf": [
             {
-              "additionalProperties": true,
-              "type": "object"
+              "type": "string"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
-          "title": "Structuredproperties"
+          "title": "Description"
         },
         "assets": {
           "anyOf": [
@@ -1268,8 +1929,144 @@
       "type": "object"
     },
     "DatasetDoc": {
+      "additionalProperties": true,
       "description": "A dataset (table, view, topic, file, ...).",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "glossaryTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glossaryterms"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "DATASET",
           "title": "Kind",
@@ -1360,85 +2157,6 @@
           "default": null,
           "title": "Properties"
         },
-        "subTypes": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "e.g. 'Table', 'View', 'Topic'.",
-          "title": "Subtypes"
-        },
-        "tags": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Tags"
-        },
-        "glossaryTerms": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Glossaryterms"
-        },
-        "owners": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/OwnerEntry"
-            },
-            {
-              "items": {
-                "$ref": "#/$defs/OwnerEntry"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Owners"
-        },
-        "domains": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Domains"
-        },
         "externalUrl": {
           "anyOf": [
             {
@@ -1473,22 +2191,6 @@
           ],
           "default": null,
           "description": "For views: the view's SQL definition. Set subTypes: View alongside it. No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed."
-        },
-        "applications": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "ids of the APPLICATION documents this dataset belongs to.",
-          "title": "Applications"
         }
       },
       "required": [
@@ -1575,9 +2277,139 @@
       "title": "DatasetRef",
       "type": "object"
     },
+    "DeprecationDoc": {
+      "description": "Marks an entity deprecated. Emits the `deprecation` aspect.",
+      "properties": {
+        "deprecated": {
+          "default": true,
+          "description": "Set to false to explicitly un-deprecate an entity.",
+          "title": "Deprecated",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "decommissionTime": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Planned removal time, epoch millis.",
+          "title": "Decommissiontime"
+        },
+        "actor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Owner name; converted to a corpuser URN if not already one.",
+          "title": "Actor"
+        }
+      },
+      "title": "DeprecationDoc",
+      "type": "object"
+    },
+    "DisplayPropertiesDoc": {
+      "description": "Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.\n(`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an\nicon library/name/style triple with no natural single-field shorthand.)",
+      "properties": {
+        "colorHex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Colorhex"
+        }
+      },
+      "title": "DisplayPropertiesDoc",
+      "type": "object"
+    },
     "DomainDoc": {
+      "additionalProperties": true,
       "description": "A business domain, used to group related datasets/data products.\nReferenced elsewhere via `domains: <id>`.",
       "properties": {
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "DOMAIN",
           "title": "Kind",
@@ -1603,6 +2435,30 @@
           ],
           "default": null,
           "title": "Description"
+        },
+        "parentDomain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of a parent DOMAIN, for nested domain trees.",
+          "title": "Parentdomain"
+        },
+        "displayProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DisplayPropertiesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1699,8 +2555,102 @@
       "type": "object"
     },
     "GlossaryNodeDoc": {
+      "additionalProperties": true,
       "description": "A glossary category/folder that groups related glossary terms.",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "GLOSSARY_NODE",
           "title": "Kind",
@@ -1739,6 +2689,17 @@
           "default": null,
           "description": "id of a parent GLOSSARY_NODE, for nested categories.",
           "title": "Parentnode"
+        },
+        "displayProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DisplayPropertiesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1749,9 +2710,201 @@
       "title": "GlossaryNodeDoc",
       "type": "object"
     },
+    "GlossaryRelatedTermsDoc": {
+      "description": "Relationships to other glossary terms. Emits the `glossaryRelatedTerms`\naspect. Each list holds ids of other GLOSSARY_TERM documents.",
+      "properties": {
+        "isRelatedTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "'is a' relationships, e.g. this term is a kind of the related term.",
+          "title": "Isrelatedterms"
+        },
+        "hasRelatedTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "'has a' relationships, e.g. this term has the related term as a part.",
+          "title": "Hasrelatedterms"
+        },
+        "values": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Related terms representing possible values of this term.",
+          "title": "Values"
+        },
+        "relatedTerms": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "General 'is related to' relationships.",
+          "title": "Relatedterms"
+        }
+      },
+      "title": "GlossaryRelatedTermsDoc",
+      "type": "object"
+    },
     "GlossaryTermDoc": {
+      "additionalProperties": true,
       "description": "A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`.",
       "properties": {
+        "subTypes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subtypes"
+        },
+        "structuredProperties": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Map of structuredProperty qualifiedName -> value (or list of values).",
+          "title": "Structuredproperties"
+        },
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "links": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/LinkDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
+          "title": "Links"
+        },
+        "applications": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ids of the APPLICATION documents this entity belongs to.",
+          "title": "Applications"
+        },
+        "domains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domains"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tags"
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "GLOSSARY_TERM",
           "title": "Kind",
@@ -1790,6 +2943,66 @@
           "default": null,
           "description": "id of the GLOSSARY_NODE this term belongs to.",
           "title": "Parentnode"
+        },
+        "glossaryRelatedTerms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GlossaryRelatedTermsDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "termSource": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'EXTERNAL' or 'INTERNAL'.",
+          "title": "Termsource"
+        },
+        "sourceRef": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of the external source this term came from, if termSource is EXTERNAL.",
+          "title": "Sourceref"
+        },
+        "sourceUrl": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sourceurl"
+        },
+        "displayProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DisplayPropertiesDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -1798,6 +3011,32 @@
         "name"
       ],
       "title": "GlossaryTermDoc",
+      "type": "object"
+    },
+    "LinkDoc": {
+      "description": "A link surfaced in DataHub's \"Links\" panel (the `institutionalMemory` aspect).",
+      "properties": {
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "LinkDoc",
       "type": "object"
     },
     "OwnerEntry": {
@@ -1820,7 +3059,7 @@
     },
     "RawAspectDoc": {
       "additionalProperties": true,
-      "description": "Passthrough document for directly emitting an existing DataHub aspect.\n\nDiscriminated by the presence of `aspectName` rather than `kind`. All\nfields other than `aspectName` and the entity reference are treated as\nthe raw payload for that aspect class. Different aspects attach to\ndifferent entity types, so the entity reference is one of several\nmutually-exclusive fields depending on `aspectName`:\n  - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...)\n  - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string)\n  - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string)",
+      "description": "Passthrough document for directly emitting an existing DataHub aspect.\n\nDiscriminated by the presence of `aspectName` rather than `kind`. All\nfields other than `aspectName` and the entity reference are treated as\nthe raw payload for that aspect class. Different aspects attach to\ndifferent entity types, so the entity reference is one of several\nmutually-exclusive fields depending on `aspectName`:\n  - `dataset`: for dataset-scoped aspects (DATASET_PROFILE, OPERATION, ...)\n  - `assertionUrn`: for ASSERTION_RUN_EVENT (already a full URN string)\n  - `dataProcessInstanceUrn`: for DATA_PROCESS_INSTANCE_RUN_EVENT (full URN string)\n  - `entityUrn`: generic fallback -- a full URN string for any other entity type",
       "properties": {
         "aspectName": {
           "title": "Aspectname",
@@ -1860,6 +3099,18 @@
           ],
           "default": null,
           "title": "Dataprocessinstanceurn"
+        },
+        "entityUrn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entityurn"
         }
       },
       "required": [
@@ -1990,7 +3241,39 @@
       "title": "SchemaFieldDoc",
       "type": "object"
     },
+    "SchemaFieldSpecDoc": {
+      "description": "[DATA_SCHEMA assertions] One expected column.",
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "type": {
+          "default": "string",
+          "title": "Type",
+          "type": "string"
+        },
+        "nativeType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nativetype"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "SchemaFieldSpecDoc",
+      "type": "object"
+    },
     "StructuredPropertyDoc": {
+      "additionalProperties": true,
       "description": "A custom structured property definition (a typed, filterable field\nattachable to datasets/data products/etc, beyond built-in DataHub fields).",
       "properties": {
         "kind": {
@@ -2166,8 +3449,38 @@
       "type": "object"
     },
     "TagDoc": {
+      "additionalProperties": true,
       "description": "A tag definition. Referenced elsewhere via `tags: [<name>]`.",
       "properties": {
+        "deprecation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DeprecationDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "owners": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OwnerEntry"
+            },
+            {
+              "items": {
+                "$ref": "#/$defs/OwnerEntry"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Owners"
+        },
         "kind": {
           "const": "TAG",
           "title": "Kind",
@@ -2188,6 +3501,18 @@
           ],
           "default": null,
           "title": "Description"
+        },
+        "colorHex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Colorhex"
         }
       },
       "required": [

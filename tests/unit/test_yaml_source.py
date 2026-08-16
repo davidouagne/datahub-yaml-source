@@ -1,3 +1,5 @@
+import logging
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,7 +11,7 @@ from pydantic import ValidationError
 
 from datahub_yaml_source.loader import ParsedRepository
 from datahub_yaml_source.yaml_source import YamlSource, _resolve_aws_connection
-from datahub_yaml_source.yaml_source_config import YamlSourceConfig
+from datahub_yaml_source.yaml_source_config import YamlGitInfo, YamlSourceConfig
 
 
 def _source(tmp_path: Path, **config_kwargs) -> YamlSource:
@@ -151,7 +153,7 @@ def test_config_requires_path_when_git_info_is_not_set():
 
 
 def test_config_defaults_path_to_dot_when_git_info_is_set():
-    config = YamlSourceConfig(git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"))
+    config = YamlSourceConfig(git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"))
     assert config.path == "."
 
 
@@ -165,7 +167,7 @@ def test_get_workunits_internal_clones_git_info_and_loads_checkout(tmp_path: Pat
 
     monkeypatch.setattr(GitInfo, "clone", fake_clone)
 
-    config = YamlSourceConfig(git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"))
+    config = YamlSourceConfig(git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"))
     source = YamlSource(config, PipelineContext(run_id="test-run"))
 
     wus = list(source.get_workunits_internal())
@@ -191,7 +193,7 @@ def test_get_workunits_internal_resolves_relative_path_under_git_checkout(
     monkeypatch.setattr(GitInfo, "clone", fake_clone)
 
     config = YamlSourceConfig(
-        git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"), path="sub"
+        git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"), path="sub"
     )
     source = YamlSource(config, PipelineContext(run_id="test-run"))
 
@@ -208,7 +210,7 @@ def test_get_workunits_internal_reports_failure_when_git_clone_raises(monkeypatc
 
     monkeypatch.setattr(GitInfo, "clone", fake_clone)
 
-    config = YamlSourceConfig(git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"))
+    config = YamlSourceConfig(git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"))
     source = YamlSource(config, PipelineContext(run_id="test-run"))
 
     wus = list(source.get_workunits_internal())
@@ -242,6 +244,91 @@ def test_test_connection_reports_not_capable_when_git_clone_fails(monkeypatch):
     assert report.basic_connectivity.capable is False
 
 
+# --- YamlGitInfo clone defaults (repo_ssh_locator / clone_timeout) --------
+
+
+def test_git_info_derives_https_clone_url_when_no_deploy_key():
+    config = YamlSourceConfig(git_info={"repo": "https://github.com/aphp/datahub-sample"})
+    assert config.git_info.repo_ssh_locator == "https://github.com/aphp/datahub-sample.git"
+
+
+def test_git_info_derives_https_clone_url_from_org_repo_shorthand():
+    config = YamlSourceConfig(git_info={"repo": "aphp/datahub-sample"})
+    assert config.git_info.repo_ssh_locator == "https://github.com/aphp/datahub-sample.git"
+
+
+def test_git_info_infers_ssh_locator_when_deploy_key_file_is_set(tmp_path: Path):
+    key_file = tmp_path / "deploy_key"
+    key_file.write_text("fake-key-content")
+    config = YamlSourceConfig(
+        git_info={
+            "repo": "https://github.com/aphp/datahub-sample",
+            "deploy_key_file": str(key_file),
+        }
+    )
+    assert config.git_info.repo_ssh_locator == "git@github.com:aphp/datahub-sample.git"
+
+
+def test_git_info_infers_ssh_locator_when_deploy_key_is_set():
+    config = YamlSourceConfig(
+        git_info={
+            "repo": "https://github.com/aphp/datahub-sample",
+            "deploy_key": "fake-key-content",
+        }
+    )
+    assert config.git_info.repo_ssh_locator == "git@github.com:aphp/datahub-sample.git"
+
+
+def test_git_info_respects_explicit_ssh_repo_ssh_locator():
+    config = YamlSourceConfig(
+        git_info={
+            "repo": "https://github.com/aphp/datahub-sample",
+            "repo_ssh_locator": "git@github.com:aphp/datahub-sample.git",
+        }
+    )
+    assert config.git_info.repo_ssh_locator == "git@github.com:aphp/datahub-sample.git"
+
+
+def test_git_info_respects_explicit_https_repo_ssh_locator():
+    config = YamlSourceConfig(
+        git_info={
+            "repo": "https://github.com/aphp/datahub-sample",
+            "repo_ssh_locator": "https://github.com/aphp/datahub-sample.git",
+        }
+    )
+    assert config.git_info.repo_ssh_locator == "https://github.com/aphp/datahub-sample.git"
+
+
+def test_git_info_disables_clone_timeout_on_windows_by_default(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "win32")
+    config = YamlSourceConfig(git_info={"repo": "https://github.com/aphp/datahub-sample"})
+    assert config.git_info.clone_timeout is None
+
+
+def test_git_info_overrides_explicit_clone_timeout_on_windows_with_warning(monkeypatch, caplog):
+    monkeypatch.setattr(sys, "platform", "win32")
+    with caplog.at_level(logging.WARNING):
+        config = YamlSourceConfig(
+            git_info={"repo": "https://github.com/aphp/datahub-sample", "clone_timeout": 600}
+        )
+    assert config.git_info.clone_timeout is None
+    assert any("not supported on Windows" in r.message for r in caplog.records)
+
+
+def test_git_info_keeps_default_clone_timeout_on_non_windows(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "linux")
+    config = YamlSourceConfig(git_info={"repo": "https://github.com/aphp/datahub-sample"})
+    assert config.git_info.clone_timeout == 300
+
+
+def test_git_info_keeps_explicit_clone_timeout_on_non_windows(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "linux")
+    config = YamlSourceConfig(
+        git_info={"repo": "https://github.com/aphp/datahub-sample", "clone_timeout": 600}
+    )
+    assert config.git_info.clone_timeout == 600
+
+
 # --- s3:// / http(s):// path entries --------------------------------------
 
 
@@ -273,7 +360,7 @@ def test_config_accepts_path_as_a_list():
 def test_config_rejects_s3_path_combined_with_git_info():
     with pytest.raises(ValidationError, match="git_info"):
         YamlSourceConfig(
-            git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"),
+            git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"),
             path=["s3://bucket/prefix"],
             aws_connection={},
         )
@@ -282,7 +369,7 @@ def test_config_rejects_s3_path_combined_with_git_info():
 def test_config_rejects_http_path_combined_with_git_info():
     with pytest.raises(ValidationError, match="git_info"):
         YamlSourceConfig(
-            git_info=GitInfo(repo="https://github.com/aphp/datahub-sample"),
+            git_info=YamlGitInfo(repo="https://github.com/aphp/datahub-sample"),
             path=["https://example.com/catalog.yml"],
         )
 

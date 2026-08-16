@@ -104,26 +104,33 @@ registry-permitted metadata is correspondingly thinner (e.g. `SERVICE` only acce
   [yaml_recipe.yml](yaml_recipe.yml) for fully-worked examples of both forms
   below.
 
-  **Important**: `GitInfo.clone()` always clones via `repo_ssh_locator`,
-  which DataHub derives as an SSH URL (`git@github.com:org/repo.git`) even
-  when `repo` is a plain `https://` URL — it never does an anonymous HTTPS
-  clone on its own.
-  - **Public repo, no deploy key**: you must set `repo_ssh_locator`
-    explicitly to the `https://.../repo.git` clone URL, or the clone attempts
-    SSH auth with no key and fails.
+  This source uses its own `git_info` type (`YamlGitInfo`, a subclass of
+  DataHub's `GitInfo`) that fixes two `GitInfo.clone()` defaults which
+  otherwise trip up a plain `repo: https://...` config:
+  - **Public repo, no deploy key**: core's `GitInfo.clone()` always clones
+    via `repo_ssh_locator`, which it derives as an SSH URL
+    (`git@github.com:org/repo.git`) even when `repo` is a plain `https://`
+    URL — with no deploy key, that SSH clone has no key to authenticate with
+    and fails. `YamlGitInfo` instead derives an anonymous
+    `https://.../repo.git` clone URL automatically whenever no
+    `repo_ssh_locator`/`deploy_key`/`deploy_key_file` is set. Set
+    `repo_ssh_locator` explicitly to override this — e.g. to force an
+    ambient SSH key (agent or `~/.ssh`) instead of an HTTPS clone.
   - **Private repo**: set `deploy_key_file` or `deploy_key` to an SSH deploy
     key with read access; `repo_ssh_locator` is then inferred automatically
-    as an SSH URL for GitHub/GitLab.
-
-  **Windows**: also set `clone_timeout: null`. GitPython's
-  `kill_after_timeout`, used internally to enforce the default 300s
-  `clone_timeout`, is not supported on Windows and the clone fails outright
-  otherwise (`'"kill_after_timeout" feature is not supported on Windows'`).
-  Leave `clone_timeout` at its default on Linux/macOS, where it works fine.
+    as an SSH URL for GitHub/GitLab, same as core.
+  - **Windows**: GitPython's `kill_after_timeout`, used internally to
+    enforce the default 300s `clone_timeout`, is unconditionally unsupported
+    on Windows and would otherwise make every clone fail outright
+    (`'"kill_after_timeout" feature is not supported on Windows'`).
+    `YamlGitInfo` disables `clone_timeout` automatically when running on
+    Windows. Set `clone_timeout` explicitly to override this on any OS.
 
   Verified end-to-end against a real clone of
-  `https://github.com/aphp/datahub-sample.git` (8 files, 1702 workunits,
-  0 failures) using the public-repo config above.
+  `https://github.com/aphp/datahub-sample.git` on Windows, using only
+  `git_info: {repo: https://github.com/aphp/datahub-sample, branch: main}` —
+  no `repo_ssh_locator` or `clone_timeout` override (8 files, 1702
+  workunits, 0 failures).
 
 ## Required Permissions
 
@@ -133,10 +140,10 @@ permissions to configure.
 - Local directory mode: the DataHub ingestion process needs read access to the
   directory configured in `path`.
 - Automatic git clone mode: the ingestion process needs outbound network
-  access to the git host — over HTTPS (443) for a public repo cloned via
-  `repo_ssh_locator`, or over SSH (22) for a private repo authenticated with a
-  deploy key — and, for a private repository, an SSH deploy key with read
-  access to that repository.
+  access to the git host — over HTTPS (443) for a public repo (the default,
+  no deploy key configured), or over SSH (22) for a private repo
+  authenticated with a deploy key — and, for a private repository, an SSH
+  deploy key with read access to that repository.
 - `s3://` entries: the credentials in `aws_connection` (or the ambient boto3
   credential chain, if `aws_connection: {}`) need `s3:ListBucket` on the
   bucket and `s3:GetObject` on the scanned prefix.
@@ -338,15 +345,17 @@ types, defaults), see the generated [reference.md](reference.md).
   URNs instead of a parent/child relationship.
 - **`git_info` clone fails with "SSH authentication failed — the deploy key
   does not have read access..." on a public repo with no deploy key
-  configured**: `GitInfo.clone()` always clones via `repo_ssh_locator`, which
-  defaults to an SSH URL even for a plain `https://` `repo`. Set
-  `repo_ssh_locator` explicitly to the `https://.../repo.git` clone URL — see
-  the "Public repo, no deploy key" example in
-  [yaml_recipe.yml](yaml_recipe.yml).
+  configured**: this shouldn't happen anymore — `YamlGitInfo` derives an
+  anonymous HTTPS clone URL automatically whenever no
+  `repo_ssh_locator`/`deploy_key`/`deploy_key_file` is set. If you see this,
+  check whether `repo_ssh_locator` was set explicitly (it takes priority) to
+  an SSH URL that shouldn't be used, e.g. left over from copying a private-repo
+  example.
 - **`git_info` clone fails with `'"kill_after_timeout" feature is not
-  supported on Windows'`**: this is a GitPython/Windows limitation triggered
-  by the default `clone_timeout: 300`. Set `clone_timeout: null` in
-  `git_info`.
+  supported on Windows'`**: this shouldn't happen anymore either —
+  `YamlGitInfo` disables `clone_timeout` automatically on Windows. If you see
+  this, check whether `clone_timeout` was set explicitly to a non-null value
+  (it takes priority over the automatic Windows default).
 - **"'aws_connection' is required..."**: an `s3://` entry in `path` needs
   `aws_connection` set (use `{}` to fall back to the default boto3 credential
   chain instead of explicit keys).

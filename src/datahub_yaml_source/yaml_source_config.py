@@ -1,3 +1,5 @@
+import logging
+import sys
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field, model_validator
@@ -13,6 +15,78 @@ from datahub.ingestion.source.state.stateful_ingestion_base import (
 )
 
 from datahub_yaml_source.loader import is_http_uri
+
+logger = logging.getLogger(__name__)
+
+
+def _https_clone_url(repo: Any) -> Optional[str]:
+    """Anonymous HTTPS clone URL derived from `repo`, or None if it can't be.
+
+    Mirrors the 'org/repo' shorthand from `GitReference.simplify_repo_url`,
+    since this runs on the raw value before the 'repo' field itself is
+    validated.
+    """
+    if not isinstance(repo, str):
+        return None
+    repo = repo.strip().rstrip("/")
+    if repo.startswith("github.com/") or repo.startswith("gitlab.com/"):
+        repo = f"https://{repo}"
+    elif "://" not in repo and repo.count("/") == 1:
+        repo = f"https://github.com/{repo}"
+    if not repo.startswith(("https://", "http://")):
+        return None
+    return repo if repo.endswith(".git") else f"{repo}.git"
+
+
+class YamlGitInfo(GitInfo):
+    """`GitInfo` whose clone defaults work out of the box, unlike core's.
+
+    Core's `GitInfo.clone()` always clones through `repo_ssh_locator`, which
+    it infers as an SSH URL even for a plain `https://` 'repo' -- so a public
+    repo with no deploy key fails SSH auth with no key configured. And on
+    Windows, GitPython's `kill_after_timeout` (used to enforce the default
+    300s `clone_timeout`) is unconditionally unsupported, so the clone fails
+    outright unless `clone_timeout` is None. Both are fixed here so a minimal
+    'git_info: {repo: https://...}' recipe just works, on any OS.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_clone_defaults(cls, values: Any) -> Any:
+        if not isinstance(values, dict):
+            return values
+        values = dict(values)  # don't mutate the caller's dict
+
+        # (1) With no deploy key, SSH auth can't succeed -- clone over HTTPS
+        # instead, unless the user already pinned a locator explicitly.
+        if (
+            values.get("repo_ssh_locator") is None
+            and values.get("deploy_key") is None
+            and values.get("deploy_key_file") is None
+        ):
+            https_url = _https_clone_url(values.get("repo"))
+            if https_url is not None:
+                values["repo_ssh_locator"] = https_url
+                logger.info(
+                    "git_info: no deploy key configured, deriving an anonymous "
+                    "HTTPS clone URL (%s) instead of core's default SSH "
+                    "locator. Set 'repo_ssh_locator' explicitly to override.",
+                    https_url,
+                )
+
+        # (2) GitPython's kill_after_timeout is not supported on Windows --
+        # any non-None clone_timeout (including the library default of 300)
+        # makes the clone fail outright there.
+        if sys.platform == "win32":
+            if values.get("clone_timeout") is not None:
+                logger.warning(
+                    "git_info: 'clone_timeout' is not supported on Windows "
+                    "(GitPython's kill_after_timeout always fails there) -- "
+                    "ignoring the configured value and disabling the timeout."
+                )
+            values["clone_timeout"] = None
+
+        return values
 
 
 class YamlSourceConfig(StatefulIngestionConfigBase):
@@ -66,22 +140,21 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "(default) means no limit.",
     )
 
-    git_info: Optional[GitInfo] = Field(
+    git_info: Optional[YamlGitInfo] = Field(
         default=None,
         description="Git repository to shallow-clone before scanning, instead of "
         "reading from an already-checked-out local directory. 'repo' accepts an "
         "https://github.com/... or https://gitlab.com/... URL (or 'org/repo' "
-        "shorthand for GitHub), and should NOT end in '.git'. The clone itself "
-        "always goes through 'repo_ssh_locator', which DataHub derives as an SSH "
-        "URL by default -- for a PUBLIC repo with no deploy key, you must set "
-        "'repo_ssh_locator' explicitly to the 'https://.../repo.git' clone URL, "
-        "or the clone attempts SSH auth with no key and fails. For a PRIVATE "
-        "repo, set 'deploy_key_file' or 'deploy_key' to an SSH deploy key with "
-        "read access; the SSH clone URL is then inferred automatically for "
-        "GitHub/GitLab. On Windows, also set 'clone_timeout: null' -- "
-        "GitPython's kill_after_timeout (used to enforce the default 300s "
-        "clone_timeout) is not supported on Windows and the clone fails "
-        "outright otherwise. Requires the 'git' extra "
+        "shorthand for GitHub), and should NOT end in '.git'. For a PUBLIC repo "
+        "with no deploy key, the clone URL is automatically derived as the "
+        "'https://.../repo.git' anonymous clone URL (set 'repo_ssh_locator' "
+        "explicitly to override, e.g. to force an ambient SSH key instead). For "
+        "a PRIVATE repo, set 'deploy_key_file' or 'deploy_key' to an SSH deploy "
+        "key with read access; the SSH clone URL is then inferred automatically "
+        "for GitHub/GitLab. 'clone_timeout' (default 300s) is automatically "
+        "disabled on Windows, where GitPython's kill_after_timeout is not "
+        "supported and would otherwise make every clone fail outright; set it "
+        "explicitly to override on any OS. Requires the 'git' extra "
         "(`pip install datahub-yaml-source[git]`).",
     )
 

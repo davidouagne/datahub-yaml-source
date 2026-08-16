@@ -332,12 +332,18 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "in which case a relative local entry defaults to/resolves against the "
         "cloned checkout; s3/http entries are rejected together with git_info.",
     )
-    git_info: Optional[GitInfo] = Field(
+    git_info: Optional[YamlGitInfo] = Field(
         default=None,
         description="Git repository to shallow-clone before scanning, instead of "
-        "reading an already-checked-out local directory. Same shape as DataHub's "
-        "GitReference/GitInfo (datahub.configuration.git), used by the lookml and "
-        "odcs sources for the same purpose. Requires the `git` extra.",
+        "reading an already-checked-out local directory. YamlGitInfo subclasses "
+        "DataHub's GitReference/GitInfo (datahub.configuration.git, used by the "
+        "lookml and odcs sources) to fix two clone defaults that otherwise break "
+        "a plain `repo: https://...` config: it derives an anonymous HTTPS clone "
+        "URL when no deploy key is set (core always clones via repo_ssh_locator, "
+        "which it infers as SSH even for an https:// repo), and it disables "
+        "clone_timeout on Windows (GitPython's kill_after_timeout, used to "
+        "enforce it, is unconditionally unsupported there). Requires the `git` "
+        "extra.",
     )
     aws_connection: Optional[Dict[str, Any]] = Field(default=None)
     http_connection: Optional[HTTPConnectionConfig] = Field(default=None)
@@ -382,16 +388,22 @@ exists/is_dir check.
 **Verified end-to-end (2026-08-16)** against a real clone of
 `https://github.com/aphp/datahub-sample.git` (real network + real GitPython, no
 mocks): 8 files scanned, 1702 workunits, 0 failures. Two gotchas discovered in
-DataHub core's `GitInfo`/`GitClone` (not our code, but our docs were wrong about
-the first one): (1) `GitInfo.clone()` always clones via `repo_ssh_locator`, which
-it derives as an SSH URL even for a plain `https://` `repo` — a public repo with
-no deploy key needs `repo_ssh_locator` overridden to the HTTPS clone URL, or the
-clone attempts SSH auth and fails; (2) on Windows, GitPython's
-`kill_after_timeout` (used to enforce `clone_timeout`, default 300s) isn't
-supported, so the clone fails outright unless `clone_timeout: null` is set. Both
-are now documented in `yaml.md`/`yaml_recipe.yml`/the `git_info` field
-description; neither was worked around in code (out of scope for a doc fix — see
-`yaml.md` Troubleshooting for the literal error strings).
+DataHub core's `GitInfo`/`GitClone`: (1) `GitInfo.clone()` always clones via
+`repo_ssh_locator`, which it derives as an SSH URL even for a plain `https://`
+`repo` — a public repo with no deploy key needs `repo_ssh_locator` overridden to
+the HTTPS clone URL, or the clone attempts SSH auth and fails; (2) on Windows,
+GitPython's `kill_after_timeout` (used to enforce `clone_timeout`, default 300s)
+isn't supported, so the clone fails outright unless `clone_timeout: null` is set.
+Initially only documented as workarounds (`yaml.md`/`yaml_recipe.yml`/the
+`git_info` field description); **fixed in code the same day** via `YamlGitInfo`
+(`yaml_source_config.py`), a `GitInfo` subclass with a `model_validator(mode=
+"before")` that derives the anonymous HTTPS clone URL automatically (when no
+`repo_ssh_locator`/`deploy_key`/`deploy_key_file` is set) and forces
+`clone_timeout: None` on `sys.platform == "win32"` — both still overridable
+explicitly. Re-verified end-to-end on Windows with the minimal config (`repo` +
+`branch` only, no overrides): same 8 files / 1702 workunits / 0 failures, clone
+log confirming an HTTPS clone (`Cloning repo 'https://github.com/aphp/datahub-
+sample.git'`).
 
 **HTTP support also verified end-to-end (2026-08-16)**, real network, no mocks:
 `path` set to two `https://raw.githubusercontent.com/aphp/datahub-sample/main/...`

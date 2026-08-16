@@ -16,29 +16,29 @@ source:
     # 'path' then resolves relative to the checkout -- "." (the default)
     # scans the whole repo, or a subdirectory scopes the scan to a subtree.
     #
-    # IMPORTANT: DataHub's GitInfo.clone() always clones via 'repo_ssh_locator',
-    # which it derives as an SSH URL (git@github.com:org/repo.git) even when
-    # 'repo' is a plain https:// URL -- it never does an anonymous HTTPS clone
-    # on its own. For a public repo with no deploy key, you must override
-    # 'repo_ssh_locator' yourself with the https:// clone URL, as below.
-    # 'repo' itself should NOT end in '.git' (it's also used to build "view
-    # source" links); 'repo_ssh_locator' is the literal `git clone` URL and
-    # does carry '.git'.
-    #
-    # On Windows, also set 'clone_timeout: null' -- GitPython's
-    # kill_after_timeout (used to enforce the default 300s clone_timeout) is
-    # not supported on Windows and the clone fails outright otherwise. Leave
-    # clone_timeout at its default on Linux/macOS, where it works fine.
+    # 'git_info' here is this source's own YamlGitInfo (a GitInfo subclass)
+    # rather than DataHub core's GitInfo directly, so a minimal config below
+    # just works -- on Windows too -- with no clone-URL or timeout overrides:
+    #   - no deploy key configured -> clones anonymously over HTTPS, derived
+    #     from 'repo' (core would instead always clone via 'repo_ssh_locator',
+    #     which it derives as an SSH URL even for a plain https:// 'repo', and
+    #     that SSH clone has no key to authenticate with and fails)
+    #   - deploy_key/deploy_key_file set -> SSH clone URL inferred as usual
+    #   - clone_timeout disabled automatically on Windows, where GitPython's
+    #     kill_after_timeout (used to enforce the default 300s clone_timeout)
+    #     is unconditionally unsupported and would make every clone fail
+    # Set 'repo_ssh_locator' / 'clone_timeout' explicitly to override any of
+    # the above. 'repo' itself should NOT end in '.git' (it's also used to
+    # build "view source" links); 'repo_ssh_locator' is the literal
+    # `git clone` URL and does carry '.git'.
     #
     # Verified against a real clone of https://github.com/aphp/datahub-sample.git
-    # (8 files, 1702 workunits, 0 failures) with exactly this config:
+    # on Windows (8 files, 1702 workunits, 0 failures) with exactly this config:
     #
     # Public repo, no deploy key:
     # git_info:
     #   repo: https://github.com/aphp/datahub-sample
     #   branch: main
-    #   repo_ssh_locator: https://github.com/aphp/datahub-sample.git
-    #   clone_timeout: null  # Windows only; omit on Linux/macOS
     # path: "."
     #
     # Private repo, SSH deploy key (repo_ssh_locator is inferred automatically
@@ -47,7 +47,6 @@ source:
     #   repo: https://github.com/aphp/datahub-sample
     #   branch: main
     #   deploy_key_file: /run/secrets/datahub_sample_deploy_key
-    #   clone_timeout: null  # Windows only; omit on Linux/macOS
     # path: "."
 
     # ---- Mode C: s3:// prefix (instead of Mode A/B) ----

@@ -70,15 +70,79 @@ registry-permitted metadata is correspondingly thinner (e.g. `SERVICE` only acce
 
 ## Prerequisites
 
-- A local directory (e.g. a checked-out git repository) containing `*.yml` /
-  `*.yaml` files in the format described below. The source only reads from the
-  local filesystem — no network access or credentials are required.
+`*.yml` / `*.yaml` files in the format described below, provided via `path`
+(a single location, or a list to combine several) in any of these ways:
+
+- **Local directory** (default) — `path` points at an already-checked-out
+  directory (e.g. a manually cloned git repository) on the filesystem where
+  ingestion runs, scanned recursively. No network access or credentials are
+  required.
+- **`s3://bucket/prefix`** — listed recursively the same way a local
+  directory is (paginated, arbitrarily deep). Requires the `s3` extra:
+  `pip install datahub-yaml-source[s3]`, and `aws_connection` (same shape as
+  other DataHub sources' AWS config — set it to `{}` to fall back to the
+  default boto3 credential chain instead of explicit keys). See Mode C in
+  [yaml_recipe.yml](yaml_recipe.yml).
+- **`https://.../file.yml`** — unlike a local directory or an `s3://` prefix,
+  an http(s) URL has no directory listing, so each entry must name a single
+  file directly; since the format is multi-document YAML, one URL can still
+  carry a whole catalog. A glob pattern in an http(s) URL is rejected with a
+  clear error rather than silently matching nothing. `http_connection` is
+  only needed for an authenticated endpoint (bearer token or basic auth) —
+  omit it for a public URL. See Mode D in [yaml_recipe.yml](yaml_recipe.yml).
+  Verified end-to-end against two real files from
+  `https://raw.githubusercontent.com/aphp/datahub-sample/main/` (294
+  workunits, 0 failures).
+- **Automatic git clone** — set `git_info` and the source shallow-clones the
+  repository itself into a temporary directory before scanning it; `path` then
+  resolves relative to that checkout (default `"."`, or a subdirectory to
+  scope the scan to a subtree) — `s3://`/`http(s)://` entries are not allowed
+  in `path` together with `git_info`. Requires the `git` extra:
+  `pip install datahub-yaml-source[git]`. `git_info` accepts the same shape as
+  DataHub's `GitReference`/`GitInfo` (`datahub.configuration.git`), used the
+  same way by the `lookml` and `odcs` sources — see `git_info` in
+  [yaml_recipe.yml](yaml_recipe.yml) for fully-worked examples of both forms
+  below.
+
+  **Important**: `GitInfo.clone()` always clones via `repo_ssh_locator`,
+  which DataHub derives as an SSH URL (`git@github.com:org/repo.git`) even
+  when `repo` is a plain `https://` URL — it never does an anonymous HTTPS
+  clone on its own.
+  - **Public repo, no deploy key**: you must set `repo_ssh_locator`
+    explicitly to the `https://.../repo.git` clone URL, or the clone attempts
+    SSH auth with no key and fails.
+  - **Private repo**: set `deploy_key_file` or `deploy_key` to an SSH deploy
+    key with read access; `repo_ssh_locator` is then inferred automatically
+    as an SSH URL for GitHub/GitLab.
+
+  **Windows**: also set `clone_timeout: null`. GitPython's
+  `kill_after_timeout`, used internally to enforce the default 300s
+  `clone_timeout`, is not supported on Windows and the clone fails outright
+  otherwise (`'"kill_after_timeout" feature is not supported on Windows'`).
+  Leave `clone_timeout` at its default on Linux/macOS, where it works fine.
+
+  Verified end-to-end against a real clone of
+  `https://github.com/aphp/datahub-sample.git` (8 files, 1702 workunits,
+  0 failures) using the public-repo config above.
 
 ## Required Permissions
 
 This source has no connection of its own, so there are no source-system
-permissions to configure. The only requirement is that the DataHub ingestion
-process has read access to the directory configured in `path`.
+permissions to configure.
+
+- Local directory mode: the DataHub ingestion process needs read access to the
+  directory configured in `path`.
+- Automatic git clone mode: the ingestion process needs outbound network
+  access to the git host — over HTTPS (443) for a public repo cloned via
+  `repo_ssh_locator`, or over SSH (22) for a private repo authenticated with a
+  deploy key — and, for a private repository, an SSH deploy key with read
+  access to that repository.
+- `s3://` entries: the credentials in `aws_connection` (or the ambient boto3
+  credential chain, if `aws_connection: {}`) need `s3:ListBucket` on the
+  bucket and `s3:GetObject` on the scanned prefix.
+- `http(s)://` entries: outbound network access to the host, and — for an
+  authenticated endpoint — the bearer token or basic-auth credentials set in
+  `http_connection`.
 
 ## Document Format
 
@@ -272,3 +336,23 @@ types, defaults), see the generated [reference.md](reference.md).
   exactly (`platform`, `instance`, `database`, `env`) — a mismatch (e.g. an
   `instance` set on one but not the other) produces two different container
   URNs instead of a parent/child relationship.
+- **`git_info` clone fails with "SSH authentication failed — the deploy key
+  does not have read access..." on a public repo with no deploy key
+  configured**: `GitInfo.clone()` always clones via `repo_ssh_locator`, which
+  defaults to an SSH URL even for a plain `https://` `repo`. Set
+  `repo_ssh_locator` explicitly to the `https://.../repo.git` clone URL — see
+  the "Public repo, no deploy key" example in
+  [yaml_recipe.yml](yaml_recipe.yml).
+- **`git_info` clone fails with `'"kill_after_timeout" feature is not
+  supported on Windows'`**: this is a GitPython/Windows limitation triggered
+  by the default `clone_timeout: 300`. Set `clone_timeout: null` in
+  `git_info`.
+- **"'aws_connection' is required..."**: an `s3://` entry in `path` needs
+  `aws_connection` set (use `{}` to fall back to the default boto3 credential
+  chain instead of explicit keys).
+- **`ModuleNotFoundError: No module named 'boto3'`** (or a report failure
+  titled "Cannot read s3:// path(s)"): install the `s3` extra —
+  `pip install datahub-yaml-source[s3]`.
+- **"Glob patterns are not supported for http(s):// URIs"**: an `http(s)://`
+  entry in `path` has no directory listing — it must be the URL of a single
+  YAML file, not a wildcard.

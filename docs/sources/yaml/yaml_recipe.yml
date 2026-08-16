@@ -4,9 +4,91 @@
 source:
   type: yaml
   config:
+    # ---- Mode A: local directory (default) ----
     # Root directory to scan recursively for '*.yml' / '*.yaml' files.
-    # Typically a checked-out git repository of hand-authored metadata.
+    # Typically a manually checked-out git repository of hand-authored metadata.
     path: /mnt/c/Users/4087446/Projects/aphp/datahub-sample
+
+    # ---- Mode B: automatic git clone (instead of Mode A) ----
+    # Set 'git_info' to have the source shallow-clone a repository itself
+    # instead of reading an already-checked-out directory. Requires the 'git'
+    # extra: pip install datahub-yaml-source[git]
+    # 'path' then resolves relative to the checkout -- "." (the default)
+    # scans the whole repo, or a subdirectory scopes the scan to a subtree.
+    #
+    # IMPORTANT: DataHub's GitInfo.clone() always clones via 'repo_ssh_locator',
+    # which it derives as an SSH URL (git@github.com:org/repo.git) even when
+    # 'repo' is a plain https:// URL -- it never does an anonymous HTTPS clone
+    # on its own. For a public repo with no deploy key, you must override
+    # 'repo_ssh_locator' yourself with the https:// clone URL, as below.
+    # 'repo' itself should NOT end in '.git' (it's also used to build "view
+    # source" links); 'repo_ssh_locator' is the literal `git clone` URL and
+    # does carry '.git'.
+    #
+    # On Windows, also set 'clone_timeout: null' -- GitPython's
+    # kill_after_timeout (used to enforce the default 300s clone_timeout) is
+    # not supported on Windows and the clone fails outright otherwise. Leave
+    # clone_timeout at its default on Linux/macOS, where it works fine.
+    #
+    # Verified against a real clone of https://github.com/aphp/datahub-sample.git
+    # (8 files, 1702 workunits, 0 failures) with exactly this config:
+    #
+    # Public repo, no deploy key:
+    # git_info:
+    #   repo: https://github.com/aphp/datahub-sample
+    #   branch: main
+    #   repo_ssh_locator: https://github.com/aphp/datahub-sample.git
+    #   clone_timeout: null  # Windows only; omit on Linux/macOS
+    # path: "."
+    #
+    # Private repo, SSH deploy key (repo_ssh_locator is inferred automatically
+    # as an SSH URL in this case -- no need to set it):
+    # git_info:
+    #   repo: https://github.com/aphp/datahub-sample
+    #   branch: main
+    #   deploy_key_file: /run/secrets/datahub_sample_deploy_key
+    #   clone_timeout: null  # Windows only; omit on Linux/macOS
+    # path: "."
+
+    # ---- Mode C: s3:// prefix (instead of Mode A/B) ----
+    # 'path' also accepts one or more 's3://bucket/prefix' entries, listed
+    # recursively the same way a local directory is (paginated, arbitrarily
+    # deep). Requires the 's3' extra: pip install datahub-yaml-source[s3]
+    # and 'aws_connection' (same shape as other DataHub sources' AWS config --
+    # set it to '{}' to fall back to the default boto3 credential chain: env
+    # vars, ~/.aws/credentials, instance role, ...).
+    #
+    # path: s3://aphp-datahub-metadata/prod/
+    # aws_connection:
+    #   aws_region: eu-west-1
+    #   # aws_access_key_id / aws_secret_access_key / aws_profile / aws_role
+    #   # are all optional -- omit entirely to use the default credential chain.
+
+    # ---- Mode D: http(s):// URL(s) (instead of Mode A/B/C) ----
+    # 'path' also accepts one or more 'https://.../file.yml' URLs. Unlike a
+    # local directory or an s3:// prefix, an http(s) URL has no directory
+    # listing, so each entry must name a single file directly -- since the
+    # format is multi-document YAML, one URL can still carry a whole catalog.
+    # A glob pattern in an http(s) URL is rejected rather than silently
+    # matching nothing. 'http_connection' is only needed for an authenticated
+    # endpoint (bearer token or basic auth); omit it for a public URL.
+    #
+    # Verified against a real fetch of two files from
+    # https://raw.githubusercontent.com/aphp/datahub-sample/main/ (294
+    # workunits, 0 failures) with exactly this config:
+    #
+    # path:
+    #   - https://raw.githubusercontent.com/aphp/datahub-sample/main/setup/assets.yml
+    #   - https://raw.githubusercontent.com/aphp/datahub-sample/main/raw-layer/assets.yml
+    # http_connection:
+    #   token: ${METADATA_ENDPOINT_TOKEN}  # omit entirely for a public URL
+
+    # 'path' can combine multiple entries of any of the above kinds in a
+    # single list (except s3://.../http(s):// combined with 'git_info' --
+    # those two remote kinds are only meaningful without a git checkout).
+    # Optional across every mode: cap how large any single scanned file may
+    # be, mainly useful as a safety net for remote entries.
+    # max_input_file_bytes: 10485760  # 10 MiB
 
     # Optional: turn dangling references (a tag/domain/glossaryTerm/container
     # that's referenced but never declared anywhere in the scanned files) into

@@ -1,6 +1,8 @@
 import logging
+import tempfile
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Dict, Iterable, List, Optional
+from urllib.parse import urlparse
 
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.decorators import (
@@ -17,6 +19,7 @@ from datahub.ingestion.api.source import (
     TestConnectionReport,
 )
 from datahub.ingestion.api.workunit import MetadataWorkUnit
+from datahub.ingestion.source.aws.s3_util import is_s3_uri
 from datahub.ingestion.source.state.stateful_ingestion_base import (
     StatefulIngestionSourceBase,
 )
@@ -54,12 +57,38 @@ from datahub_yaml_source.builders.software import (
 )
 from datahub_yaml_source.builders.structured_property import build_structured_property
 from datahub_yaml_source.builders.tag import build_tag
-from datahub_yaml_source.loader import ParsedRepository, load_repository
+from datahub_yaml_source.loader import (
+    ParsedRepository,
+    has_glob_characters,
+    is_http_uri,
+    load_repository,
+)
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_config import YamlSourceConfig
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_aws_connection(aws_connection_config: Optional[Dict[str, Any]]) -> Optional[Any]:
+    """Lazily build an `AwsConnectionConfig` from the config dict, if set.
+
+    `AwsConnectionConfig` (datahub.ingestion.source.aws.aws_common) hard-imports
+    boto3 at module level with no lazy variant, so the import itself lives here
+    -- inside a function only called when an 's3://' path is actually configured
+    -- rather than at module level, keeping boto3 optional for local/git/http-only
+    recipes.
+    """
+    if aws_connection_config is None:
+        return None
+    try:
+        from datahub.ingestion.source.aws.aws_common import AwsConnectionConfig
+    except ImportError as e:
+        raise ImportError(
+            "Reading s3:// paths requires the 's3' extra: "
+            "pip install datahub-yaml-source[s3]"
+        ) from e
+    return AwsConnectionConfig.model_validate(aws_connection_config)
 
 
 @platform_name("YAML Metadata")
@@ -107,33 +136,71 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     def get_report(self) -> YamlSourceReport:
         return self.report
 
-    def _load_repository(self) -> ParsedRepository:
-        root = Path(self.config.path)
+    def _resolve_roots(self, checkout_dir: Optional[Path] = None) -> List[str]:
+        """Resolve every 'path' entry to a root `load_repository()` can scan.
 
-        if not root.exists():
-            self.report.failure(
-                title="Configured path does not exist",
-                message="The 'path' in your recipe does not exist on disk. Check for "
-                "typos, and note that under WSL, Windows paths must be given as "
-                "'/mnt/c/...' rather than 'C:\\...'.",
-                context=str(root),
-            )
+        A local-directory entry is checked to exist/be-a-directory here (so a
+        typo is reported with an exact, actionable message); a bad entry is
+        skipped (reported as a failure) rather than aborting the other entries.
+        's3://'/'http(s)://' entries pass through unchanged -- there's nothing
+        to check locally, and `load_repository()` reports any listing/read
+        problem for them itself, per-URI, via `on_error`.
+        """
+        configured_paths = self.config.path if isinstance(self.config.path, list) else [self.config.path]
+
+        roots: List[str] = []
+        for entry in configured_paths:
+            if is_s3_uri(entry) or is_http_uri(entry):
+                roots.append(entry)
+                continue
+
+            local_path = Path(entry)
+            if checkout_dir is not None and not local_path.is_absolute():
+                local_path = checkout_dir / local_path
+
+            if not local_path.exists():
+                self.report.failure(
+                    title="Configured path does not exist",
+                    message="An entry in 'path' does not exist on disk. Check for "
+                    "typos, and note that under WSL, Windows paths must be given as "
+                    "'/mnt/c/...' rather than 'C:\\...'.",
+                    context=str(local_path),
+                )
+                continue
+
+            if not local_path.is_dir():
+                self.report.failure(
+                    title="Configured path is not a directory",
+                    message="An entry in 'path' points at a file, not a directory.",
+                    context=str(local_path),
+                )
+                continue
+
+            roots.append(str(local_path))
+
+        return roots
+
+    def _load_repository(self, checkout_dir: Optional[Path] = None) -> ParsedRepository:
+        roots = self._resolve_roots(checkout_dir)
+        if not roots:
             return ParsedRepository()
 
-        if not root.is_dir():
+        try:
+            aws_connection = _resolve_aws_connection(self.config.aws_connection)
+        except ImportError as e:
             self.report.failure(
-                title="Configured path is not a directory",
-                message="The 'path' in your recipe points at a file, not a directory.",
-                context=str(root),
+                title="Cannot read s3:// path(s)",
+                message=str(e),
+                exc=e,
             )
-            return ParsedRepository()
+            aws_connection = None
 
         def on_error(path: str, message: str) -> None:
             if self.config.fail_on_unresolved_reference:
                 raise ValueError(f"{path}: {message}")
             self.report.report_document_parse_failure(path, message)
 
-        def on_file_scanned(path: Path) -> None:
+        def on_file_scanned(path: str) -> None:
             self.report.files_scanned += 1
 
         def on_unknown_fields(path: str, kind: str, field_names: list) -> None:
@@ -143,21 +210,56 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.report_unknown_fields(message)
 
         repository = load_repository(
-            root, on_error=on_error, on_file_scanned=on_file_scanned, on_unknown_fields=on_unknown_fields
+            roots,
+            on_error=on_error,
+            on_file_scanned=on_file_scanned,
+            on_unknown_fields=on_unknown_fields,
+            aws_connection=aws_connection,
+            http_connection=self.config.http_connection,
+            max_input_file_bytes=self.config.max_input_file_bytes,
         )
 
         if self.report.files_scanned == 0:
             self.report.warning(
                 title="No YAML files found",
                 message="No '*.yml' / '*.yaml' files were found under the configured "
-                "path. Check that 'path' points at the right directory.",
-                context=str(root),
+                "path.",
+                context=str(roots),
             )
 
         return repository
 
+    def _load_repository_maybe_from_git(self) -> Optional[ParsedRepository]:
+        """Clone `git_info` into a temp dir (if configured) and load the repository.
+
+        Unlike a lazy file-by-file scan, `_load_repository` fully reads and
+        parses every YAML file into an in-memory `ParsedRepository` before
+        returning -- so the checkout only needs to stay on disk for the
+        duration of this call, not for the lifetime of the (lazy)
+        `get_workunits_internal` generator.
+        """
+        if self.config.git_info is None:
+            return self._load_repository()
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="yaml_source_git_") as tmp_dir:
+                checkout_dir = self.config.git_info.clone(tmp_path=tmp_dir)
+                self.report.git_checkout = str(checkout_dir)
+                return self._load_repository(checkout_dir)
+        except Exception as e:
+            self.report.failure(
+                title="Failed to clone git_info repository",
+                message="Could not shallow-clone the configured git repository. "
+                "Check 'repo', branch/commit, and deploy key configuration. "
+                "Requires the 'git' extra: pip install datahub-yaml-source[git].",
+                exc=e,
+            )
+            return None
+
     def get_workunits_internal(self) -> Iterable[MetadataWorkUnit]:
-        repository = self._load_repository()
+        repository = self._load_repository_maybe_from_git()
+        if repository is None:
+            return
         index = ReferenceIndex(repository)
 
         for platform_doc in repository.platforms:
@@ -370,14 +472,35 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         test_report = TestConnectionReport()
         try:
             config = YamlSourceConfig.model_validate(config_dict)
-            root = Path(config.path)
-            if not root.exists():
+
+            if config.git_info is not None:
+                try:
+                    with tempfile.TemporaryDirectory(prefix="yaml_source_git_test_") as tmp_dir:
+                        config.git_info.clone(tmp_path=tmp_dir)
+                    test_report.basic_connectivity = CapabilityReport(capable=True)
+                except Exception as e:
+                    test_report.basic_connectivity = CapabilityReport(
+                        capable=False, failure_reason=f"Could not clone git_info repository: {e}"
+                    )
+                return test_report
+
+            problems = []
+            entries = config.path if isinstance(config.path, list) else [config.path]
+            for entry in entries:
+                if is_s3_uri(entry):
+                    problems.extend(YamlSource._check_s3_connectivity(entry, config))
+                elif is_http_uri(entry):
+                    problems.extend(YamlSource._check_http_connectivity(entry, config))
+                else:
+                    root = Path(entry)
+                    if not root.exists():
+                        problems.append(f"Path does not exist: {root}")
+                    elif not root.is_dir():
+                        problems.append(f"Path is not a directory: {root}")
+
+            if problems:
                 test_report.basic_connectivity = CapabilityReport(
-                    capable=False, failure_reason=f"Path does not exist: {root}"
-                )
-            elif not root.is_dir():
-                test_report.basic_connectivity = CapabilityReport(
-                    capable=False, failure_reason=f"Path is not a directory: {root}"
+                    capable=False, failure_reason="; ".join(problems)
                 )
             else:
                 test_report.basic_connectivity = CapabilityReport(capable=True)
@@ -385,3 +508,36 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             test_report.basic_connectivity = CapabilityReport(capable=False, failure_reason=str(e))
 
         return test_report
+
+    @staticmethod
+    def _check_s3_connectivity(uri: str, config: "YamlSourceConfig") -> List[str]:
+        try:
+            aws_connection = _resolve_aws_connection(config.aws_connection)
+        except ImportError as e:
+            return [str(e)]
+        if aws_connection is None:
+            return [f"'aws_connection' is required for s3:// path: {uri}"]
+
+        parsed = urlparse(uri)
+        try:
+            aws_connection.get_s3_client().list_objects_v2(
+                Bucket=parsed.netloc, Prefix=parsed.path.lstrip("/"), MaxKeys=1
+            )
+        except Exception as e:
+            return [f"Could not list s3:// path {uri}: {e}"]
+        return []
+
+    @staticmethod
+    def _check_http_connectivity(uri: str, config: "YamlSourceConfig") -> List[str]:
+        if has_glob_characters(uri):
+            return [f"Glob patterns are not supported for http(s):// URIs: {uri}"]
+
+        import requests
+
+        kwargs = config.http_connection.to_request_kwargs() if config.http_connection else {}
+        try:
+            resp = requests.head(uri, timeout=10, allow_redirects=True, **kwargs)
+            resp.raise_for_status()
+        except Exception as e:
+            return [f"Could not reach http(s):// path {uri}: {e}"]
+        return []

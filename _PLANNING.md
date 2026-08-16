@@ -2,12 +2,7 @@
 
 **Created**: 2026-07-13
 **Last updated**: 2026-08-15
-**Status**: IMPLEMENTED — initial build and the coverage-extension both shipped
-**Extension spec**: [`docs/specs/entity-aspect-coverage-gaps.md`](docs/specs/entity-aspect-coverage-gaps.md)
-
-This document merges what was originally two files: the initial-build plan (2026-07-13) and the
-coverage-extension plan (`_PLANNING-v2.md`, 2026-08-15, now folded in here). Both are fully
-implemented; this is the as-built record of the whole connector, not a forward-looking plan.
+**Status**: IMPLEMENTED
 
 ## Overview
 
@@ -24,7 +19,7 @@ This is **not** a source for one external system — it's a generic "authoring f
 source, closest in spirit to DataHub's built-in `datahub-business-glossary` and
 `datahub-lineage-file` sources, but generalized to (almost) the entire DataHub entity
 model. The format was originally reverse-engineered from a real example repo at
-`C:\Users\4087446\Projects\aphp\datahub-sample` (AP-HP health-data-platform metadata).
+https://github.com/aphp/datahub-sample (AP-HP health-data-platform metadata).
 
 No SQL connection and no external API are involved — the source purely parses local
 files, so it does not fit the `sql` / `api` / `nosql` categories in the standard
@@ -47,7 +42,7 @@ new aspect used to require.
 - **Type**: Other (declarative file-based / metadata-as-code)
 - **Interface**: Local filesystem, multi-document YAML (`---`-separated)
 - **Standards File**: `standards/patterns.md`, `standards/api.md` (closest architecture), `standards/containers.md`, `standards/lineage.md` (partially)
-- **Reference format**: `C:\Users\4087446\Projects\aphp\datahub-sample` (layered directories: `setup/`, `raw-layer/`, `semantic-layer/`, `transform-layer/`, `sharing-layer/`, `quality-layer/`, `dataproduct-layer/`, `observability-layer/`)
+- **Reference format**: https://github.com/aphp/datahub-sample (layered directories: `setup/`, `raw-layer/`, `semantic-layer/`, `transform-layer/`, `sharing-layer/`, `quality-layer/`, `dataproduct-layer/`, `observability-layer/`)
 
 **Key simplification vs. a typical connector**: lineage is **fully hand-declared** in
 the YAML (`upstreamLineage`, `fineGrainedLineages`, `dataJobInputOutput`). There is no
@@ -319,21 +314,34 @@ built directly as `StructuredPropertiesClass` and passed via `extra_aspects=` in
 
 ### Config Structure
 
-`YamlSourceConfig` inherits `StatefulIngestionConfigBase` + `EnvConfigMixin`. It has
-**no `PlatformInstanceConfigMixin`** at the top level — this source doesn't have one
-platform, it *declares* platforms per-entity via `DATA_PLATFORM` documents and
-per-container/dataset `platform:` fields.
+`YamlSourceConfig` inherits `StatefulIngestionConfigBase` only — **no `EnvConfigMixin`**,
+**no `PlatformInstanceConfigMixin`** at the top level. This source doesn't have one
+platform or one environment: it *declares* both per-entity via `DATA_PLATFORM`
+documents and per-container/dataset `platform:`/`env:` fields. (An earlier draft of
+this doc specified `EnvConfigMixin` and a `file_pattern` field; neither was actually
+built — extensions are hard-coded to `.yml`/`.yaml` in `loader.discover_yaml_files()`.)
 
 ```python
-class YamlSourceConfig(StatefulIngestionConfigBase, EnvConfigMixin):
-    path: str = Field(
-        description="Root directory to scan recursively for YAML metadata files."
+class YamlSourceConfig(StatefulIngestionConfigBase):
+    path: Optional[Union[str, List[str]]] = Field(
+        default=None,
+        description="One or more locations to scan for YAML metadata files: a local "
+        "directory (recursive), an s3://bucket/prefix (recursive, requires "
+        "aws_connection), or an https://.../file.yml URL (single file, requires "
+        "http_connection only if authenticated). Required unless git_info is set, "
+        "in which case a relative local entry defaults to/resolves against the "
+        "cloned checkout; s3/http entries are rejected together with git_info.",
     )
-    file_pattern: str = Field(
-        default="**/*.yml",
-        description="Glob pattern (relative to `path`) for files to parse. "
-        "Both *.yml and *.yaml are scanned regardless of this pattern's extension.",
+    git_info: Optional[GitInfo] = Field(
+        default=None,
+        description="Git repository to shallow-clone before scanning, instead of "
+        "reading an already-checked-out local directory. Same shape as DataHub's "
+        "GitReference/GitInfo (datahub.configuration.git), used by the lookml and "
+        "odcs sources for the same purpose. Requires the `git` extra.",
     )
+    aws_connection: Optional[Dict[str, Any]] = Field(default=None)
+    http_connection: Optional[HTTPConnectionConfig] = Field(default=None)
+    max_input_file_bytes: Optional[int] = Field(default=None)
     fail_on_unresolved_reference: bool = Field(
         default=False,
         description="If true, a reference to a tag/domain/glossary term/container/"
@@ -343,6 +351,58 @@ class YamlSourceConfig(StatefulIngestionConfigBase, EnvConfigMixin):
     )
     stateful_ingestion: Optional[StatefulStaleMetadataRemovalConfig] = Field(default=None)
 ```
+
+`aws_connection` is deliberately typed `Optional[Dict[str, Any]]` rather than
+`Optional[AwsConnectionConfig]`: pydantic v2 resolves field type annotations at
+class-definition time, and `AwsConnectionConfig`
+(`datahub.ingestion.source.aws.aws_common`) hard-imports `boto3` at module level
+with no lazy variant. Typing the field as a plain dict keeps that import out of
+`yaml_source_config.py` entirely; the real `AwsConnectionConfig` is constructed
+(and boto3 actually imported) only inside `yaml_source._resolve_aws_connection()`,
+called only when an `s3://` path is actually configured — guarded by
+`try/except ImportError` pointing at the `s3` extra. `http_connection` needs no
+such treatment: `HTTPConnectionConfig`
+(`datahub.ingestion.source.common.http_connection_config`) is a plain pydantic
+model with no heavy import (`requests` itself is a base acryl-datahub dependency,
+so HTTP support needs no extra at all). `loader.py` carries the equivalent
+reasoning for `_discover_s3_files`/`_read_s3_bytes` vs. `_read_http_bytes` — see
+its module docstring.
+
+`git_info` support: `YamlSource._load_repository_maybe_from_git()` clones (if
+`git_info` is set) into a `tempfile.TemporaryDirectory` and calls
+`_load_repository(checkout_dir)`, which resolves a relative `path` under the
+checkout. The temp directory only needs to live for that one call — unlike ODCS's
+lazy per-file scan, `_load_repository` fully materializes the `ParsedRepository`
+in memory before returning, so there's no need to keep the checkout open for the
+lifetime of the (lazy) `get_workunits_internal` generator. `report.git_checkout`
+records the resolved checkout path for troubleshooting. `test_connection()` clones
+into a throwaway temp dir when `git_info` is set, instead of the local
+exists/is_dir check.
+
+**Verified end-to-end (2026-08-16)** against a real clone of
+`https://github.com/aphp/datahub-sample.git` (real network + real GitPython, no
+mocks): 8 files scanned, 1702 workunits, 0 failures. Two gotchas discovered in
+DataHub core's `GitInfo`/`GitClone` (not our code, but our docs were wrong about
+the first one): (1) `GitInfo.clone()` always clones via `repo_ssh_locator`, which
+it derives as an SSH URL even for a plain `https://` `repo` — a public repo with
+no deploy key needs `repo_ssh_locator` overridden to the HTTPS clone URL, or the
+clone attempts SSH auth and fails; (2) on Windows, GitPython's
+`kill_after_timeout` (used to enforce `clone_timeout`, default 300s) isn't
+supported, so the clone fails outright unless `clone_timeout: null` is set. Both
+are now documented in `yaml.md`/`yaml_recipe.yml`/the `git_info` field
+description; neither was worked around in code (out of scope for a doc fix — see
+`yaml.md` Troubleshooting for the literal error strings).
+
+**HTTP support also verified end-to-end (2026-08-16)**, real network, no mocks:
+`path` set to two `https://raw.githubusercontent.com/aphp/datahub-sample/main/...`
+URLs (`setup/assets.yml`, `raw-layer/assets.yml`) — 2 files scanned, 294
+workunits, 0 failures; `test_connection()` capable. S3 support (`_discover_s3_files`
+/`_read_s3_bytes`, paginated prefix listing) is covered only by unit tests against
+a hand-rolled fake `AwsConnectionConfig`-shaped object (`tests/unit/test_loader_remote.py`)
+— no real S3 bucket was available to verify against; the `boto3`-import-is-lazy
+guarantee itself *was* verified for real (`python -c "import
+datahub_yaml_source.yaml_source"` with `boto3` uninstalled succeeds; `sys.modules`
+confirms `boto3` isn't loaded).
 
 Example recipe:
 
@@ -501,172 +561,6 @@ Two more traps, not spec-related:
 Bar: ≥80% coverage on new/changed builder code (currently 97% overall, no file below
 83%).
 
-## Implementation History
-
-### Initial build — 2026-07-13
-
-1. `models.py` — Pydantic discriminated-union models for the original 13 kinds + raw-aspect doc.
-2. `loader.py` — directory walk, multi-doc YAML parsing, `ParsedRepository` aggregation.
-3. `urns.py` — URN/ContainerKey builders + reference resolver.
-4. `yaml_source_config.py`, `yaml_source_report.py`.
-5. Builders in dependency order: platform → tag → glossary → structured_property →
-   domain → container (+ topological sort) → dataset (schema, FKs, lineage).
-6. `yaml_source.py` orchestrating the two-pass emit order; registered in `setup.py`
-   entry points.
-7. Remaining builders: data_product, data_flow_job, data_process_instance, assertion,
-   raw_aspect.
-8. Unit tests for every builder.
-9. Integration test fixture tree + golden file.
-10. Documentation (`docs/sources/yaml/yaml.md` + `yaml_recipe.yml`).
-
-### Coverage extension — 2026-08-15
-
-Implements `docs/specs/entity-aspect-coverage-gaps.md`, in four independently-shippable
-phases (Phase 1 landed alone — it touches every existing builder plus the golden file,
-and mixing it with feature work would have made the diff unreadable):
-
-- **Phase 1 — cross-cutting parity + refactor**: the nine `Has*` mixins, `common_sdk_kwargs()`/
-  `common_aspect_mcps()`, every existing builder rewritten to consume them, the multi-subtype
-  bug (C5) fixed, seven new `@capability` decorators, nested domains
-  (`DomainDoc.parentDomain` + `topological_sort_domains()`), `GlossaryTermDoc`'s related-term
-  fields, `TagDoc.colorHex`/`DisplayPropertiesDoc`, and D2's unknown-field warning.
-  **Checkpoint met**: the refactor step alone produced an empty golden-file diff before any
-  new fixture content was added.
-- **Phase 2 — pipeline & assertion completeness** (done opportunistically once C1-C3 showed
-  it was cheap): `DataJobDoc.inputDataJobs` (job-to-job DAG edges), `DATA_JOB`
-  `externalUrl`/`properties`/`container`, `DATA_FLOW.container`, assertion types `VOLUME`/
-  `DATA_SCHEMA`/`CUSTOM`, `assertionNote`/`assertionActions`.
-- **Phase 3 — column-level metadata**: `SchemaFieldDoc` gains `HasTags`/`HasTerms`/
-  `HasStructuredProps`/`HasDeprecation`; `build_dataset()` emits `schemaField` MCPs after
-  the dataset's own workunits, reusing `common_aspect_mcps()` with a context string naming
-  the column — no new aspect-construction code needed.
-- **Phase 4 — five new entity kinds**, one commit each: `CHART` (`f4ed4cc`), `DASHBOARD`
-  (`c63997a`, needs `CHART` first for its `charts:` field), `QUERY` (`24490ef`), `INCIDENT`
-  (`19bafcd`), `DOCUMENT` (`664d5c2`, last — gated on the `Document.create_*()` factory
-  quirks in C8). Explicitly out of scope for all five (documented, not silently dropped):
-  `incidentExternalLinks` (needs a DataHub `connection` entity, absent from this connector),
-  `chartQuery`, `embed`, `inputFields`, `editable*Properties` (UI-owned), `*UsageStatistics`
-  (would use the existing `aspectName:` raw passthrough mechanism instead, on demand).
-
-Design deviations from the plan as originally approved: `common_sdk_kwargs()` needed a
-`native=` parameter partway through Phase 1 (the plan assumed every SDK V2 entity class
-implements the same six mixins uniformly; `Tag`/`GlossaryNode`/`GlossaryTerm` each
-implement a different subset). `DataJobDoc` deliberately does **not** get `HasSubTypes`
-despite the registry permitting `subTypes` on `dataJob` — its pre-existing `type` field
-already maps to that exact aspect, and adding both would have given authors two
-differently-named fields for the same thing (and crashed on a duplicate `subtype=`
-keyword).
-
-### ML / semantic / software-catalog entities — Phase 5, 2026-08-15
-
-Promotes `SEMANTIC_MODEL`/`METRIC`/`SERVICE`/`API`/`REPOSITORY`/`AI_AGENT`/`AGENT_SKILL` and the
-5 ML entities (`MLMODEL`/`MLMODEL_GROUP`/`MLFEATURE_TABLE`/`MLFEATURE`/`MLPRIMARY_KEY`) out of Future
-Considerations, where they'd been deferred as "brand new in this DataHub release; premature to
-encode" and "no current AP-HP use case". 12 kinds, delivered as 3 commits (one per family, not one
-per kind as Phase 4 was — validated with the user given the larger batch size): **5A — ML entities**
-(`9804975`), **5B — semantic layer** (`64493e3`), **5C — software/AI catalog** (`57bb3fe`). All
-three shipped; the connector now covers 29 `kind:` values.
-
-- **Phase 5A — ML entities**, one commit. All 5 kinds and their aspects verified to exist in both
-  `entity-registry.yml` and the installed `acryl-datahub==1.7.0.3` before writing any code — one
-  near-miss caught immediately: the AI_AGENT aspect class is `AIAgentInfoClass` (AI capitalized), not
-  `AiAgentInfoClass`; a naive `hasattr` check with the wrong casing would have wrongly concluded the
-  entity wasn't supported.
-  - `MLMODEL`/`MLMODEL_GROUP` use the SDK V2 `datahub.sdk.mlmodel.MLModel`/
-    `datahub.sdk.mlmodelgroup.MLModelGroup` wrappers, but **neither exposes `subtype=`,
-    `applications=`, or `container=` as a constructor kwarg** (verified by signature inspection,
-    despite the registry permitting all three on both entities) — `native=` for these two is
-    narrowed to `{owners, tags, terms, domain, links}`; `subTypes`/`applications`/`container` all go
-    via `extra_aspects=`, same as every other narrowed-`native=` kind.
-  - `MLFEATURE_TABLE`/`MLFEATURE`/`MLPRIMARY_KEY` have no SDK V2 wrapper — raw MCP, same shape as
-    `QUERY`/`INCIDENT`. `MLFeatureDoc.sources`/`MLPrimaryKeyDoc.sources` reuse `QuerySubjectRef`
-    as-is (a `DatasetRef` with optional `fieldPath`) rather than inventing a new type — the shape
-    (dataset, or one of its columns) is identical to what `QUERY.subjects` already needed.
-  - **`MLModelDoc` carries the full "model card"** (`intendedUse`, `ethicalConsiderations`,
-    `caveatsAndRecommendations`, `trainingData`, `evaluationData`, `factorPrompts`, `metrics`,
-    `sourceCode`) per explicit user request — these 8 aspects are valid *only* on `mlModel` (verified
-    against the registry, not shared with `mlModelGroup`), so they're plain fields on `MLModelDoc`,
-    not a new `Has*` mixin (D1 mixins are for aspects shared *across* kinds). `cost` was deliberately
-    excluded even under "full model card" — a financial discriminated-union aspect outside the usual
-    model-card concept, with no expressed use case.
-  - **New finding (C9)**: `MLModelPropertiesClass.type`/`.hyperParameters`/`.mlFeatures` have no
-    matching SDK constructor kwarg at all (only `hyper_params=`, a differently-typed field the SDK
-    does expose, which was not used here since the YAML wants a plain `Dict[str, scalar]`). Same
-    "SDK partially covers an aspect it already owns" situation as `DataJobDoc.inputDataJobs` (Phase 2)
-    — set directly via `model._ensure_model_props()` after construction, before `as_workunits()`.
-  - Emission order: `MLFEATURE`/`MLPRIMARY_KEY` before `MLFEATURE_TABLE` (which references them);
-    `MLMODEL_GROUP` before `MLMODEL` (which references its group via the SDK's native `model_group=`
-    kwarg).
-  - Exercised end-to-end in a new integration fixture (`ml-layer/models.yml`).
-- **Phase 5B — semantic layer** (`SEMANTIC_MODEL`, `METRIC`), one commit. Both have SDK V2 wrappers
-  (`datahub.sdk.semantic_model.SemanticModel`/`datahub.sdk.metric.Metric`), both with the same
-  narrowed `native=` as 5A (no `subtype=`/`applications=`/`container=` kwarg either).
-  `Metric`'s constructor **requires** `semantic_model=` — a real emission-order dependency, not
-  cosmetic, so `SEMANTIC_MODEL` is emitted before `METRIC`. `aiContext:` maps to the native
-  `ai_context=` kwarg on both, but needs a real `AiContextInput` dataclass
-  (`datahub.sdk.semantic_model.AiContextInput`/`datahub.sdk.metric.AiContextInput`, the same class
-  re-exported from both modules), not a plain dict — a dict fails with `AttributeError` inside the
-  SDK's own `build_ai_context()`. `MetricInfoClass.expression` doesn't accept a plain string despite
-  `MetricDoc.expression: Optional[str]` — constructing it from a string produces
-  `MetricExpressionClass(dialects=[DialectExpressionClass(dialect='ANSI_SQL', expression=<str>)])`,
-  caught by a smoke test before finalizing the builder and test assertions. `metricRelationships`'s
-  `relatedMetrics`/`derivedFrom` and `semanticModelInfo`/`metricInfo`'s `externalUrl` need the same
-  `_ensure_metric_relationships()`/`_ensure_model_props()`/`_ensure_metric_props()` post-construction
-  pattern as C9 (an aspect the SDK partially owns); `metricUpstreams` has no SDK involvement at all,
-  so it's a plain `extra_aspects=` entry with no race risk. Exercised end-to-end by extending the
-  Phase 5A fixture (`ml-layer/models.yml`) rather than a new file, since `METRIC.datasetUpstreams`
-  reuses the same dataset already declared there.
-- **Phase 5C — software/AI catalog** (`SERVICE`, `API`, `REPOSITORY`, `AI_AGENT`, `AGENT_SKILL`), one
-  commit. All five: raw MCP, id-based URN (like `QUERY`/`INCIDENT`/`DOCUMENT`) — no SDK V2 wrapper
-  exists for any of them (verified against the `datahub/sdk/` package listing). A genuine widening of
-  the connector's *subject matter* (software/AI-agent catalog, not data catalog) rather than just its
-  kind count — each entity's registry-permitted mixin subset is much thinner than the data-oriented
-  kinds (`SERVICE` only gets `tags`/`owners`/`subTypes`; `AI_AGENT`/`AGENT_SKILL` don't get
-  `subTypes` either; none of the five get `applications` or `deprecation`).
-  - **New finding (C10)**: `AgentSkillInfo.requiredTools` and `AIAgentDependencies.tools` are both
-    `array[Urn]` in their `.pdl` source (`entityTypes: [api]`), **not free-text tool names** as
-    initially assumed from their field names — the wrong assumption was caught not by a Python smoke
-    test (a plain string is a valid `Urn`-typed field value at the SDK layer, so construction
-    silently succeeds) but by an actual pipeline run: DataHub's
-    `auto_materialize_referenced_tags_terms` workunit processor walks every `Urn`-typed field via
-    `list_urns()` and asserts it starts with `urn:li:`, which a raw id like `"fhir_search"` fails at
-    ingestion time, not at MCP-construction time. Both fields now resolve their ids through
-    `api_urn()` like every other cross-reference in the connector. Lesson: for `array[Urn]` fields
-    specifically, a construction-time smoke test isn't sufficient verification — running the full
-    pipeline (as the golden-file regeneration step already does) is what actually catches this class
-    of bug.
-  - `AIAgentInfoClass.created`/`.lastModified` are **required** (unlike every other Phase 5C aspect,
-    and unlike `MLMODEL`/`SEMANTIC_MODEL`/`METRIC`'s optional audit stamps) — pinned to
-    `ZERO_AUDIT_STAMP` for golden-file determinism, the same fix C8 already established for
-    `DOCUMENT`.
-  - `ServiceDefinitionClass.rawSpec` is typed `LargeStringClass`, not a plain string — a document's
-    `rawSpec: str` field is wrapped in `LargeStringClass(blob=...)` in the builder.
-  - `dataPlatformInstance` was brought into scope for all five kinds (arbitrated with the user during
-    planning, not in the original spec text): their URNs are the only ones in the connector that
-    don't already encode a platform, so without it there'd be no way to say "this repository is on
-    GitLab" at all. New `build_data_platform_instance_aspect()` helper in `builders/common.py`,
-    called directly by each Phase 5C builder rather than dispatched through a `Has*` mixin (no other
-    kind uses it).
-  - Emission order: `REPOSITORY → API → AGENT_SKILL → AI_AGENT → SERVICE` — parents before the
-    children that reference them (`API.sourceRepository`, `AGENT_SKILL.sourceRepository`,
-    `AI_AGENT.dependencies.skills`, `SERVICE.apis`/`.sourceRepository`).
-  - Exercised end-to-end in a new integration fixture (`software-layer/catalog.yml`).
-- **Explicitly out of scope for all 12** (documented, not silently dropped): `versionProperties`
-  (needs a `VERSION_SET` entity this connector doesn't model, already in Future Considerations),
-  `semanticContent` (vector embeddings — system-computed, not hand-authorable), `incidentsSummary`
-  and `browsePathsV2` (system-computed), `upstreamLineage` on `AI_AGENT` (would need a lineage
-  mechanism this connector doesn't model for non-dataset entities), `apiSignature.inputFields`/
-  `.outputFields` (only the free-text `schemaDefinition` is exposed), `cost` on `MLMODEL` (see above).
-  No new `@capability` decorators — DataHub's `SourceCapability` enum has no dedicated value for any
-  ML/semantic/software-catalog entity, the same situation already true for
-  `DATA_PRODUCT`/`ASSERTION`/the BI kinds.
-
-Spec item 1.10 (`dataPlatformInstanceProperties`) was deferred by decision D3.
-`RawAspectDoc.entityUrn` was added to the model but has no generic-scope builder
-registered yet — no concrete new `aspectName` in this round exercises it; wire it up
-together with whatever raw aspect first needs a non-dataset/assertion/dataProcessInstance
-entity reference.
-
 ## Verification
 
 Run from the repo root, using `.venv\Scripts\python.exe`.
@@ -721,11 +615,5 @@ its DRY criteria.
 | 1 | Confirm each mixin↔kind cell against `entity-registry.yml` at the pinned version before writing the class declarations. | implementer | **Resolved** — done for all 19 kinds, recorded as the matrix comment in `models.py` |
 | 2 | Is the target GMS recent enough for `DOCUMENT`, `applications`, and `displayProperties`? | AP-HP platform team | **Open** — code ships regardless; real confirmation against the target deployment still pending |
 | 3 | Does the target deployment index `schemaField` entities? | AP-HP platform team | **Open** — same as #2, column-level tags may not surface in the UI even though the MCPs succeed |
-| 4 | Does `docs/sources/yaml/yaml_recipe.yml` stay pointed at the `datahub-sample` root? | maintainer | Open, non-blocking |
-
-## Approval
-
-- [x] Initial build approved on: 2026-07-13 — "j'approuve le plan"
-- [x] Coverage-extension plan (Phases 1-4) approved and executed phase-by-phase between
-      2026-08-15 and the completion of `DOCUMENT` (commit `664d5c2`), each phase reviewed
-      and its own commit created before moving to the next.
+| 4 | Does `docs/sources/yaml/yaml_recipe.yml` stay pointed at the `datahub-sample` root? | maintainer | **Resolved** — points at https://github.com/aphp/datahub-sample; `git_info` (below) lets a recipe clone it automatically instead of requiring a pre-existing local checkout |
+| 5 | Should `path` also accept `s3://` / `http(s)://` URIs (not just a local directory or a `git_info` checkout)? | maintainer | **Resolved** — implemented. NOT via `object_store_files.read_file_as_bytes()` as originally proposed: that module transitively imports `AwsConnectionConfig`, which hard-imports `boto3` at module level, so merely importing it would force `boto3` on every user (local/git-only recipes included). Instead: `loader._discover_s3_files`/`_read_s3_bytes` take an already-built `aws_connection` as a loosely-typed `Any` parameter (boto3 only touched inside those two functions); `yaml_source._resolve_aws_connection()` lazily imports `AwsConnectionConfig` and builds it from the config's plain-dict `aws_connection` field, guarded by `try/except ImportError` naming the `s3` extra. HTTP is hand-rolled with `requests` (already a base dependency, so no extra needed) rather than reused from `object_store_files`, for the same reason. `path` accepts a single string or a `List[str]`; HTTP entries must each name a single file (no directory listing), consistent with the original proposal. Verified end-to-end for both (see "Config Structure" above): git test against `github.com/aphp/datahub-sample`, HTTP test against two real `raw.githubusercontent.com` files; S3 covered by unit tests only (no real bucket available). |

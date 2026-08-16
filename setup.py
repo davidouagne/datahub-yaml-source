@@ -15,11 +15,26 @@ setup(
         "pyyaml>=6.0",
     ],
     extras_require={
+        # GitInfo.clone() (datahub.configuration.git) lazily imports GitPython;
+        # it's in the base acryl-datahub wheel but the dependency isn't, so
+        # 'git_info' in a recipe needs this extra installed.
+        "git": [
+            "GitPython>=3.1.37,<4",
+        ],
+        # 'aws_connection' + an s3:// entry in 'path' needs boto3, which DataHub's
+        # AwsConnectionConfig (datahub.ingestion.source.aws.aws_common) hard-imports
+        # at module level -- lazily imported only inside YamlSource's S3 code paths,
+        # so local-only/git-only/http-only recipes never need this extra.
+        "s3": [
+            "boto3>=1.35.0,<2",
+        ],
         "dev": [
             "pytest>=7.0.0",
             "pytest-cov>=4.0.0",
             "deepdiff>=6.0.0",
             "jsonschema>=4.0.0",
+            "GitPython>=3.1.37,<4",
+            "boto3>=1.35.0,<2",
         ],
     },
     entry_points={

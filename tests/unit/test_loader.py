@@ -12,7 +12,7 @@ def test_discover_yaml_files_finds_yml_and_yaml_recursively(tmp_path: Path):
 
     found = discover_yaml_files(tmp_path)
 
-    assert {p.name for p in found} == {"one.yml", "two.yaml"}
+    assert {Path(p).name for p in found} == {"one.yml", "two.yaml"}
 
 
 def test_load_repository_parses_multi_document_file(tmp_path: Path):

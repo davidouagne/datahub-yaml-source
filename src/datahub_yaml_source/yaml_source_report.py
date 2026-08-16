@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 from datahub.ingestion.source.state.stale_entity_removal_handler import (
     StaleEntityRemovalSourceReport,
@@ -9,6 +10,7 @@ from datahub.utilities.lossy_collections import LossyList
 @dataclass
 class YamlSourceReport(StaleEntityRemovalSourceReport):
     files_scanned: int = 0
+    git_checkout: Optional[str] = None
 
     platforms_scanned: int = 0
     tags_scanned: int = 0

@@ -6,13 +6,30 @@ setup(
     description="DataHub ingestion source that reads declarative YAML metadata files.",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
-    python_requires=">=3.9",
+    # acryl-datahub>=1.7.0 itself requires Python >=3.10 (its PyPI
+    # classifiers list only 3.10/3.11/3.12) -- this floor tracks that,
+    # not an independent choice; CI matrices 3.10-3.12 accordingly.
+    python_requires=">=3.10",
     install_requires=[
         # >=1.6.0 for the SDK V2 constructor kwargs the cross-cutting aspect
         # helpers in builders/common.py depend on (e.g. DataFlow/DataJob's
         # `parent_container=`, `links=`, `structured_properties=`).
         "acryl-datahub>=1.7.0",
         "pyyaml>=6.0",
+        # models.py/loader.py/yaml_source_config.py import pydantic directly
+        # for the config schema and validation. Only ever a transitive dep
+        # today (acryl-datahub itself requires pydantic>=2.4.0,<3.0.0
+        # unconditionally); declared explicitly so our own use of it isn't
+        # silently dependent on that staying true. Same range as upstream's
+        # own floor, to avoid a resolver conflict.
+        "pydantic>=2.4.0,<3.0.0",
+        # loader.py/yaml_source.py lazily import requests for the http(s)://
+        # 'path' code path. Only ever a *two-hop* transitive dep today
+        # (acryl-datahub unconditionally requires requests_file, which in
+        # turn requires requests>=1.0.0 -- an essentially unconstrained
+        # floor); declared explicitly with a floor actually exercised by
+        # our own requests.get(..., stream=True)/requests.head(...) calls.
+        "requests>=2.28.0,<3",
     ],
     extras_require={
         # GitInfo.clone() (datahub.configuration.git) lazily imports GitPython;

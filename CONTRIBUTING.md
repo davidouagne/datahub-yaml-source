@@ -4,6 +4,10 @@ Thanks for considering a contribution to `datahub-yaml-source`.
 
 ## Development setup
 
+Supported Python versions: 3.10, 3.11, 3.12 (the floor tracked in `setup.py`'s
+`python_requires`, matching `acryl-datahub`'s own Python >=3.10 requirement).
+CI (`.github/workflows/ci.yml`) runs the test suite on all three.
+
 ```bash
 pip install -e ".[dev]"
 ```
@@ -58,8 +62,7 @@ tree under `tests/integration/yaml_source/resources/` with a refreshed golden
 file.
 
 See `_PLANNING.md` for the architecture rationale (why SDK V2 vs. raw MCP per
-kind, emission ordering, reference-resolution strategy) and
-`docs/specs/` for open specs on planned coverage gaps.
+kind, emission ordering, reference-resolution strategy).
 
 ## Code style
 

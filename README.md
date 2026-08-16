@@ -1,5 +1,7 @@
 # datahub-yaml-source
 
+[![CI](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml/badge.svg)](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml)
+
 A standalone [DataHub](https://datahubproject.io/) ingestion source plugin that
 reads a directory tree of declarative YAML "metadata as code" files and emits
 the DataHub entities they describe (platforms, tags, glossary, domains,

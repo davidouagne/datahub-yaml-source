@@ -7,6 +7,7 @@ from datahub.metadata.schema_classes import (
     AssertionActionsClass,
     AssertionInfoClass,
     AssertionNoteClass,
+    AssertionSourceClass,
     AssertionStdParameterClass,
     AssertionStdParametersClass,
     AuditStampClass,
@@ -35,6 +36,7 @@ from datahub_yaml_source.builders.common import (
     common_aspect_mcps,
     mcp_workunit,
     schema_field_data_type,
+    stringify_custom_properties,
 )
 from datahub_yaml_source.models import AssertionActionsDoc, AssertionDoc
 from datahub_yaml_source.urns import ReferenceIndex
@@ -207,9 +209,17 @@ def build_assertion(
 
     entity_urn = AssertionUrn(doc.id).urn()
 
+    custom_properties = None
+    if doc.properties:
+        custom_properties = stringify_custom_properties(
+            {k: v for k, v in {"name": doc.properties.name, "dbt_test": doc.properties.dbt_test}.items() if v is not None}
+        )
+
     aspect = AssertionInfoClass(
         type=doc.assertion.type,
         description=doc.description,
+        customProperties=custom_properties,
+        source=AssertionSourceClass(type=doc.sourceType),
         **{kwarg_name: sub_assertion},
     )
     yield mcp_workunit(entity_urn, aspect)

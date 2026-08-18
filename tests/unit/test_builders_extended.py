@@ -136,6 +136,7 @@ def test_build_assertion_freshness():
             "kind": "ASSERTION",
             "id": "ehr-patient-freshness-check-1",
             "sourceType": "NATIVE",
+            "properties": {"name": "ehr_patient freshness", "dbt_test": "dbt_test.ehr_patient_freshness"},
             "assertion": {
                 "type": "FRESHNESS",
                 "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
@@ -153,6 +154,11 @@ def test_build_assertion_freshness():
     aspect = wus[0].metadata.aspect
     assert aspect.type == "FRESHNESS"
     assert aspect.freshnessAssertion.schedule.cron.cron == "0 8 * * *"
+    assert aspect.source.type == "NATIVE"
+    assert aspect.customProperties == {
+        "name": "ehr_patient freshness",
+        "dbt_test": "dbt_test.ehr_patient_freshness",
+    }
 
 
 def test_build_assertion_sql():

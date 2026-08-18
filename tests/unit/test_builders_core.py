@@ -16,7 +16,7 @@ from datahub_yaml_source.models import (
     StructuredPropertyDoc,
     TagDoc,
 )
-from datahub_yaml_source.urns import ReferenceIndex
+from datahub_yaml_source.urns import ReferenceIndex, container_key
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 
@@ -116,6 +116,43 @@ def test_build_container_reports_dangling_domain():
     wus = list(build_container(doc, index, report))
     assert len(wus) > 0
     assert len(report.dangling_references) == 1
+
+
+def test_build_container_emits_data_platform_instance_when_instance_declared():
+    # `gen_containers()` always emits its own dataPlatformInstance aspect, but derives
+    # it from `container_key.instance` -- which `container_key()` deliberately leaves
+    # unset so `instance` never affects the URN (see its docstring). That aspect is
+    # therefore always emitted with `instance=None`; `build_container()` must overwrite
+    # it with a follow-up MCP carrying the real value.
+    doc = _container("public", "ehr", schema="public")
+    doc = ContainerDoc.model_validate({**doc.model_dump(by_alias=True), "instance": "aphp-prod"})
+    repo = ParsedRepository()
+    repo.containers.append(doc)
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    urn_before = container_key(doc).as_urn()
+    wus = list(build_container(doc, index, report))
+    assert container_key(doc).as_urn() == urn_before  # `instance` never affects the URN
+
+    dpi_aspects = [wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"]
+    assert len(dpi_aspects) == 2
+    assert dpi_aspects[0].instance is None  # gen_containers()'s own emission
+    assert dpi_aspects[-1].platform == "urn:li:dataPlatform:postgres"
+    assert dpi_aspects[-1].instance == "urn:li:dataPlatformInstance:(urn:li:dataPlatform:postgres,aphp-prod)"
+
+
+def test_build_container_does_not_overwrite_data_platform_instance_when_instance_absent():
+    doc = _container("public", "ehr", schema="public")
+    repo = ParsedRepository()
+    repo.containers.append(doc)
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+
+    wus = list(build_container(doc, index, report))
+    dpi_aspects = [wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"]
+    assert len(dpi_aspects) == 1  # only gen_containers()'s own emission, no override
+    assert dpi_aspects[0].instance is None
 
 
 def test_build_application_emits_application_properties():

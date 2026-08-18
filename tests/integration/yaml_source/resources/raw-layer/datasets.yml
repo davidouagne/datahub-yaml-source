@@ -3,6 +3,7 @@ kind: CONTAINER
 platform: postgres
 database: ehr
 env: PROD
+instance: aphp-prod
 name: EHR
 description: Primary EHR production database
 subTypes: Database

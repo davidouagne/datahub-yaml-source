@@ -524,6 +524,23 @@
     "entityType": "container",
     "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
     "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:postgres",
+            "instance": "urn:li:dataPlatformInstance:(urn:li:dataPlatform:postgres,aphp-prod)"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786837520031,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:44c6f8da817901635425c92093b4a3ca",
+    "changeType": "UPSERT",
     "aspectName": "browsePathsV2",
     "aspect": {
         "json": {
@@ -626,6 +643,23 @@
                 "time": 0,
                 "actor": "urn:li:corpuser:unknown"
             }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1786837520033,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "container",
+    "entityUrn": "urn:li:container:4d3e74f70a031dc44928c6a0de2afbf3",
+    "changeType": "UPSERT",
+    "aspectName": "dataPlatformInstance",
+    "aspect": {
+        "json": {
+            "platform": "urn:li:dataPlatform:duckdb",
+            "instance": "urn:li:dataPlatformInstance:(urn:li:dataPlatform:duckdb,duckdb)"
         }
     },
     "systemMetadata": {

@@ -6,6 +6,7 @@ from datahub.emitter.mcp_builder import gen_containers
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 
 from datahub_yaml_source.builders.common import (
+    build_data_platform_instance_aspect,
     build_ownership_aspect,
     common_aspect_mcps,
     mcp_workunit,
@@ -111,6 +112,17 @@ def build_container(
     # aspect afterward (overwriting the single-owner one) when there's more than one.
     if len(owners) > 1:
         yield mcp_workunit(key.as_urn(), build_ownership_aspect(owners))
+
+    # `instance` never affects the container's URN (see `container_key()`, which
+    # deliberately omits it from the ContainerKey so the GUID stays stable). That
+    # same omission means `gen_containers()` above -- which derives its own
+    # dataPlatformInstance aspect from `container_key.instance` -- always emits
+    # it with `instance=None`, even when the YAML declares one. Overwrite it with
+    # a follow-up MCP carrying the real value, same pattern as the multi-owner
+    # fallback above.
+    if doc.instance:
+        dpi = build_data_platform_instance_aspect(doc.platform, doc.instance)
+        yield mcp_workunit(key.as_urn(), dpi)
 
     # terms/applications/links/deprecation/structuredProperties have no
     # gen_containers() kwarg at all; owners/tags/subTypes/domain were just

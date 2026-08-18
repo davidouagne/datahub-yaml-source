@@ -3630,7 +3630,9 @@
     "aspectName": "serviceProperties",
     "aspect": {
         "json": {
-            "customProperties": {},
+            "customProperties": {
+                "cluster": "eds"
+            },
             "displayName": "Serveur FHIR Pathling",
             "description": "Serveur FHIR analytique expose en MCP",
             "lifecycle": "PRODUCTION",

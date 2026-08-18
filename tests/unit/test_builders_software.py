@@ -168,6 +168,7 @@ def test_build_service_only_permits_tags_owners_subtypes_and_wraps_raw_spec():
             "sourceRepository": "aphp-pathling",
             "mcpServer": {"url": "https://mcp.example.org/pathling", "transport": "HTTP"},
             "definition": {"format": "OPENAPI", "rawSpec": "openapi: 3.0.0", "version": "1.0"},
+            "properties": {"cluster": "eds", "replicas": 3},
             "tags": ["pii"],
             "owners": {"owner": "datahub", "type": "TECHNICAL_OWNER"},
         }
@@ -184,6 +185,8 @@ def test_build_service_only_permits_tags_owners_subtypes_and_wraps_raw_spec():
     assert props.apis == ["urn:li:api:fhir-patient-search-api"]
     assert props.sourceRepository == "urn:li:repository:aphp-pathling"
     assert props.lifecycle == "PRODUCTION"
+    # `replicas: 3` (int) must be coerced to `"3"` -- customProperties is Dict[str, str].
+    assert props.customProperties == {"cluster": "eds", "replicas": "3"}
 
     mcp_server = next(
         wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "McpServerPropertiesClass"

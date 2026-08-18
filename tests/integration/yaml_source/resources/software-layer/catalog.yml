@@ -74,6 +74,8 @@ definition:
   format: OPENAPI
   rawSpec: "openapi: 3.0.0"
   version: "1.0"
+properties:
+  cluster: eds
 platform: gitlab
 instance: aphp-prod
 tags: [pii]

@@ -176,6 +176,7 @@ A source application/system (e.g. an EHR, an ERP). Referenced elsewhere via `app
 | `id` | string | **yes** | - | Stable identifier, becomes urn:li:application:<id>. |
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
+| `applicationLineage` | ApplicationLineageDoc | no | - | APIs/datasets this application consumes and produces. |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 

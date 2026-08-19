@@ -3,6 +3,14 @@ kind: APPLICATION
 id: ORBIS
 name: ORBIS
 description: Hospital information system (EHR) source application
+applicationLineage:
+  consumes:
+    - api: fhir-patient-search-api
+  produces:
+    - dataset:
+        platform: oracle
+        name: or1pro_prescription_aph_pha_recup_prescr_v3_hc1v2
+        env: PROD
 ---
 kind: CONTAINER
 platform: oracle

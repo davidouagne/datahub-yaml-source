@@ -199,7 +199,7 @@ checked-in schema and the models have drifted apart.
 | `GLOSSARY_TERM`         | Glossary term                          | `id`, `name`, `definition`, `parentNode`                                                 |
 | `STRUCTURED_PROPERTY`   | Structured property definition         | `qualifiedName`, `valueType`, `cardinality`, `allowedValues`, `entityTypes`, `settings`  |
 | `DOMAIN`                | Domain                                 | `id`, `name`, `description`                                                              |
-| `APPLICATION`           | Application                            | `id`, `name`, `description`                                                              |
+| `APPLICATION`           | Application                            | `id`, `name`, `description`, `applicationLineage` (consumes/produces `API`/`DATASET`)     |
 | `CONTAINER`             | Container (database/schema/...)        | `platform`, `database`, `schema`, `parentContainer`, `subTypes`, `owners`                |
 | `DATASET`               | Dataset (table/view/...)               | `platform`, `name`, `schema` (fields + foreignKeys), `container`, `upstreamLineage`, `viewProperties`, `applications`, ... |
 | `CHART`                 | Chart/visualization (BI tool)          | `platform`, `name`, `chartUrl`, `chartType`, `container`, `inputDatasets`                |

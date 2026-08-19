@@ -1,3 +1,5 @@
+import pytest
+
 from datahub_yaml_source.builders.application import build_application
 from datahub_yaml_source.builders.container import build_container, topological_sort_containers
 from datahub_yaml_source.builders.domain import build_domain
@@ -163,6 +165,96 @@ def test_build_application_emits_application_properties():
     wus = list(build_application(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:application:ORBIS"
     assert wus[0].metadata.aspect.name == "ORBIS"
+
+
+def test_build_application_with_no_lineage_emits_no_application_lineage_aspect():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    doc = ApplicationDoc(kind="APPLICATION", id="ORBIS", name="ORBIS")
+    wus = list(build_application(doc, index, report))
+    assert not any(wu.metadata.aspect.__class__.__name__ == "ApplicationLineageClass" for wu in wus)
+
+
+def test_build_application_lineage_emits_input_and_output_edges():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    doc = ApplicationDoc.model_validate(
+        {
+            "kind": "APPLICATION",
+            "id": "ORBIS",
+            "name": "ORBIS",
+            "applicationLineage": {
+                "consumes": [{"api": "fhir-patient-search-api"}],
+                "produces": [
+                    {"dataset": {"platform": "oracle", "name": "or1pro_prescription", "env": "PROD"}}
+                ],
+            },
+        }
+    )
+    wus = list(build_application(doc, index, report))
+    lineage = next(
+        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "ApplicationLineageClass"
+    )
+    assert [e.destinationUrn for e in lineage.inputEdges] == ["urn:li:api:fhir-patient-search-api"]
+    assert [e.destinationUrn for e in lineage.outputEdges] == [
+        "urn:li:dataset:(urn:li:dataPlatform:oracle,or1pro_prescription,PROD)"
+    ]
+    assert not report.dangling_references
+
+
+def test_build_application_lineage_edge_requires_exactly_one_of_api_or_dataset():
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    doc = ApplicationDoc.model_validate(
+        {
+            "kind": "APPLICATION",
+            "id": "ORBIS",
+            "name": "ORBIS",
+            "applicationLineage": {"consumes": [{}]},
+        }
+    )
+    with pytest.raises(ValueError, match="exactly one of 'api' or 'dataset'"):
+        list(build_application(doc, index, report))
+
+    doc_both = ApplicationDoc.model_validate(
+        {
+            "kind": "APPLICATION",
+            "id": "ORBIS",
+            "name": "ORBIS",
+            "applicationLineage": {
+                "consumes": [
+                    {
+                        "api": "fhir-patient-search-api",
+                        "dataset": {"platform": "oracle", "name": "or1pro_prescription", "env": "PROD"},
+                    }
+                ]
+            },
+        }
+    )
+    with pytest.raises(ValueError, match="exactly one of 'api' or 'dataset'"):
+        list(build_application(doc_both, index, report))
+
+
+def test_build_application_lineage_validation_error_yields_no_partial_work_units():
+    # A malformed applicationLineage edge must fail the whole document atomically --
+    # not emit `applicationProperties` and then blow up, leaving a half-written entity.
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    doc = ApplicationDoc.model_validate(
+        {
+            "kind": "APPLICATION",
+            "id": "ORBIS",
+            "name": "ORBIS",
+            "applicationLineage": {"consumes": [{}]},
+        }
+    )
+    gen = build_application(doc, index, report)
+    with pytest.raises(ValueError, match="exactly one of 'api' or 'dataset'"):
+        next(gen)
 
 
 def test_build_glossary_node_and_term_link_parent(monkeypatch):

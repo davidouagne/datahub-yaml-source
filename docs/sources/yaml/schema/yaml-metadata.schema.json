@@ -1031,6 +1031,18 @@
           ],
           "default": null,
           "title": "Description"
+        },
+        "applicationLineage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ApplicationLineageDoc"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "APIs/datasets this application consumes and produces."
         }
       },
       "required": [
@@ -1039,6 +1051,76 @@
         "name"
       ],
       "title": "ApplicationDoc",
+      "type": "object"
+    },
+    "ApplicationLineageDoc": {
+      "description": "Which APIs/datasets an APPLICATION consumes and produces.",
+      "properties": {
+        "consumes": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ApplicationLineageEdgeDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upstream APIs/datasets this application reads from.",
+          "title": "Consumes"
+        },
+        "produces": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ApplicationLineageEdgeDoc"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Downstream APIs/datasets this application writes to.",
+          "title": "Produces"
+        }
+      },
+      "title": "ApplicationLineageDoc",
+      "type": "object"
+    },
+    "ApplicationLineageEdgeDoc": {
+      "description": "One edge in an APPLICATION's `applicationLineage`. Exactly one of `api`\nor `dataset` must be set -- `applicationLineage`'s underlying edges accept\neither an `api` or a `dataset` entity, never both.",
+      "properties": {
+        "api": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "id of an API document.",
+          "title": "Api"
+        },
+        "dataset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DatasetRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "ApplicationLineageEdgeDoc",
       "type": "object"
     },
     "AssertionActionDoc": {

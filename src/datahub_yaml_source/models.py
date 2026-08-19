@@ -401,6 +401,26 @@ class DomainDoc(HasOwners, HasLinks, HasDeprecation, HasStructuredProps, _AllowE
     displayProperties: Optional[DisplayPropertiesDoc] = None
 
 
+class ApplicationLineageEdgeDoc(BaseModel):
+    """One edge in an APPLICATION's `applicationLineage`. Exactly one of `api`
+    or `dataset` must be set -- `applicationLineage`'s underlying edges accept
+    either an `api` or a `dataset` entity, never both."""
+
+    api: Optional[str] = Field(default=None, description="id of an API document.")
+    dataset: Optional[DatasetRef] = None
+
+
+class ApplicationLineageDoc(BaseModel):
+    """Which APIs/datasets an APPLICATION consumes and produces."""
+
+    consumes: Optional[List[ApplicationLineageEdgeDoc]] = Field(
+        default=None, description="Upstream APIs/datasets this application reads from."
+    )
+    produces: Optional[List[ApplicationLineageEdgeDoc]] = Field(
+        default=None, description="Downstream APIs/datasets this application writes to."
+    )
+
+
 class ApplicationDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields):
     """A source application/system (e.g. an EHR, an ERP). Referenced elsewhere
     via `applications: [<id>]`."""
@@ -409,6 +429,9 @@ class ApplicationDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps
     id: str = Field(description="Stable identifier, becomes urn:li:application:<id>.")
     name: str
     description: Optional[str] = None
+    applicationLineage: Optional[ApplicationLineageDoc] = Field(
+        default=None, description="APIs/datasets this application consumes and produces."
+    )
 
 
 class ContainerDoc(

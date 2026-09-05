@@ -1,0 +1,71 @@
+name: Quality
+
+# Implements the contract documented in spec/spec-process-cicd-quality.md.
+# Keep the two in sync: any change to triggers, jobs, or gates here
+# should update that spec first, per its Change Management section.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ruff:
+    # Blocking. This job's name is the required status check wired into
+    # branch protection for `main` -- keep it stable ("ruff").
+    name: ruff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: setup.py
+
+      # ruff + mypy are declared in setup.py's `dev` extra, so the tool
+      # versions CI uses are the same ones `pip install -e ".[dev]"` gives
+      # a contributor locally -- no separate tool-install step, no drift.
+      - name: Install (dev extras)
+        run: pip install -e ".[dev]"
+
+      - name: ruff check
+        run: ruff check --output-format=github .
+
+      - name: ruff format --check
+        run: ruff format --check --diff .
+
+  mypy:
+    # Advisory only: mypy currently reports a known, non-empty error
+    # baseline (see the spec). continue-on-error keeps a regression
+    # visible in the run without blocking merge. Promoting this to a
+    # required check is tracked as fog on the wayfinder map (issue #1).
+    name: mypy (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: setup.py
+
+      - name: Install (dev extras)
+        run: pip install -e ".[dev]"
+
+      - name: mypy
+        run: mypy

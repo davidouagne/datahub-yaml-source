@@ -65,6 +65,12 @@ setup(
             "jsonschema>=4.0.0",
             "GitPython>=3.1.37,<4",
             "boto3>=1.35.0,<2",
+            # Lint/format and type-check, run by .github/workflows/quality.yml
+            # (see spec/spec-process-cicd-quality.md). Ruff is capped to a
+            # minor because its lint rules shift between minors; local and CI
+            # must agree on the exact ruleset.
+            "ruff>=0.12,<0.13",
+            "mypy>=1.17",
         ],
     },
     entry_points={

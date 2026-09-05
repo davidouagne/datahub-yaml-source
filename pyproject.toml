@@ -26,3 +26,21 @@ select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["datahub_yaml_source"]
+
+[tool.mypy]
+# Advisory only -- the quality workflow runs this job with
+# continue-on-error. Scope is the package itself; tests/ and scripts/ are
+# left out until the src/ signal is clean. Non-strict baseline, with the
+# few low-noise warnings that catch real staleness.
+files = ["src"]
+python_version = "3.10"
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# acryl-datahub ships partial/absent type information; its generated
+# metadata classes in particular are untyped. Don't let that drown the
+# signal from our own code.
+module = ["datahub.*", "deepdiff.*"]
+ignore_missing_imports = true

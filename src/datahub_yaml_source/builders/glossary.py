@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import DisplayPropertiesClass
@@ -21,14 +21,20 @@ _GLOSSARY_TERM_NATIVE_KWARGS = frozenset({"owners", "links", "tags", "domain"})
 
 
 def _resolve_related_term_urns(
-    term_ids: Optional[List[str]], index: ReferenceIndex, report: YamlSourceReport, context: str, relation: str
-) -> Optional[List[str]]:
+    term_ids: list[str] | None,
+    index: ReferenceIndex,
+    report: YamlSourceReport,
+    context: str,
+    relation: str,
+) -> list[str] | None:
     if not term_ids:
         return None
     urns = []
     for term_id in term_ids:
         if not index.has_glossary_term(term_id):
-            report.report_dangling_reference(f"{context} references undeclared {relation} '{term_id}'")
+            report.report_dangling_reference(
+                f"{context} references undeclared {relation} '{term_id}'"
+            )
         urns.append(glossary_term_urn(term_id))
     return urns
 
@@ -40,7 +46,9 @@ def build_glossary_node(
     parent_node_urn = None
     if doc.parentNode:
         if not index.has_glossary_node(doc.parentNode):
-            report.report_dangling_reference(f"{context} references undeclared parentNode '{doc.parentNode}'")
+            report.report_dangling_reference(
+                f"{context} references undeclared parentNode '{doc.parentNode}'"
+            )
         parent_node_urn = glossary_node_urn(doc.parentNode)
 
     common = common_sdk_kwargs(doc, index, report, context, native=_GLOSSARY_NODE_NATIVE_KWARGS)
@@ -66,7 +74,9 @@ def build_glossary_term(
     parent_node_urn = None
     if doc.parentNode:
         if not index.has_glossary_node(doc.parentNode):
-            report.report_dangling_reference(f"{context} references undeclared parentNode '{doc.parentNode}'")
+            report.report_dangling_reference(
+                f"{context} references undeclared parentNode '{doc.parentNode}'"
+            )
         parent_node_urn = glossary_node_urn(doc.parentNode)
 
     common = common_sdk_kwargs(doc, index, report, context, native=_GLOSSARY_TERM_NATIVE_KWARGS)
@@ -85,10 +95,18 @@ def build_glossary_term(
         term_source=doc.termSource or "INTERNAL",
         source_ref=doc.sourceRef,
         source_url=doc.sourceUrl,
-        is_a=_resolve_related_term_urns(related.isRelatedTerms, index, report, context, "glossaryRelatedTerms.isRelatedTerms"),
-        has_a=_resolve_related_term_urns(related.hasRelatedTerms, index, report, context, "glossaryRelatedTerms.hasRelatedTerms"),
-        values=_resolve_related_term_urns(related.values, index, report, context, "glossaryRelatedTerms.values"),
-        related_terms=_resolve_related_term_urns(related.relatedTerms, index, report, context, "glossaryRelatedTerms.relatedTerms"),
+        is_a=_resolve_related_term_urns(
+            related.isRelatedTerms, index, report, context, "glossaryRelatedTerms.isRelatedTerms"
+        ),
+        has_a=_resolve_related_term_urns(
+            related.hasRelatedTerms, index, report, context, "glossaryRelatedTerms.hasRelatedTerms"
+        ),
+        values=_resolve_related_term_urns(
+            related.values, index, report, context, "glossaryRelatedTerms.values"
+        ),
+        related_terms=_resolve_related_term_urns(
+            related.relatedTerms, index, report, context, "glossaryRelatedTerms.relatedTerms"
+        ),
         **common,
     )
     yield from term.as_workunits()

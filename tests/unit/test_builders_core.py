@@ -39,7 +39,9 @@ def _container(name, database, schema=None, parent=None):
 
 
 def test_build_data_platform_emits_data_platform_info():
-    doc = DataPlatformDoc(kind="DATA_PLATFORM", name="pathling", displayName="Pathling", type="OTHERS")
+    doc = DataPlatformDoc(
+        kind="DATA_PLATFORM", name="pathling", displayName="Pathling", type="OTHERS"
+    )
     wus = list(build_data_platform(doc))
     assert len(wus) == 1
     assert wus[0].metadata.entityUrn == "urn:li:dataPlatform:pathling"
@@ -73,17 +75,24 @@ def test_build_domain_with_parent_domain_and_display_properties():
     report = YamlSourceReport()
 
     doc = DomainDoc(
-        kind="DOMAIN", id="child", name="Child", parentDomain="parent",
+        kind="DOMAIN",
+        id="child",
+        name="Child",
+        parentDomain="parent",
         displayProperties={"colorHex": "#00FF00"},
     )
     wus = list(build_domain(doc, index, report))
     assert not report.dangling_references
     props = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DomainPropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DomainPropertiesClass"
     )
     assert props.parentDomain == "urn:li:domain:parent"
     display = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DisplayPropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DisplayPropertiesClass"
     )
     assert display.colorHex == "#00FF00"
 
@@ -109,7 +118,9 @@ def test_topological_sort_domains_orders_parent_before_child():
 
 def test_build_container_reports_dangling_domain():
     doc = _container("public", "ehr", schema="public")
-    doc = ContainerDoc.model_validate({**doc.model_dump(by_alias=True), "domains": "does-not-exist"})
+    doc = ContainerDoc.model_validate(
+        {**doc.model_dump(by_alias=True), "domains": "does-not-exist"}
+    )
     repo = ParsedRepository()
     repo.containers.append(doc)
     index = ReferenceIndex(repo)
@@ -137,11 +148,18 @@ def test_build_container_emits_data_platform_instance_when_instance_declared():
     wus = list(build_container(doc, index, report))
     assert container_key(doc).as_urn() == urn_before  # `instance` never affects the URN
 
-    dpi_aspects = [wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"]
+    dpi_aspects = [
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"
+    ]
     assert len(dpi_aspects) == 2
     assert dpi_aspects[0].instance is None  # gen_containers()'s own emission
     assert dpi_aspects[-1].platform == "urn:li:dataPlatform:postgres"
-    assert dpi_aspects[-1].instance == "urn:li:dataPlatformInstance:(urn:li:dataPlatform:postgres,aphp-prod)"
+    assert (
+        dpi_aspects[-1].instance
+        == "urn:li:dataPlatformInstance:(urn:li:dataPlatform:postgres,aphp-prod)"
+    )
 
 
 def test_build_container_does_not_overwrite_data_platform_instance_when_instance_absent():
@@ -152,7 +170,11 @@ def test_build_container_does_not_overwrite_data_platform_instance_when_instance
     report = YamlSourceReport()
 
     wus = list(build_container(doc, index, report))
-    dpi_aspects = [wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"]
+    dpi_aspects = [
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataPlatformInstanceClass"
+    ]
     assert len(dpi_aspects) == 1  # only gen_containers()'s own emission, no override
     assert dpi_aspects[0].instance is None
 
@@ -188,14 +210,22 @@ def test_build_application_lineage_emits_input_and_output_edges():
             "applicationLineage": {
                 "consumes": [{"api": "fhir-patient-search-api"}],
                 "produces": [
-                    {"dataset": {"platform": "oracle", "name": "or1pro_prescription", "env": "PROD"}}
+                    {
+                        "dataset": {
+                            "platform": "oracle",
+                            "name": "or1pro_prescription",
+                            "env": "PROD",
+                        }
+                    }
                 ],
             },
         }
     )
     wus = list(build_application(doc, index, report))
     lineage = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "ApplicationLineageClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "ApplicationLineageClass"
     )
     assert [e.destinationUrn for e in lineage.inputEdges] == ["urn:li:api:fhir-patient-search-api"]
     assert [e.destinationUrn for e in lineage.outputEdges] == [
@@ -228,7 +258,11 @@ def test_build_application_lineage_edge_requires_exactly_one_of_api_or_dataset()
                 "consumes": [
                     {
                         "api": "fhir-patient-search-api",
-                        "dataset": {"platform": "oracle", "name": "or1pro_prescription", "env": "PROD"},
+                        "dataset": {
+                            "platform": "oracle",
+                            "name": "or1pro_prescription",
+                            "env": "PROD",
+                        },
                     }
                 ]
             },
@@ -259,7 +293,9 @@ def test_build_application_lineage_validation_error_yields_no_partial_work_units
 
 def test_build_glossary_node_and_term_link_parent(monkeypatch):
     repo = ParsedRepository()
-    repo.glossary_nodes.append(GlossaryNodeDoc(kind="GLOSSARY_NODE", id="fhir:Resource", name="FHIR Resource"))
+    repo.glossary_nodes.append(
+        GlossaryNodeDoc(kind="GLOSSARY_NODE", id="fhir:Resource", name="FHIR Resource")
+    )
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
 
@@ -278,7 +314,9 @@ def test_build_glossary_node_and_term_link_parent(monkeypatch):
 
 def test_build_glossary_term_with_related_terms_and_source():
     repo = ParsedRepository()
-    repo.glossary_terms.append(GlossaryTermDoc(kind="GLOSSARY_TERM", id="fhir:Encounter", name="Encounter"))
+    repo.glossary_terms.append(
+        GlossaryTermDoc(kind="GLOSSARY_TERM", id="fhir:Encounter", name="Encounter")
+    )
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
 
@@ -294,7 +332,9 @@ def test_build_glossary_term_with_related_terms_and_source():
     wus = list(build_glossary_term(term_doc, index, report))
     assert not report.dangling_references
     related = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "GlossaryRelatedTermsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "GlossaryRelatedTermsClass"
     )
     assert related.hasRelatedTerms == ["urn:li:glossaryTerm:fhir:Encounter"]
 
@@ -320,7 +360,9 @@ def test_build_glossary_node_reports_dangling_parent_node():
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
 
-    node_doc = GlossaryNodeDoc(kind="GLOSSARY_NODE", id="child", name="Child", parentNode="does:not:exist")
+    node_doc = GlossaryNodeDoc(
+        kind="GLOSSARY_NODE", id="child", name="Child", parentNode="does:not:exist"
+    )
     list(build_glossary_node(node_doc, index, report))
     assert len(report.dangling_references) == 1
 

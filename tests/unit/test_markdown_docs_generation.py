@@ -48,7 +48,15 @@ def test_generated_markdown_links_are_not_dangling():
     for line in markdown.splitlines():
         if line.startswith("## ") or line.startswith("### "):
             heading_text = line.lstrip("#").strip()
-            anchor = heading_text.lower().replace(" ", "-").replace("_", "-").replace(":", "").replace("(", "").replace(")", "").replace(".", "")
+            anchor = (
+                heading_text.lower()
+                .replace(" ", "-")
+                .replace("_", "-")
+                .replace(":", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace(".", "")
+            )
             headings.add(anchor)
 
     referenced_anchors = set(re.findall(r"\]\(#([a-z0-9\-]+)\)", markdown))

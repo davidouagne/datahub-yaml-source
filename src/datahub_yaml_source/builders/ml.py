@@ -6,7 +6,7 @@ because the five are tightly interrelated: a feature table references its featur
 primary keys, a model references its model group and its features.
 """
 
-from typing import FrozenSet, Iterable, List
+from collections.abc import Iterable
 
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
@@ -31,7 +31,12 @@ from datahub.metadata.schema_classes import (
 from datahub.sdk.mlmodel import MLModel
 from datahub.sdk.mlmodelgroup import MLModelGroup
 
-from datahub_yaml_source.builders.common import common_aspect_mcps, common_sdk_kwargs, mcp_workunit, stringify_custom_properties
+from datahub_yaml_source.builders.common import (
+    common_aspect_mcps,
+    common_sdk_kwargs,
+    mcp_workunit,
+    stringify_custom_properties,
+)
 from datahub_yaml_source.models import (
     MLFeatureDoc,
     MLFeatureTableDoc,
@@ -56,7 +61,7 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 # constructor kwargs (verified by signature inspection), unlike Chart/Dashboard/Dataset --
 # all three, plus structuredProperties (as always, C4) and the model card, go via
 # `extra_aspects=` instead.
-_ML_ENTITY_NATIVE_KWARGS: FrozenSet[str] = frozenset({"owners", "tags", "terms", "domain", "links"})
+_ML_ENTITY_NATIVE_KWARGS: frozenset[str] = frozenset({"owners", "tags", "terms", "domain", "links"})
 
 
 def _dataset_or_field_urn(ref: QuerySubjectRef) -> str:
@@ -78,7 +83,9 @@ def build_ml_feature_table(
             customProperties=stringify_custom_properties(doc.properties),
             description=doc.description,
             mlFeatures=[ml_feature_urn(f) for f in doc.mlFeatures] if doc.mlFeatures else None,
-            mlPrimaryKeys=[ml_primary_key_urn(k) for k in doc.mlPrimaryKeys] if doc.mlPrimaryKeys else None,
+            mlPrimaryKeys=[ml_primary_key_urn(k) for k in doc.mlPrimaryKeys]
+            if doc.mlPrimaryKeys
+            else None,
         ),
     )
     yield from common_aspect_mcps(entity_urn, doc, index, report, context)
@@ -147,9 +154,11 @@ def build_ml_model_group(
     yield from group.as_workunits()
 
 
-def _base_data_list(entries: List[MLModelDataDoc]) -> List[BaseDataClass]:
+def _base_data_list(entries: list[MLModelDataDoc]) -> list[BaseDataClass]:
     return [
-        BaseDataClass(dataset=dataset_urn(e.dataset), motivation=e.motivation, preProcessing=e.preProcessing)
+        BaseDataClass(
+            dataset=dataset_urn(e.dataset), motivation=e.motivation, preProcessing=e.preProcessing
+        )
         for e in entries
     ]
 
@@ -173,10 +182,14 @@ def build_ml_model(
     if doc.intendedUse:
         extra_aspects.append(IntendedUseClass(**doc.intendedUse.model_dump(exclude_none=True)))
     if doc.ethicalConsiderations:
-        extra_aspects.append(EthicalConsiderationsClass(**doc.ethicalConsiderations.model_dump(exclude_none=True)))
+        extra_aspects.append(
+            EthicalConsiderationsClass(**doc.ethicalConsiderations.model_dump(exclude_none=True))
+        )
     if doc.caveatsAndRecommendations:
         car = doc.caveatsAndRecommendations
-        caveats = CaveatDetailsClass(**car.caveats.model_dump(exclude_none=True)) if car.caveats else None
+        caveats = (
+            CaveatDetailsClass(**car.caveats.model_dump(exclude_none=True)) if car.caveats else None
+        )
         extra_aspects.append(
             CaveatsAndRecommendationsClass(
                 caveats=caveats,
@@ -187,10 +200,15 @@ def build_ml_model(
     if doc.trainingData:
         extra_aspects.append(TrainingDataClass(trainingData=_base_data_list(doc.trainingData)))
     if doc.evaluationData:
-        extra_aspects.append(EvaluationDataClass(evaluationData=_base_data_list(doc.evaluationData)))
+        extra_aspects.append(
+            EvaluationDataClass(evaluationData=_base_data_list(doc.evaluationData))
+        )
     if doc.factorPrompts:
+
         def _factors(f) -> MLModelFactorsClass:
-            return MLModelFactorsClass(groups=f.groups, instrumentation=f.instrumentation, environment=f.environment)
+            return MLModelFactorsClass(
+                groups=f.groups, instrumentation=f.instrumentation, environment=f.environment
+            )
 
         extra_aspects.append(
             MLModelFactorPromptsClass(
@@ -216,7 +234,10 @@ def build_ml_model(
     if doc.sourceCode:
         extra_aspects.append(
             SourceCodeClass(
-                sourceCode=[SourceCodeUrlClass(type=s.type, sourceCodeUrl=s.sourceCodeUrl) for s in doc.sourceCode]
+                sourceCode=[
+                    SourceCodeUrlClass(type=s.type, sourceCodeUrl=s.sourceCodeUrl)
+                    for s in doc.sourceCode
+                ]
             )
         )
 

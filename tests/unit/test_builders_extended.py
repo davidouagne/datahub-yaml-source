@@ -37,10 +37,16 @@ def test_build_data_product_emits_properties_assets_and_structured_properties():
             }
         )
     )
-    repo.domains.append(DomainDoc(kind="DOMAIN", id="9306fe49bb1f70f491a712ff19b8d972", name="Parcours patient"))
+    repo.domains.append(
+        DomainDoc(kind="DOMAIN", id="9306fe49bb1f70f491a712ff19b8d972", name="Parcours patient")
+    )
     repo.tags.append(TagDoc(kind="TAG", name="aphp:access"))
     repo.glossary_terms.append(
-        GlossaryTermDoc(kind="GLOSSARY_TERM", id="aphp:medico-administrative", name="Donnees medico-administratives")
+        GlossaryTermDoc(
+            kind="GLOSSARY_TERM",
+            id="aphp:medico-administrative",
+            name="Donnees medico-administratives",
+        )
     )
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
@@ -67,13 +73,20 @@ def test_build_data_product_emits_properties_assets_and_structured_properties():
     assert not report.dangling_references
 
     props = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataProductPropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataProductPropertiesClass"
     )
     assert props.name == "Venues et sejours"
-    assert props.assets[0].destinationUrn == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert (
+        props.assets[0].destinationUrn
+        == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
 
     structured = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "StructuredPropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "StructuredPropertiesClass"
     )
     assert structured.properties[0].values == ["DAILY"]
 
@@ -110,7 +123,9 @@ def test_build_data_process_instance_emits_run_events_and_io():
                 "jobId": "ehr_patient_to_raw_layer",
             },
             "inputs": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
-            "outputs": [{"platform": "duckdb", "name": "warehouse_raw-layer_patient", "env": "PROD"}],
+            "outputs": [
+                {"platform": "duckdb", "name": "warehouse_raw-layer_patient", "env": "PROD"}
+            ],
             "runEvents": [{"status": "STARTED", "timestampMillis": 1779696000000, "attempt": 1}],
         }
     )
@@ -125,7 +140,9 @@ def test_build_data_process_instance_emits_run_events_and_io():
         "DataProcessInstanceRunEventClass",
     }
     relationships = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataProcessInstanceRelationshipsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataProcessInstanceRelationshipsClass"
     )
     assert "ehr_patient_to_raw_layer" in relationships.parentTemplate
 
@@ -136,7 +153,10 @@ def test_build_assertion_freshness():
             "kind": "ASSERTION",
             "id": "ehr-patient-freshness-check-1",
             "sourceType": "NATIVE",
-            "properties": {"name": "ehr_patient freshness", "dbt_test": "dbt_test.ehr_patient_freshness"},
+            "properties": {
+                "name": "ehr_patient freshness",
+                "dbt_test": "dbt_test.ehr_patient_freshness",
+            },
             "assertion": {
                 "type": "FRESHNESS",
                 "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
@@ -218,7 +238,10 @@ def test_build_assertion_rejects_unsupported_type():
         {
             "kind": "ASSERTION",
             "id": "id4",
-            "assertion": {"type": "DATASET", "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:x,y,PROD)"},
+            "assertion": {
+                "type": "DATASET",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:x,y,PROD)",
+            },
         }
     )
     repo = ParsedRepository()
@@ -313,10 +336,16 @@ def test_build_assertion_emits_note_and_actions():
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
     wus = list(build_assertion(doc, index, report))
-    note = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "AssertionNoteClass")
+    note = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "AssertionNoteClass"
+    )
     assert note.content == "Last run failed due to a warehouse outage"
     actions = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "AssertionActionsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "AssertionActionsClass"
     )
     assert actions.onFailure[0].type == "RAISE_INCIDENT"
 
@@ -356,7 +385,12 @@ def test_build_query_emits_properties_and_subjects():
             "source": "MANUAL",
             "subjects": [
                 {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"},
-                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "nom"},
+                {
+                    "platform": "postgres",
+                    "name": "ehr_public_patient",
+                    "env": "PROD",
+                    "fieldPath": "nom",
+                },
             ],
             "subTypes": "View query",
         }
@@ -367,15 +401,22 @@ def test_build_query_emits_properties_and_subjects():
     assert wus[0].metadata.entityUrn == "urn:li:query:q_patients_actifs"
 
     props = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "QueryPropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "QueryPropertiesClass"
     )
     assert props.statement.value == "select * from ehr_public_patient where actif"
     assert props.name == "Patients actifs"
 
     subjects = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "QuerySubjectsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "QuerySubjectsClass"
     )
-    assert subjects.subjects[0].entity == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert (
+        subjects.subjects[0].entity
+        == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
     assert subjects.subjects[1].entity == (
         "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),nom)"
     )
@@ -391,9 +432,7 @@ def test_build_query_without_subjects_emits_no_subjects_aspect():
     index = ReferenceIndex(repo)
     report = YamlSourceReport()
 
-    doc = QueryDoc.model_validate(
-        {"kind": "QUERY", "id": "q1", "statement": "select 1"}
-    )
+    doc = QueryDoc.model_validate({"kind": "QUERY", "id": "q1", "statement": "select 1"})
 
     wus = list(build_query(doc, index, report))
     aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
@@ -415,9 +454,16 @@ def test_build_incident_emits_info_and_notes():
             "description": "The patient table missed its 08:00 refresh window",
             "priority": 1,
             "entities": ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"],
-            "status": {"state": "ACTIVE", "stage": "TRIAGE", "message": "Investigating warehouse outage"},
+            "status": {
+                "state": "ACTIVE",
+                "stage": "TRIAGE",
+                "message": "Investigating warehouse outage",
+            },
             "assignees": ["datahub"],
-            "source": {"type": "ASSERTION_FAILURE", "sourceUrn": "urn:li:assertion:ehr-patient-freshness-check"},
+            "source": {
+                "type": "ASSERTION_FAILURE",
+                "sourceUrn": "urn:li:assertion:ehr-patient-freshness-check",
+            },
             "startedAt": 1830297600000,
             "notes": ["Warehouse outage confirmed at 08:05"],
             "tags": ["pii"],
@@ -428,17 +474,29 @@ def test_build_incident_emits_info_and_notes():
     assert not report.dangling_references
     assert wus[0].metadata.entityUrn == "urn:li:incident:inc-patient-freshness"
 
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass"
+    )
     assert info.type == "FRESHNESS"
     assert info.title == "Patient table late"
     assert info.status.stage == "TRIAGE"
     assert info.assignees[0].actor == "urn:li:corpuser:datahub"
     assert info.source.sourceUrn == "urn:li:assertion:ehr-patient-freshness-check"
 
-    notes = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentNotesClass")
+    notes = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "IncidentNotesClass"
+    )
     assert notes.notes[0].message == "Warehouse outage confirmed at 08:05"
 
-    tags = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass")
+    tags = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass"
+    )
     assert tags.tags[0].tag == "urn:li:tag:pii"
 
 
@@ -458,7 +516,11 @@ def test_build_incident_defaults_status_and_reports_dangling_tag():
     )
 
     wus = list(build_incident(doc, index, report))
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "IncidentInfoClass"
+    )
     assert info.status.state == "ACTIVE"
     assert len(report.dangling_references) == 1
 
@@ -476,10 +538,17 @@ def test_build_document_native_emits_document_info_and_common_aspects():
             "title": "Runbook - reprise de la table patient",
             "text": "## Etapes\n1. Verifier le job",
             "subTypes": "Runbook",
-            "relatedAssets": ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"],
+            "relatedAssets": [
+                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+            ],
             "tags": ["pii"],
             "owners": {"owner": "datahub", "type": "TECHNICAL_OWNER"},
-            "links": [{"url": "https://wiki.example.org/runbooks/patient", "description": "Runbook source"}],
+            "links": [
+                {
+                    "url": "https://wiki.example.org/runbooks/patient",
+                    "description": "Runbook source",
+                }
+            ],
         }
     )
 
@@ -488,9 +557,19 @@ def test_build_document_native_emits_document_info_and_common_aspects():
     assert wus[0].metadata.entityUrn == "urn:li:document:runbook_patient"
 
     aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
-    assert {"DocumentInfoClass", "SubTypesClass", "GlobalTagsClass", "OwnershipClass", "InstitutionalMemoryClass"} <= aspect_names
+    assert {
+        "DocumentInfoClass",
+        "SubTypesClass",
+        "GlobalTagsClass",
+        "OwnershipClass",
+        "InstitutionalMemoryClass",
+    } <= aspect_names
 
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass"
+    )
     assert info.title == "Runbook - reprise de la table patient"
     assert info.contents.text == "## Etapes\n1. Verifier le job"
     assert info.source.sourceType == "NATIVE"
@@ -537,7 +616,11 @@ def test_build_document_external_emits_external_source():
     )
 
     wus = list(build_document(doc, index, report))
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass"
+    )
     assert info.source.sourceType == "EXTERNAL"
     assert info.source.externalUrl == "https://wiki.example.org/runbooks/patient"
     assert info.source.externalId == "12345"
@@ -560,7 +643,11 @@ def test_build_document_resolves_parent_and_related_documents():
     )
 
     wus = list(build_document(doc, index, report))
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DocumentInfoClass"
+    )
     assert info.parentDocument.document == "urn:li:document:runbook_patient"
     assert info.relatedDocuments[0].document == "urn:li:document:runbook_encounter"
 
@@ -599,7 +686,10 @@ def test_build_raw_aspect_dataset_profile():
         }
     )
     wus = list(build_raw_aspect(doc))
-    assert wus[0].metadata.entityUrn == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
     aspect = wus[0].metadata.aspect
     assert aspect.rowCount == 1480100
     assert aspect.fieldProfiles[0].distinctValueFrequencies[0].value == "m"
@@ -607,7 +697,10 @@ def test_build_raw_aspect_dataset_profile():
 
 def test_build_raw_aspect_rejects_unsupported_aspect_name():
     doc = RawAspectDoc.model_validate(
-        {"aspectName": "SOME_UNKNOWN_ASPECT", "dataset": {"platform": "x", "name": "y", "env": "PROD"}}
+        {
+            "aspectName": "SOME_UNKNOWN_ASPECT",
+            "dataset": {"platform": "x", "name": "y", "env": "PROD"},
+        }
     )
     with pytest.raises(ValueError, match="Unsupported raw aspectName"):
         list(build_raw_aspect(doc))
@@ -631,7 +724,9 @@ def test_build_raw_aspect_operation_uses_dataset_reference():
             "sourceType": "DATA_PROCESS",
             "numAffectedRows": 982400,
             "actor": "quality-bot",
-            "affectedDatasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "affectedDatasets": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+            ],
             "customProperties": {"checkType": "completeness"},
         }
     )

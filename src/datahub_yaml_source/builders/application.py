@@ -1,7 +1,11 @@
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
-from datahub.metadata.schema_classes import ApplicationLineageClass, ApplicationPropertiesClass, EdgeClass
+from datahub.metadata.schema_classes import (
+    ApplicationLineageClass,
+    ApplicationPropertiesClass,
+    EdgeClass,
+)
 
 from datahub_yaml_source.builders.common import common_aspect_mcps, mcp_workunit
 from datahub_yaml_source.models import ApplicationDoc, ApplicationLineageEdgeDoc
@@ -10,15 +14,16 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 
 def _application_lineage_edges(
-    edges: Optional[List[ApplicationLineageEdgeDoc]], direction: str, context: str
-) -> Optional[List[EdgeClass]]:
+    edges: list[ApplicationLineageEdgeDoc] | None, direction: str, context: str
+) -> list[EdgeClass] | None:
     if not edges:
         return None
     result = []
     for i, edge in enumerate(edges):
         if bool(edge.api) == bool(edge.dataset):
             raise ValueError(
-                f"{context} applicationLineage.{direction}[{i}] must set exactly one of 'api' or 'dataset'"
+                f"{context} applicationLineage.{direction}[{i}] must set "
+                f"exactly one of 'api' or 'dataset'"
             )
         destination_urn = api_urn(edge.api) if edge.api else dataset_urn(edge.dataset)
         result.append(EdgeClass(destinationUrn=destination_urn))
@@ -38,8 +43,12 @@ def build_application(
     # `build_document`'s equivalent native/external check for the same reason).
     input_edges = output_edges = None
     if doc.applicationLineage:
-        input_edges = _application_lineage_edges(doc.applicationLineage.consumes, "consumes", context)
-        output_edges = _application_lineage_edges(doc.applicationLineage.produces, "produces", context)
+        input_edges = _application_lineage_edges(
+            doc.applicationLineage.consumes, "consumes", context
+        )
+        output_edges = _application_lineage_edges(
+            doc.applicationLineage.produces, "produces", context
+        )
 
     yield mcp_workunit(
         entity_urn,

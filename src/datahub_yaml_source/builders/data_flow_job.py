@@ -1,13 +1,23 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import ContainerClass
 from datahub.sdk.dataflow import DataFlow
 from datahub.sdk.datajob import DataJob
 
-from datahub_yaml_source.builders.common import build_fine_grained_lineage_list, common_sdk_kwargs, stringify_custom_properties
+from datahub_yaml_source.builders.common import (
+    build_fine_grained_lineage_list,
+    common_sdk_kwargs,
+    stringify_custom_properties,
+)
 from datahub_yaml_source.models import DataFlowDoc, DataJobDoc
-from datahub_yaml_source.urns import ReferenceIndex, container_key, data_flow_urn, data_job_urn, dataset_urn
+from datahub_yaml_source.urns import (
+    ReferenceIndex,
+    container_key,
+    data_flow_urn,
+    data_job_urn,
+    dataset_urn,
+)
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 

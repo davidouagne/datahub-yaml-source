@@ -1,7 +1,14 @@
 import pytest
 
 from datahub_yaml_source.loader import ParsedRepository
-from datahub_yaml_source.models import ContainerDoc, DatasetRef, DomainDoc, TagDoc
+from datahub_yaml_source.models import (
+    ContainerDoc,
+    DataFlowJobRef,
+    DataFlowRef,
+    DatasetRef,
+    DomainDoc,
+    TagDoc,
+)
 from datahub_yaml_source.urns import (
     ReferenceIndex,
     container_key,
@@ -15,14 +22,12 @@ from datahub_yaml_source.urns import (
     owner_urn,
     tag_urn,
 )
-from datahub_yaml_source.models import DataFlowJobRef, DataFlowRef
 
 
 def test_dataset_urn_without_platform_instance():
     ref = DatasetRef(platform="postgres", name="ehr.public.patient", env="PROD")
     assert (
-        dataset_urn(ref)
-        == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr.public.patient,PROD)"
+        dataset_urn(ref) == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr.public.patient,PROD)"
     )
 
 
@@ -141,10 +146,22 @@ def test_container_urn_ignores_env_like_default_sdk_behavior():
     # entirely, so these two must collide (this is expected/desired: it's why
     # the known-good GUID above doesn't depend on env at all).
     prod = ContainerDoc.model_validate(
-        {"kind": "CONTAINER", "platform": "postgres", "database": "ehr", "env": "PROD", "name": "EHR"}
+        {
+            "kind": "CONTAINER",
+            "platform": "postgres",
+            "database": "ehr",
+            "env": "PROD",
+            "name": "EHR",
+        }
     )
     dev = ContainerDoc.model_validate(
-        {"kind": "CONTAINER", "platform": "postgres", "database": "ehr", "env": "DEV", "name": "EHR"}
+        {
+            "kind": "CONTAINER",
+            "platform": "postgres",
+            "database": "ehr",
+            "env": "DEV",
+            "name": "EHR",
+        }
     )
     assert container_urn(prod) == container_urn(dev)
 
@@ -176,14 +193,19 @@ def test_document_urn_is_stable_and_passes_through_full_urns():
 
 def test_owner_urn_builds_corpuser_unless_already_a_urn():
     assert owner_urn("datahub") == "urn:li:corpuser:datahub"
-    assert owner_urn("urn:li:corpGroup:eds-data-engineering") == "urn:li:corpGroup:eds-data-engineering"
+    assert (
+        owner_urn("urn:li:corpGroup:eds-data-engineering")
+        == "urn:li:corpGroup:eds-data-engineering"
+    )
 
 
 def test_data_flow_and_data_job_urns():
     flow_ref = DataFlowRef(orchestrator="airflow", flowId="ehr_to_raw", cluster="PROD")
     assert data_flow_urn(flow_ref) == "urn:li:dataFlow:(airflow,ehr_to_raw,PROD)"
 
-    job_ref = DataFlowJobRef(orchestrator="airflow", flowId="ehr_to_raw", cluster="PROD", jobId="patient_to_raw")
+    job_ref = DataFlowJobRef(
+        orchestrator="airflow", flowId="ehr_to_raw", cluster="PROD", jobId="patient_to_raw"
+    )
     job_urn = data_job_urn(job_ref)
     assert job_urn.startswith("urn:li:dataJob:")
     assert "patient_to_raw" in job_urn
@@ -212,10 +234,22 @@ def test_reference_index_flags_missing_tag_domain_and_container():
     assert index.has_domain("missing") is False
 
     known_container = ContainerDoc.model_validate(
-        {"kind": "CONTAINER", "platform": "postgres", "database": "ehr", "env": "PROD", "name": "EHR"}
+        {
+            "kind": "CONTAINER",
+            "platform": "postgres",
+            "database": "ehr",
+            "env": "PROD",
+            "name": "EHR",
+        }
     )
     unknown_container = ContainerDoc.model_validate(
-        {"kind": "CONTAINER", "platform": "postgres", "database": "other", "env": "PROD", "name": "Other"}
+        {
+            "kind": "CONTAINER",
+            "platform": "postgres",
+            "database": "other",
+            "env": "PROD",
+            "name": "Other",
+        }
     )
     assert index.has_container(known_container) is True
     assert index.has_container(unknown_container) is False
@@ -227,7 +261,13 @@ def test_reference_index_treats_containers_differing_only_by_instance_as_the_sam
     repo = ParsedRepository()
     repo.containers.append(
         ContainerDoc.model_validate(
-            {"kind": "CONTAINER", "platform": "postgres", "database": "ehr", "env": "PROD", "name": "EHR"}
+            {
+                "kind": "CONTAINER",
+                "platform": "postgres",
+                "database": "ehr",
+                "env": "PROD",
+                "name": "EHR",
+            }
         )
     )
     index = ReferenceIndex(repo)

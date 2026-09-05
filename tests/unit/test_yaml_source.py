@@ -106,7 +106,9 @@ def test_get_workunits_internal_reports_warning_and_continues_when_builder_raise
 
     wus = list(source.get_workunits_internal())
 
-    tag_urns = {wu.metadata.entityUrn for wu in wus if wu.metadata.entityUrn == "urn:li:tag:still-processed"}
+    tag_urns = {
+        wu.metadata.entityUrn for wu in wus if wu.metadata.entityUrn == "urn:li:tag:still-processed"
+    }
     assert tag_urns  # the tag after the failing assertion was still emitted
     assert len(source.report.warnings) == 1
 

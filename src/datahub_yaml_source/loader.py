@@ -17,15 +17,15 @@ reason.
 import logging
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Union
+from typing import Any
 from urllib.parse import urlparse
 
 import yaml
-from pydantic import ValidationError
-
 from datahub.ingestion.source.aws.s3_util import is_s3_uri
+from pydantic import ValidationError
 
 from datahub_yaml_source.models import (
     AgentSkillDoc,
@@ -77,7 +77,7 @@ OnFileScannedCallback = Callable[[str], None]
 # Callback invoked for every entity document with a field that's either
 # misspelled or not valid for its `kind`: (file_path, kind, field_names) -> None.
 # Not used for RawAspectDoc, whose extra fields *are* the intended payload.
-OnUnknownFieldsCallback = Callable[[str, str, List[str]], None]
+OnUnknownFieldsCallback = Callable[[str, str, list[str]], None]
 
 _HTTP_URI_PATTERN = re.compile(r"^https?://", re.IGNORECASE)
 _GLOB_CHARACTERS = frozenset("*?[]")
@@ -99,38 +99,38 @@ class FileSizeExceededError(ValueError):
 
 @dataclass
 class ParsedRepository:
-    platforms: List[DataPlatformDoc] = field(default_factory=list)
-    tags: List[TagDoc] = field(default_factory=list)
-    glossary_nodes: List[GlossaryNodeDoc] = field(default_factory=list)
-    glossary_terms: List[GlossaryTermDoc] = field(default_factory=list)
-    structured_properties: List[StructuredPropertyDoc] = field(default_factory=list)
-    domains: List[DomainDoc] = field(default_factory=list)
-    applications: List[ApplicationDoc] = field(default_factory=list)
-    containers: List[ContainerDoc] = field(default_factory=list)
-    datasets: List[DatasetDoc] = field(default_factory=list)
-    charts: List[ChartDoc] = field(default_factory=list)
-    dashboards: List[DashboardDoc] = field(default_factory=list)
-    queries: List[QueryDoc] = field(default_factory=list)
-    incidents: List[IncidentDoc] = field(default_factory=list)
-    documents: List[DocumentDoc] = field(default_factory=list)
-    ml_feature_tables: List[MLFeatureTableDoc] = field(default_factory=list)
-    ml_features: List[MLFeatureDoc] = field(default_factory=list)
-    ml_primary_keys: List[MLPrimaryKeyDoc] = field(default_factory=list)
-    ml_model_groups: List[MLModelGroupDoc] = field(default_factory=list)
-    ml_models: List[MLModelDoc] = field(default_factory=list)
-    semantic_models: List[SemanticModelDoc] = field(default_factory=list)
-    metrics: List[MetricDoc] = field(default_factory=list)
-    repositories: List[RepositoryDoc] = field(default_factory=list)
-    apis: List[ApiDoc] = field(default_factory=list)
-    agent_skills: List[AgentSkillDoc] = field(default_factory=list)
-    ai_agents: List[AIAgentDoc] = field(default_factory=list)
-    services: List[ServiceDoc] = field(default_factory=list)
-    data_products: List[DataProductDoc] = field(default_factory=list)
-    data_flows: List[DataFlowDoc] = field(default_factory=list)
-    data_jobs: List[DataJobDoc] = field(default_factory=list)
-    data_process_instances: List[DataProcessInstanceDoc] = field(default_factory=list)
-    assertions: List[AssertionDoc] = field(default_factory=list)
-    raw_aspects: List[RawAspectDoc] = field(default_factory=list)
+    platforms: list[DataPlatformDoc] = field(default_factory=list)
+    tags: list[TagDoc] = field(default_factory=list)
+    glossary_nodes: list[GlossaryNodeDoc] = field(default_factory=list)
+    glossary_terms: list[GlossaryTermDoc] = field(default_factory=list)
+    structured_properties: list[StructuredPropertyDoc] = field(default_factory=list)
+    domains: list[DomainDoc] = field(default_factory=list)
+    applications: list[ApplicationDoc] = field(default_factory=list)
+    containers: list[ContainerDoc] = field(default_factory=list)
+    datasets: list[DatasetDoc] = field(default_factory=list)
+    charts: list[ChartDoc] = field(default_factory=list)
+    dashboards: list[DashboardDoc] = field(default_factory=list)
+    queries: list[QueryDoc] = field(default_factory=list)
+    incidents: list[IncidentDoc] = field(default_factory=list)
+    documents: list[DocumentDoc] = field(default_factory=list)
+    ml_feature_tables: list[MLFeatureTableDoc] = field(default_factory=list)
+    ml_features: list[MLFeatureDoc] = field(default_factory=list)
+    ml_primary_keys: list[MLPrimaryKeyDoc] = field(default_factory=list)
+    ml_model_groups: list[MLModelGroupDoc] = field(default_factory=list)
+    ml_models: list[MLModelDoc] = field(default_factory=list)
+    semantic_models: list[SemanticModelDoc] = field(default_factory=list)
+    metrics: list[MetricDoc] = field(default_factory=list)
+    repositories: list[RepositoryDoc] = field(default_factory=list)
+    apis: list[ApiDoc] = field(default_factory=list)
+    agent_skills: list[AgentSkillDoc] = field(default_factory=list)
+    ai_agents: list[AIAgentDoc] = field(default_factory=list)
+    services: list[ServiceDoc] = field(default_factory=list)
+    data_products: list[DataProductDoc] = field(default_factory=list)
+    data_flows: list[DataFlowDoc] = field(default_factory=list)
+    data_jobs: list[DataJobDoc] = field(default_factory=list)
+    data_process_instances: list[DataProcessInstanceDoc] = field(default_factory=list)
+    assertions: list[AssertionDoc] = field(default_factory=list)
+    raw_aspects: list[RawAspectDoc] = field(default_factory=list)
 
     def add(self, doc: object) -> None:
         if isinstance(doc, DataPlatformDoc):
@@ -201,7 +201,7 @@ class ParsedRepository:
             raise TypeError(f"Unrecognized parsed document type: {type(doc)}")
 
 
-def _discover_s3_files(prefix: str, aws_connection: Optional[Any]) -> List[str]:
+def _discover_s3_files(prefix: str, aws_connection: Any | None) -> list[str]:
     """List every '*.yml' / '*.yaml' object under an s3:// prefix.
 
     Lists by prefix (paginated `list_objects_v2`) rather than using DataHub's
@@ -220,7 +220,7 @@ def _discover_s3_files(prefix: str, aws_connection: Optional[Any]) -> List[str]:
     client = aws_connection.get_s3_client()
     paginator = client.get_paginator("list_objects_v2")
 
-    keys: List[str] = []
+    keys: list[str] = []
     for page in paginator.paginate(Bucket=bucket, Prefix=key_prefix):
         for obj in page.get("Contents", []):
             key = obj["Key"]
@@ -230,7 +230,7 @@ def _discover_s3_files(prefix: str, aws_connection: Optional[Any]) -> List[str]:
     return sorted(f"s3://{bucket}/{key}" for key in keys)
 
 
-def _read_s3_bytes(uri: str, aws_connection: Optional[Any], max_bytes: Optional[int]) -> bytes:
+def _read_s3_bytes(uri: str, aws_connection: Any | None, max_bytes: int | None) -> bytes:
     if aws_connection is None:
         raise ValueError(f"'aws_connection' is required to read S3 path: {uri}")
 
@@ -257,19 +257,23 @@ def _read_s3_bytes(uri: str, aws_connection: Optional[Any], max_bytes: Optional[
     return data
 
 
-def _read_http_bytes(uri: str, http_connection: Optional[Any], max_bytes: Optional[int]) -> bytes:
+def _read_http_bytes(uri: str, http_connection: Any | None, max_bytes: int | None) -> bytes:
     import requests
 
     kwargs = http_connection.to_request_kwargs() if http_connection else {}
     with requests.get(uri, timeout=_HTTP_TIMEOUT_SECONDS, stream=True, **kwargs) as resp:
         resp.raise_for_status()
         declared = resp.headers.get("Content-Length")
-        if declared is not None and declared.isdigit() and max_bytes is not None:
-            if int(declared) > max_bytes:
-                raise FileSizeExceededError(
-                    f"{uri} is {declared} bytes, over the configured "
-                    f"max_input_file_bytes limit of {max_bytes}"
-                )
+        if (
+            declared is not None
+            and declared.isdigit()
+            and max_bytes is not None
+            and int(declared) > max_bytes
+        ):
+            raise FileSizeExceededError(
+                f"{uri} is {declared} bytes, over the configured "
+                f"max_input_file_bytes limit of {max_bytes}"
+            )
         buffer = bytearray()
         for chunk in resp.iter_content(chunk_size=_HTTP_CHUNK_BYTES):
             buffer.extend(chunk)
@@ -280,7 +284,7 @@ def _read_http_bytes(uri: str, http_connection: Optional[Any], max_bytes: Option
         return bytes(buffer)
 
 
-def discover_yaml_files(root: Union[str, Path], aws_connection: Optional[Any] = None) -> List[str]:
+def discover_yaml_files(root: str | Path, aws_connection: Any | None = None) -> list[str]:
     """Resolve one configured 'path' entry into the file URIs to read from it.
 
     - A local directory is scanned recursively for '*.yml' / '*.yaml' files
@@ -312,13 +316,13 @@ def discover_yaml_files(root: Union[str, Path], aws_connection: Optional[Any] = 
 
 
 def load_repository(
-    roots: Union[str, Path, List[Union[str, Path]]],
+    roots: str | Path | list[str | Path],
     on_error: OnErrorCallback,
-    on_file_scanned: Optional[OnFileScannedCallback] = None,
-    on_unknown_fields: Optional[OnUnknownFieldsCallback] = None,
-    aws_connection: Optional[Any] = None,
-    http_connection: Optional[Any] = None,
-    max_input_file_bytes: Optional[int] = None,
+    on_file_scanned: OnFileScannedCallback | None = None,
+    on_unknown_fields: OnUnknownFieldsCallback | None = None,
+    aws_connection: Any | None = None,
+    http_connection: Any | None = None,
+    max_input_file_bytes: int | None = None,
 ) -> ParsedRepository:
     """Resolve every entry in `roots` to file URIs and parse every document in
     every file into a ParsedRepository.
@@ -354,9 +358,7 @@ def load_repository(
                         "utf-8"
                     )
                 elif is_s3_uri(uri):
-                    text = _read_s3_bytes(uri, aws_connection, max_input_file_bytes).decode(
-                        "utf-8"
-                    )
+                    text = _read_s3_bytes(uri, aws_connection, max_input_file_bytes).decode("utf-8")
                 else:
                     file_path = Path(uri)
                     if max_input_file_bytes is not None:

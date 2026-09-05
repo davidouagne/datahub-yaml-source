@@ -1,6 +1,13 @@
 from datahub_yaml_source.builders.dataset import build_dataset
 from datahub_yaml_source.loader import ParsedRepository
-from datahub_yaml_source.models import ApplicationDoc, ContainerDoc, DatasetDoc, DomainDoc, GlossaryTermDoc, TagDoc
+from datahub_yaml_source.models import (
+    ApplicationDoc,
+    ContainerDoc,
+    DatasetDoc,
+    DomainDoc,
+    GlossaryTermDoc,
+    TagDoc,
+)
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -9,8 +16,12 @@ def _repository_with_known_references():
     repo = ParsedRepository()
     repo.tags.append(TagDoc(kind="TAG", name="pii"))
     repo.tags.append(TagDoc(kind="TAG", name="fhir-r4"))
-    repo.glossary_terms.append(GlossaryTermDoc(kind="GLOSSARY_TERM", id="donnees-patient.patient", name="Patient"))
-    repo.domains.append(DomainDoc(kind="DOMAIN", id="3667192a0a19c51419efe99aa865c1ba", name="Identite patient"))
+    repo.glossary_terms.append(
+        GlossaryTermDoc(kind="GLOSSARY_TERM", id="donnees-patient.patient", name="Patient")
+    )
+    repo.domains.append(
+        DomainDoc(kind="DOMAIN", id="3667192a0a19c51419efe99aa865c1ba", name="Identite patient")
+    )
     repo.containers.append(
         ContainerDoc.model_validate(
             {
@@ -35,11 +46,26 @@ def _dataset_doc():
             "platform": "postgres",
             "env": "PROD",
             "description": "Patient data",
-            "container": {"platform": "postgres", "database": "ehr", "schema": "public", "env": "PROD"},
+            "container": {
+                "platform": "postgres",
+                "database": "ehr",
+                "schema": "public",
+                "env": "PROD",
+            },
             "schema": {
                 "fields": [
-                    {"fieldPath": "patient_id", "type": "number", "nativeDataType": "BIGSERIAL", "partOfKey": True},
-                    {"fieldPath": "nom", "type": "string", "nativeDataType": "VARCHAR(255)", "partOfKey": False},
+                    {
+                        "fieldPath": "patient_id",
+                        "type": "number",
+                        "nativeDataType": "BIGSERIAL",
+                        "partOfKey": True,
+                    },
+                    {
+                        "fieldPath": "nom",
+                        "type": "string",
+                        "nativeDataType": "VARCHAR(255)",
+                        "partOfKey": False,
+                    },
                 ],
             },
             "subTypes": ["Table"],
@@ -60,7 +86,10 @@ def test_build_dataset_emits_expected_aspects():
     assert not report.dangling_references
 
     aspects_by_name = {wu.metadata.aspect.__class__.__name__: wu.metadata.aspect for wu in wus}
-    assert wus[0].metadata.entityUrn == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
 
     schema_metadata = aspects_by_name["SchemaMetadataClass"]
     assert [f.fieldPath for f in schema_metadata.fields] == ["patient_id", "nom"]
@@ -96,11 +125,25 @@ def test_build_dataset_with_foreign_keys_builds_schema_field_urns():
                     {
                         "name": "fk_actes_patient",
                         "sourceFields": [
-                            {"platform": "postgres", "name": "ehr_public_actes", "env": "PROD", "fieldPath": "patient_id"}
+                            {
+                                "platform": "postgres",
+                                "name": "ehr_public_actes",
+                                "env": "PROD",
+                                "fieldPath": "patient_id",
+                            }
                         ],
-                        "foreignDataset": {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"},
+                        "foreignDataset": {
+                            "platform": "postgres",
+                            "name": "ehr_public_patient",
+                            "env": "PROD",
+                        },
                         "foreignFields": [
-                            {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "patient_id"}
+                            {
+                                "platform": "postgres",
+                                "name": "ehr_public_patient",
+                                "env": "PROD",
+                                "fieldPath": "patient_id",
+                            }
                         ],
                     }
                 ],
@@ -110,10 +153,14 @@ def test_build_dataset_with_foreign_keys_builds_schema_field_urns():
 
     wus = list(build_dataset(doc, index, report))
     schema_metadata = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "SchemaMetadataClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "SchemaMetadataClass"
     )
     fk = schema_metadata.foreignKeys[0]
-    assert fk.foreignDataset == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    assert (
+        fk.foreignDataset == "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    )
     assert fk.sourceFields[0].endswith(",patient_id)")
 
 
@@ -129,11 +176,29 @@ def test_build_dataset_with_upstream_lineage_and_fine_grained():
             "platform": "dbt",
             "env": "PROD",
             "upstreamLineage": {
-                "upstreams": [{"dataset": {"platform": "duckdb", "name": "warehouse_staging_stg_ehr__diagnostics", "env": "PROD"}}],
+                "upstreams": [
+                    {
+                        "dataset": {
+                            "platform": "duckdb",
+                            "name": "warehouse_staging_stg_ehr__diagnostics",
+                            "env": "PROD",
+                        }
+                    }
+                ],
                 "fineGrainedLineages": [
                     {
-                        "upstream": {"platform": "duckdb", "name": "warehouse_staging_stg_ehr__diagnostics", "env": "PROD", "fieldPath": "diagnostic_id"},
-                        "downstream": {"platform": "dbt", "name": "transform_layer_fhir_condition", "env": "PROD", "fieldPath": "identifier_diag_value"},
+                        "upstream": {
+                            "platform": "duckdb",
+                            "name": "warehouse_staging_stg_ehr__diagnostics",
+                            "env": "PROD",
+                            "fieldPath": "diagnostic_id",
+                        },
+                        "downstream": {
+                            "platform": "dbt",
+                            "name": "transform_layer_fhir_condition",
+                            "env": "PROD",
+                            "fieldPath": "identifier_diag_value",
+                        },
                         "operation": "TRANSFORM",
                         "confidence": 1.0,
                     }
@@ -144,10 +209,15 @@ def test_build_dataset_with_upstream_lineage_and_fine_grained():
 
     wus = list(build_dataset(doc, index, report))
     upstream_lineage = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
     )
     assert len(upstream_lineage.upstreams) == 1
-    assert upstream_lineage.upstreams[0].dataset == "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_staging_stg_ehr__diagnostics,PROD)"
+    assert (
+        upstream_lineage.upstreams[0].dataset
+        == "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_staging_stg_ehr__diagnostics,PROD)"
+    )
     assert len(upstream_lineage.fineGrainedLineages) == 1
     fgl = upstream_lineage.fineGrainedLineages[0]
     assert fgl.transformOperation == "TRANSFORM"
@@ -185,7 +255,9 @@ def test_build_dataset_upstream_lineage_handles_constant_operation_without_upstr
 
     wus = list(build_dataset(doc, index, report))
     upstream_lineage = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
     )
     fgl = upstream_lineage.fineGrainedLineages[0]
     assert fgl.upstreams == []
@@ -308,7 +380,11 @@ def test_build_dataset_emits_column_level_metadata():
     aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in field_wus}
     assert aspect_names == {"GlobalTagsClass", "GlossaryTermsClass", "DeprecationClass"}
 
-    tags_aspect = next(wu.metadata.aspect for wu in field_wus if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass")
+    tags_aspect = next(
+        wu.metadata.aspect
+        for wu in field_wus
+        if wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass"
+    )
     assert tags_aspect.tags[0].tag == "urn:li:tag:pii"
 
     # The second column has no common-metadata fields set -- no workunits for it at all.

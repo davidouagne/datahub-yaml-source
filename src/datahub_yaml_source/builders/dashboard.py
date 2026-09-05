@@ -1,11 +1,17 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.sdk.dashboard import Dashboard
 
 from datahub_yaml_source.builders.common import common_sdk_kwargs, stringify_custom_properties
 from datahub_yaml_source.models import DashboardDoc
-from datahub_yaml_source.urns import ReferenceIndex, chart_urn, container_key, dashboard_urn, dataset_urn
+from datahub_yaml_source.urns import (
+    ReferenceIndex,
+    chart_urn,
+    container_key,
+    dashboard_urn,
+    dataset_urn,
+)
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 

@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from typing import Dict, Iterable, List
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import DisplayPropertiesClass, DomainPropertiesClass
@@ -10,14 +10,14 @@ from datahub_yaml_source.urns import ReferenceIndex, domain_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 
-def topological_sort_domains(domains: List[DomainDoc]) -> List[DomainDoc]:
+def topological_sort_domains(domains: list[DomainDoc]) -> list[DomainDoc]:
     """Order domains so every parent precedes its children. Kahn's algorithm,
     mirroring `builders.container.topological_sort_containers()`. A domain
     whose `parentDomain` isn't itself declared is treated as a root; any
     cycle is broken by appending the remaining nodes in original order."""
-    by_id: Dict[str, DomainDoc] = {d.id: d for d in domains}
-    children: Dict[str, List[str]] = defaultdict(list)
-    indegree: Dict[str, int] = dict.fromkeys(by_id, 0)
+    by_id: dict[str, DomainDoc] = {d.id: d for d in domains}
+    children: dict[str, list[str]] = defaultdict(list)
+    indegree: dict[str, int] = dict.fromkeys(by_id, 0)
 
     for id_, doc in by_id.items():
         if doc.parentDomain and doc.parentDomain in by_id:
@@ -25,7 +25,7 @@ def topological_sort_domains(domains: List[DomainDoc]) -> List[DomainDoc]:
             indegree[id_] += 1
 
     queue: deque = deque(k for k, d in indegree.items() if d == 0)
-    order: List[DomainDoc] = []
+    order: list[DomainDoc] = []
     seen = set()
 
     while queue:
@@ -53,15 +53,21 @@ def build_domain(
     parent_domain_urn = None
     if doc.parentDomain:
         if not index.has_domain(doc.parentDomain):
-            report.report_dangling_reference(f"{context} references undeclared parentDomain '{doc.parentDomain}'")
+            report.report_dangling_reference(
+                f"{context} references undeclared parentDomain '{doc.parentDomain}'"
+            )
         parent_domain_urn = domain_urn(doc.parentDomain)
 
     yield mcp_workunit(
         entity_urn,
-        DomainPropertiesClass(name=doc.name, description=doc.description, parentDomain=parent_domain_urn),
+        DomainPropertiesClass(
+            name=doc.name, description=doc.description, parentDomain=parent_domain_urn
+        ),
     )
 
     if doc.displayProperties:
-        yield mcp_workunit(entity_urn, DisplayPropertiesClass(colorHex=doc.displayProperties.colorHex))
+        yield mcp_workunit(
+            entity_urn, DisplayPropertiesClass(colorHex=doc.displayProperties.colorHex)
+        )
 
     yield from common_aspect_mcps(entity_urn, doc, index, report, context)

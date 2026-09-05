@@ -1,8 +1,6 @@
 import logging
 import sys
-from typing import Any, Dict, List, Optional, Union
-
-from pydantic import Field, model_validator
+from typing import Any
 
 from datahub.configuration.git import GitInfo
 from datahub.ingestion.source.aws.s3_util import is_s3_uri
@@ -13,13 +11,14 @@ from datahub.ingestion.source.state.stale_entity_removal_handler import (
 from datahub.ingestion.source.state.stateful_ingestion_base import (
     StatefulIngestionConfigBase,
 )
+from pydantic import Field, model_validator
 
 from datahub_yaml_source.loader import is_http_uri
 
 logger = logging.getLogger(__name__)
 
 
-def _https_clone_url(repo: Any) -> Optional[str]:
+def _https_clone_url(repo: Any) -> str | None:
     """Anonymous HTTPS clone URL derived from `repo`, or None if it can't be.
 
     Mirrors the 'org/repo' shorthand from `GitReference.simplify_repo_url`,
@@ -96,7 +95,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
     and instance is declared per-entity inside the YAML files themselves.
     """
 
-    path: Optional[Union[str, List[str]]] = Field(
+    path: str | list[str] | None = Field(
         default=None,
         description="One or more locations to scan for '*.yml' / '*.yaml' metadata "
         "files: a local directory (scanned recursively), an 's3://bucket/prefix' "
@@ -112,7 +111,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "'s3://'/'http(s)://' entries are not allowed together with 'git_info'.",
     )
 
-    aws_connection: Optional[Dict[str, Any]] = Field(
+    aws_connection: dict[str, Any] | None = Field(
         default=None,
         description="AWS credentials/config for reading 's3://' entries in 'path', "
         "in the same shape as other DataHub sources' 'aws_connection' "
@@ -124,14 +123,14 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "(`pip install datahub-yaml-source[s3]`).",
     )
 
-    http_connection: Optional[HTTPConnectionConfig] = Field(
+    http_connection: HTTPConnectionConfig | None = Field(
         default=None,
         description="Authentication/TLS options for reading 'http(s)://' entries in "
         "'path' (bearer token or basic auth, TLS certificate verification). Not "
         "required for a public, unauthenticated URL.",
     )
 
-    max_input_file_bytes: Optional[int] = Field(
+    max_input_file_bytes: int | None = Field(
         default=None,
         description="Reject (and skip, reporting a warning) any individual scanned "
         "file larger than this many bytes. Mainly a safety cap for remote "
@@ -140,7 +139,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "(default) means no limit.",
     )
 
-    git_info: Optional[YamlGitInfo] = Field(
+    git_info: YamlGitInfo | None = Field(
         default=None,
         description="Git repository to shallow-clone before scanning, instead of "
         "reading from an already-checked-out local directory. 'repo' accepts an "
@@ -165,7 +164,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         "instead of a warning.",
     )
 
-    stateful_ingestion: Optional[StatefulStaleMetadataRemovalConfig] = Field(
+    stateful_ingestion: StatefulStaleMetadataRemovalConfig | None = Field(
         default=None,
         description="Stateful ingestion configuration for stale entity removal. "
         "Enable this to automatically soft-delete entities that were removed "
@@ -178,9 +177,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
             if self.path is None:
                 self.path = "."
         elif self.path is None:
-            raise ValueError(
-                "'path' is required when 'git_info' is not set."
-            )
+            raise ValueError("'path' is required when 'git_info' is not set.")
         return self
 
     @model_validator(mode="after")
@@ -192,8 +189,7 @@ class YamlSourceConfig(StatefulIngestionConfigBase):
         for entry in entries:
             if is_s3_uri(entry) and self.aws_connection is None:
                 raise ValueError(
-                    f"'aws_connection' is required when 'path' includes an s3:// "
-                    f"entry: {entry}"
+                    f"'aws_connection' is required when 'path' includes an s3:// entry: {entry}"
                 )
             if self.git_info is not None and (is_s3_uri(entry) or is_http_uri(entry)):
                 raise ValueError(

@@ -41,7 +41,9 @@ def test_build_chart_emits_chart_info_and_common_aspects():
             "chartUrl": "https://superset.example.org/chart/12",
             "chartType": "BAR",
             "container": {"platform": "superset", "database": "superset_metadata", "env": "PROD"},
-            "inputDatasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "inputDatasets": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+            ],
             "tags": ["dashboard"],
             "domains": "d1",
         }
@@ -55,7 +57,11 @@ def test_build_chart_emits_chart_info_and_common_aspects():
     assert "GlobalTagsClass" in aspect_names
     assert "DomainsClass" in aspect_names
 
-    chart_info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "ChartInfoClass")
+    chart_info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "ChartInfoClass"
+    )
     assert chart_info.title == "Patients par mois"
     assert chart_info.chartUrl == "https://superset.example.org/chart/12"
     assert chart_info.inputs == [
@@ -101,7 +107,9 @@ def test_build_dashboard_emits_dashboard_info_with_charts_and_datasets():
             "dashboardUrl": "https://superset.example.org/dashboard/3",
             "charts": [{"platform": "superset", "name": "patients_par_mois"}],
             "dashboards": [{"platform": "superset", "name": "cockpit_global"}],
-            "inputDatasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "inputDatasets": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+            ],
             "tags": ["dashboard"],
         }
     )
@@ -110,7 +118,9 @@ def test_build_dashboard_emits_dashboard_info_with_charts_and_datasets():
     assert not report.dangling_references
 
     dashboard_info = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DashboardInfoClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DashboardInfoClass"
     )
     assert dashboard_info.title == "Cockpit patients"
     assert dashboard_info.dashboardUrl == "https://superset.example.org/dashboard/3"

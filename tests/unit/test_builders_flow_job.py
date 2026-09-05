@@ -26,11 +26,15 @@ def test_build_data_flow_emits_expected_urn_and_properties():
     wus = list(build_data_flow(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:dataFlow:(airflow,ehr_to_duckdb_raw_layer,PROD)"
     info = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataFlowInfoClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataFlowInfoClass"
     )
     assert info.name == "EHR to duckDB Raw Layer"
     ownership = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "OwnershipClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "OwnershipClass"
     )
     assert len(ownership.owners) == 2
 
@@ -45,16 +49,34 @@ def test_build_data_job_links_to_flow_and_datasets():
         {
             "kind": "DATA_JOB",
             "jobId": "ehr_patient_to_raw_layer",
-            "dataFlow": {"orchestrator": "airflow", "flowId": "ehr_to_duckdb_raw_layer", "cluster": "PROD"},
+            "dataFlow": {
+                "orchestrator": "airflow",
+                "flowId": "ehr_to_duckdb_raw_layer",
+                "cluster": "PROD",
+            },
             "name": "EHR Patient -> DuckDB raw-layer patient",
             "type": "RawCopy",
             "tags": ["pmsi"],
-            "inputDatasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
-            "outputDatasets": [{"platform": "duckdb", "name": "warehouse_raw-layer_patient", "env": "PROD"}],
+            "inputDatasets": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+            ],
+            "outputDatasets": [
+                {"platform": "duckdb", "name": "warehouse_raw-layer_patient", "env": "PROD"}
+            ],
             "fineGrainedLineages": [
                 {
-                    "upstream": {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "patient_id"},
-                    "downstream": {"platform": "duckdb", "name": "warehouse_raw-layer_patient", "env": "PROD", "fieldPath": "patient_id"},
+                    "upstream": {
+                        "platform": "postgres",
+                        "name": "ehr_public_patient",
+                        "env": "PROD",
+                        "fieldPath": "patient_id",
+                    },
+                    "downstream": {
+                        "platform": "duckdb",
+                        "name": "warehouse_raw-layer_patient",
+                        "env": "PROD",
+                        "fieldPath": "patient_id",
+                    },
                     "operation": "IDENTITY",
                 }
             ],
@@ -69,7 +91,9 @@ def test_build_data_job_links_to_flow_and_datasets():
     assert "ehr_patient_to_raw_layer" in entity_urn
 
     io_aspect = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataJobInputOutputClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataJobInputOutputClass"
     )
     assert io_aspect.inputDatasets == [
         "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
@@ -92,14 +116,21 @@ def test_build_data_job_sets_input_data_jobs():
             "dataFlow": {"orchestrator": "airflow", "flowId": "f1", "cluster": "PROD"},
             "name": "Quality check",
             "inputDataJobs": [
-                {"orchestrator": "airflow", "flowId": "f1", "cluster": "PROD", "jobId": "upstream_job"}
+                {
+                    "orchestrator": "airflow",
+                    "flowId": "f1",
+                    "cluster": "PROD",
+                    "jobId": "upstream_job",
+                }
             ],
         }
     )
 
     wus = list(build_data_job(doc, index, report))
     io_aspect = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "DataJobInputOutputClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "DataJobInputOutputClass"
     )
     assert io_aspect.inputDatajobs == [
         "urn:li:dataJob:(urn:li:dataFlow:(airflow,f1,PROD),upstream_job)"
@@ -137,7 +168,9 @@ def test_build_data_flow_with_container(monkeypatch):
     wus = list(build_data_flow(doc, index, report))
     assert not report.dangling_references
     container_aspect = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "ContainerClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "ContainerClass"
     )
     assert container_aspect.container is not None
 

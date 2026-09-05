@@ -28,7 +28,13 @@ def _repo_with_known_refs() -> ParsedRepository:
     repo.tags.append(TagDoc(kind="TAG", name="pii"))
     repo.containers.append(
         ContainerDoc.model_validate(
-            {"kind": "CONTAINER", "platform": "mlflow", "database": "models", "env": "PROD", "name": "Models"}
+            {
+                "kind": "CONTAINER",
+                "platform": "mlflow",
+                "database": "models",
+                "env": "PROD",
+                "name": "Models",
+            }
         )
     )
     return repo
@@ -46,7 +52,14 @@ def test_build_ml_feature_emits_properties_and_sources():
             "name": "age_at_admission",
             "description": "Age at admission",
             "dataType": "CONTINUOUS",
-            "sources": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD", "fieldPath": "date_naissance"}],
+            "sources": [
+                {
+                    "platform": "postgres",
+                    "name": "ehr_public_patient",
+                    "env": "PROD",
+                    "fieldPath": "date_naissance",
+                }
+            ],
             "tags": ["pii"],
         }
     )
@@ -55,7 +68,11 @@ def test_build_ml_feature_emits_properties_and_sources():
     assert not report.dangling_references
     assert wus[0].metadata.entityUrn == "urn:li:mlFeature:(patient_features,age_at_admission)"
 
-    props = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MLFeaturePropertiesClass")
+    props = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MLFeaturePropertiesClass"
+    )
     assert props.dataType == "CONTINUOUS"
     assert props.sources == [
         "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),date_naissance)"
@@ -79,8 +96,14 @@ def test_build_ml_primary_key_requires_sources_and_supports_dataset_level_source
 
     wus = list(build_ml_primary_key(doc, index, report))
     assert wus[0].metadata.entityUrn == "urn:li:mlPrimaryKey:(patient_features,patient_id)"
-    props = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MLPrimaryKeyPropertiesClass")
-    assert props.sources == ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"]
+    props = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MLPrimaryKeyPropertiesClass"
+    )
+    assert props.sources == [
+        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    ]
 
 
 def test_build_ml_feature_table_resolves_feature_and_primary_key_urns():
@@ -99,9 +122,14 @@ def test_build_ml_feature_table_resolves_feature_and_primary_key_urns():
     )
 
     wus = list(build_ml_feature_table(doc, index, report))
-    assert wus[0].metadata.entityUrn == "urn:li:mlFeatureTable:(urn:li:dataPlatform:feast,patient_features)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:mlFeatureTable:(urn:li:dataPlatform:feast,patient_features)"
+    )
     props = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MLFeatureTablePropertiesClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MLFeatureTablePropertiesClass"
     )
     assert props.mlFeatures == ["urn:li:mlFeature:(patient_features,age_at_admission)"]
     assert props.mlPrimaryKeys == ["urn:li:mlPrimaryKey:(patient_features,patient_id)"]
@@ -122,7 +150,10 @@ def test_build_ml_model_group_reports_dangling_container():
     )
 
     wus = list(build_ml_model_group(doc, index, report))
-    assert wus[0].metadata.entityUrn == "urn:li:mlModelGroup:(urn:li:dataPlatform:mlflow,readmission_risk,PROD)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:mlModelGroup:(urn:li:dataPlatform:mlflow,readmission_risk,PROD)"
+    )
     assert len(report.dangling_references) == 1
     assert any(wu.metadata.aspect.__class__.__name__ == "ContainerClass" for wu in wus)
 
@@ -143,39 +174,83 @@ def test_build_ml_model_emits_model_card_and_hyperparameters():
             "modelGroup": {"platform": "mlflow", "name": "readmission_risk", "env": "PROD"},
             "mlFeatures": [{"featureNamespace": "patient_features", "name": "age_at_admission"}],
             "container": {"platform": "mlflow", "database": "models", "env": "PROD"},
-            "intendedUse": {"primaryUses": ["Prioritize follow-up"], "outOfScopeUses": ["Automated clinical decisions"]},
-            "ethicalConsiderations": {"risksAndHarms": ["Possible bias on under-represented groups"]},
+            "intendedUse": {
+                "primaryUses": ["Prioritize follow-up"],
+                "outOfScopeUses": ["Automated clinical decisions"],
+            },
+            "ethicalConsiderations": {
+                "risksAndHarms": ["Possible bias on under-represented groups"]
+            },
             "caveatsAndRecommendations": {
                 "caveats": {"needsFurtherTesting": True},
                 "recommendations": "Do not use without clinical oversight",
             },
-            "trainingData": [{"dataset": {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}, "motivation": "cohort"}],
-            "evaluationData": [{"dataset": {"platform": "postgres", "name": "ehr_public_patient_holdout", "env": "PROD"}}],
+            "trainingData": [
+                {
+                    "dataset": {
+                        "platform": "postgres",
+                        "name": "ehr_public_patient",
+                        "env": "PROD",
+                    },
+                    "motivation": "cohort",
+                }
+            ],
+            "evaluationData": [
+                {
+                    "dataset": {
+                        "platform": "postgres",
+                        "name": "ehr_public_patient_holdout",
+                        "env": "PROD",
+                    }
+                }
+            ],
             "factorPrompts": {"relevantFactors": [{"groups": ["Age > 75"]}]},
             "metrics": {"performanceMeasures": ["AUC 0.82"]},
-            "sourceCode": [{"type": "ML_MODEL_SOURCE_CODE", "sourceCodeUrl": "https://gitlab.example.org/model"}],
+            "sourceCode": [
+                {
+                    "type": "ML_MODEL_SOURCE_CODE",
+                    "sourceCodeUrl": "https://gitlab.example.org/model",
+                }
+            ],
             "tags": ["pii"],
         }
     )
 
     wus = list(build_ml_model(doc, index, report))
     assert not report.dangling_references
-    assert wus[0].metadata.entityUrn == "urn:li:mlModel:(urn:li:dataPlatform:mlflow,readmission_risk_v3,PROD)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:mlModel:(urn:li:dataPlatform:mlflow,readmission_risk_v3,PROD)"
+    )
 
     aspect_names = {wu.metadata.aspect.__class__.__name__ for wu in wus}
     assert {
-        "MLModelPropertiesClass", "ContainerClass", "IntendedUseClass", "EthicalConsiderationsClass",
-        "CaveatsAndRecommendationsClass", "TrainingDataClass", "EvaluationDataClass",
-        "MLModelFactorPromptsClass", "MetricsClass", "SourceCodeClass", "GlobalTagsClass",
+        "MLModelPropertiesClass",
+        "ContainerClass",
+        "IntendedUseClass",
+        "EthicalConsiderationsClass",
+        "CaveatsAndRecommendationsClass",
+        "TrainingDataClass",
+        "EvaluationDataClass",
+        "MLModelFactorPromptsClass",
+        "MetricsClass",
+        "SourceCodeClass",
+        "GlobalTagsClass",
     } <= aspect_names
 
-    props = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MLModelPropertiesClass")
+    props = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MLModelPropertiesClass"
+    )
     assert props.type == "classification"
     assert props.hyperParameters == {"n_estimators": 200, "max_depth": 8}
     assert props.mlFeatures == ["urn:li:mlFeature:(patient_features,age_at_admission)"]
 
     caveats = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "CaveatsAndRecommendationsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "CaveatsAndRecommendationsClass"
     )
     assert caveats.caveats.needsFurtherTesting is True
     assert caveats.recommendations == "Do not use without clinical oversight"
@@ -215,5 +290,9 @@ def test_build_ml_model_uses_native_model_group_reference():
     )
 
     wus = list(build_ml_model(doc, index, report))
-    props = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MLModelPropertiesClass")
+    props = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MLModelPropertiesClass"
+    )
     assert props.groups == ["urn:li:mlModelGroup:(urn:li:dataPlatform:mlflow,g,PROD)"]

@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
@@ -47,9 +47,7 @@ def _build_schema_field(field_doc: SchemaFieldDoc) -> SchemaFieldClass:
 def _build_foreign_key(fk: ForeignKeyDoc) -> ForeignKeyConstraintClass:
     return ForeignKeyConstraintClass(
         name=fk.name,
-        sourceFields=[
-            make_schema_field_urn(dataset_urn(f), f.fieldPath) for f in fk.sourceFields
-        ],
+        sourceFields=[make_schema_field_urn(dataset_urn(f), f.fieldPath) for f in fk.sourceFields],
         foreignFields=[
             make_schema_field_urn(dataset_urn(f), f.fieldPath) for f in fk.foreignFields
         ],
@@ -57,7 +55,9 @@ def _build_foreign_key(fk: ForeignKeyDoc) -> ForeignKeyConstraintClass:
     )
 
 
-def build_schema_metadata(name: str, platform: str, schema_block: SchemaBlock) -> SchemaMetadataClass:
+def build_schema_metadata(
+    name: str, platform: str, schema_block: SchemaBlock
+) -> SchemaMetadataClass:
     return SchemaMetadataClass(
         schemaName=name,
         platform=data_platform_urn(platform),
@@ -75,9 +75,7 @@ def build_schema_metadata(name: str, platform: str, schema_block: SchemaBlock) -
 
 def build_upstream_lineage(doc: UpstreamLineageDoc) -> UpstreamLineageClass:
     upstreams = [
-        UpstreamClass(
-            dataset=dataset_urn(entry.dataset), type=DatasetLineageTypeClass.TRANSFORMED
-        )
+        UpstreamClass(dataset=dataset_urn(entry.dataset), type=DatasetLineageTypeClass.TRANSFORMED)
         for entry in doc.upstreams
     ]
 
@@ -129,9 +127,7 @@ def build_dataset(
         parent_container=parent_container,
         schema=schema_metadata,
         upstreams=upstreams,
-        view_definition=(
-            build_view_properties(doc.viewProperties) if doc.viewProperties else None
-        ),
+        view_definition=(build_view_properties(doc.viewProperties) if doc.viewProperties else None),
         parse_view_lineage=False,
         **common,
     )

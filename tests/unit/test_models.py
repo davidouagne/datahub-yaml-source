@@ -77,11 +77,25 @@ def test_dataset_doc_schema_block_parses_fields_and_foreign_keys():
                     {
                         "name": "fk_actes_patient",
                         "sourceFields": [
-                            {"platform": "postgres", "name": "actes", "env": "PROD", "fieldPath": "patient_id"}
+                            {
+                                "platform": "postgres",
+                                "name": "actes",
+                                "env": "PROD",
+                                "fieldPath": "patient_id",
+                            }
                         ],
-                        "foreignDataset": {"platform": "postgres", "name": "patient", "env": "PROD"},
+                        "foreignDataset": {
+                            "platform": "postgres",
+                            "name": "patient",
+                            "env": "PROD",
+                        },
                         "foreignFields": [
-                            {"platform": "postgres", "name": "patient", "env": "PROD", "fieldPath": "patient_id"}
+                            {
+                                "platform": "postgres",
+                                "name": "patient",
+                                "env": "PROD",
+                                "fieldPath": "patient_id",
+                            }
                         ],
                     }
                 ],
@@ -193,7 +207,12 @@ def test_data_process_instance_doc_coerces_single_run_event_dict_to_list():
             "id": "x",
             "name": "x",
             "created": {"timestampMillis": 1},
-            "parentTemplate": {"orchestrator": "airflow", "flowId": "f", "cluster": "PROD", "jobId": "j"},
+            "parentTemplate": {
+                "orchestrator": "airflow",
+                "flowId": "f",
+                "cluster": "PROD",
+                "jobId": "j",
+            },
             "runEvents": {"status": "STARTED", "timestampMillis": 1},
         }
     )

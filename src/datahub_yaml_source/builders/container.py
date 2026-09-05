@@ -1,8 +1,7 @@
 from collections import defaultdict, deque
-from typing import Dict, Iterable, List, Tuple
+from collections.abc import Iterable
 
 from datahub.emitter.mcp_builder import gen_containers
-
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 
 from datahub_yaml_source.builders.common import (
@@ -14,13 +13,18 @@ from datahub_yaml_source.builders.common import (
     stringify_custom_properties,
 )
 from datahub_yaml_source.models import ContainerDoc, normalize_owners, normalize_sub_types
-from datahub_yaml_source.urns import ReferenceIndex, container_key, container_natural_key, domain_urn
+from datahub_yaml_source.urns import (
+    ReferenceIndex,
+    container_key,
+    container_natural_key,
+    domain_urn,
+)
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
-NaturalKey = Tuple[str, object, str, object, str]
+NaturalKey = tuple[str, object, str, object, str]
 
 
-def topological_sort_containers(containers: List[ContainerDoc]) -> List[ContainerDoc]:
+def topological_sort_containers(containers: list[ContainerDoc]) -> list[ContainerDoc]:
     """Order containers so that every parent precedes its children.
 
     Uses Kahn's algorithm. Containers whose parent isn't itself declared in
@@ -28,11 +32,9 @@ def topological_sort_containers(containers: List[ContainerDoc]) -> List[Containe
     never happen in practice) is broken by appending the remaining nodes in
     their original order, so this always terminates.
     """
-    by_key: Dict[NaturalKey, ContainerDoc] = {
-        container_natural_key(c): c for c in containers
-    }
-    children: Dict[NaturalKey, List[NaturalKey]] = defaultdict(list)
-    indegree: Dict[NaturalKey, int] = dict.fromkeys(by_key, 0)
+    by_key: dict[NaturalKey, ContainerDoc] = {container_natural_key(c): c for c in containers}
+    children: dict[NaturalKey, list[NaturalKey]] = defaultdict(list)
+    indegree: dict[NaturalKey, int] = dict.fromkeys(by_key, 0)
 
     for key, doc in by_key.items():
         if doc.parentContainer is not None:
@@ -42,7 +44,7 @@ def topological_sort_containers(containers: List[ContainerDoc]) -> List[Containe
                 indegree[key] += 1
 
     queue: deque = deque(k for k, d in indegree.items() if d == 0)
-    order: List[ContainerDoc] = []
+    order: list[ContainerDoc] = []
     seen = set()
 
     while queue:
@@ -71,7 +73,8 @@ def build_container(
         if not index.has_container(doc.parentContainer):
             report.report_dangling_reference(
                 f"CONTAINER '{doc.name}' references an undeclared parentContainer "
-                f"(platform={doc.parentContainer.platform}, database={doc.parentContainer.database}, "
+                f"(platform={doc.parentContainer.platform}, "
+                f"database={doc.parentContainer.database}, "
                 f"schema={doc.parentContainer.schema_name})"
             )
         parent_key = container_key(doc.parentContainer)
@@ -85,7 +88,9 @@ def build_container(
     domain = None
     if doc.domains:
         if not index.has_domain(doc.domains):
-            report.report_dangling_reference(f"{context} references undeclared domain '{doc.domains}'")
+            report.report_dangling_reference(
+                f"{context} references undeclared domain '{doc.domains}'"
+            )
         domain = domain_urn(doc.domains)
 
     sub_types = normalize_sub_types(doc.subTypes) or ["container"]
@@ -129,6 +134,10 @@ def build_container(
     # handled above (natively or via the multi-owner fallback), so skip them
     # here to avoid emitting the same aspect twice.
     yield from common_aspect_mcps(
-        key.as_urn(), doc, index, report, context,
+        key.as_urn(),
+        doc,
+        index,
+        report,
+        context,
         skip=frozenset({"owners", "tags", "subTypes", "domain"}),
     )

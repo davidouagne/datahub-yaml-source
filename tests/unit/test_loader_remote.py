@@ -16,7 +16,6 @@ import requests
 
 from datahub_yaml_source.loader import discover_yaml_files, load_repository
 
-
 # --- S3 fakes -------------------------------------------------------------
 
 

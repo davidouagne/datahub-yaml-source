@@ -76,6 +76,24 @@ kind, emission ordering, reference-resolution strategy).
   ingestion report and be skipped, not crash the whole run, unless
   `fail_on_unresolved_reference` is set.
 
+### Lint, format, and types
+
+Ruff and mypy are installed by the `dev` extra. Before pushing, run the same
+checks CI runs (`.github/workflows/quality.yml`, contract in
+`spec/spec-process-cicd-quality.md`):
+
+```bash
+ruff check .            # lint (blocking in CI)
+ruff format --check .   # formatting (blocking in CI); drop --check to apply
+mypy                    # type check over src/ (advisory in CI, not a gate)
+```
+
+`ruff check --fix .` auto-fixes most lint findings. `ruff` config
+(`[tool.ruff]`, line length 100, target `py310`) and `mypy` config
+(`[tool.mypy]`, `src/` only, non-strict) both live in `pyproject.toml`. mypy
+currently has a known non-empty error baseline — see the spec — so a new mypy
+error won't fail CI, but don't add to it.
+
 ## Submitting changes
 
 1. Open an issue or discussion first for anything beyond a small fix, so the

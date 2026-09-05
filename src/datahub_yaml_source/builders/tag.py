@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.sdk.tag import Tag

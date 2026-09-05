@@ -7,8 +7,9 @@ Usage:
     python scripts/generate_markdown_docs.py
 """
 
+import types
 from pathlib import Path
-from typing import Annotated, Any, Dict, List, Literal, Type, Union, get_args, get_origin
+from typing import Annotated, Any, Literal, Union, get_args, get_origin
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -19,6 +20,7 @@ from datahub_yaml_source.models import (
     AIAgentDependenciesDoc,
     AIAgentDoc,
     AIAgentSourceDoc,
+    AiContextDoc,
     AllowedValueDoc,
     ApiDoc,
     ApiSignatureDoc,
@@ -26,6 +28,8 @@ from datahub_yaml_source.models import (
     AssertionAssertionDoc,
     AssertionDoc,
     AssertionPropertiesDoc,
+    CaveatDetailsDoc,
+    CaveatsAndRecommendationsDoc,
     ChartDoc,
     ChartRef,
     ContainerDoc,
@@ -46,6 +50,7 @@ from datahub_yaml_source.models import (
     DisplayPropertiesDoc,
     DocumentDoc,
     DomainDoc,
+    EthicalConsiderationsDoc,
     FineGrainedLineageDoc,
     ForeignKeyDoc,
     GlossaryNodeDoc,
@@ -53,11 +58,8 @@ from datahub_yaml_source.models import (
     IncidentDoc,
     IncidentSourceDoc,
     IncidentStatusDoc,
-    CaveatDetailsDoc,
-    CaveatsAndRecommendationsDoc,
-    EthicalConsiderationsDoc,
     IntendedUseDoc,
-    AiContextDoc,
+    McpServerDoc,
     MetricDoc,
     MetricRef,
     MLFeatureDoc,
@@ -74,7 +76,6 @@ from datahub_yaml_source.models import (
     MLModelSourceCodeDoc,
     MLPrimaryKeyDoc,
     MLPrimaryKeyRef,
-    McpServerDoc,
     OwnerEntry,
     QueryDoc,
     QuerySubjectRef,
@@ -195,7 +196,15 @@ MODEL_ANCHORS = {m: m.__name__ for m in ALL_MODELS}
 
 
 def _anchor(name: str) -> str:
-    return name.lower().replace(" ", "-").replace("_", "-").replace(":", "").replace("(", "").replace(")", "").replace(".", "")
+    return (
+        name.lower()
+        .replace(" ", "-")
+        .replace("_", "-")
+        .replace(":", "")
+        .replace("(", "")
+        .replace(")", "")
+        .replace(".", "")
+    )
 
 
 def _strip_annotated(annotation: Any) -> Any:
@@ -208,7 +217,10 @@ def _render_type(annotation: Any) -> str:
     annotation = _strip_annotated(annotation)
     origin = get_origin(annotation)
 
-    if origin is Union:
+    # Both spellings of a union reach here: typing.Union[...] (origin is
+    # typing.Union) and the PEP 604 `X | Y` form (origin is types.UnionType).
+    # They must render identically -- models.py uses the `|` form.
+    if origin is Union or origin is types.UnionType:
         args = [a for a in get_args(annotation) if a is not type(None)]
         rendered = [_render_type(a) for a in args]
         return " or ".join(dict.fromkeys(rendered))  # dedupe, preserve order
@@ -217,11 +229,11 @@ def _render_type(annotation: Any) -> str:
         values = get_args(annotation)
         return " | ".join(f'"{v}"' for v in values)
 
-    if origin in (list, List):
+    if origin in (list, list):
         (item,) = get_args(annotation)
         return f"list of {_render_type(item)}"
 
-    if origin in (dict, Dict):
+    if origin in (dict, dict):
         return "map"
 
     if isinstance(annotation, type) and issubclass(annotation, BaseModel):
@@ -261,12 +273,19 @@ def _render_default(field: FieldInfo) -> str:
 # fields first instead, with common ones broken out into their own rows below
 # a divider so a kind's *distinctive* shape is what a reader sees first.
 _COMMON_ASPECT_FIELD_ORDER = [
-    "owners", "tags", "glossaryTerms", "domains", "applications",
-    "links", "deprecation", "structuredProperties", "subTypes",
+    "owners",
+    "tags",
+    "glossaryTerms",
+    "domains",
+    "applications",
+    "links",
+    "deprecation",
+    "structuredProperties",
+    "subTypes",
 ]
 
 
-def _render_field_row(model: Type[BaseModel], py_name: str, field: FieldInfo) -> str:
+def _render_field_row(model: type[BaseModel], py_name: str, field: FieldInfo) -> str:
     yaml_name = field.alias or py_name
     required = "**yes**" if field.is_required() else "no"
     type_str = _render_type(field.annotation)
@@ -275,8 +294,11 @@ def _render_field_row(model: Type[BaseModel], py_name: str, field: FieldInfo) ->
     return f"| `{yaml_name}` | {type_str} | {required} | {default} | {description} |"
 
 
-def _render_field_table(model: Type[BaseModel]) -> str:
-    header = ["| Field | Type | Required | Default | Description |", "| --- | --- | --- | --- | --- |"]
+def _render_field_table(model: type[BaseModel]) -> str:
+    header = [
+        "| Field | Type | Required | Default | Description |",
+        "| --- | --- | --- | --- | --- |",
+    ]
     all_fields = model.model_fields
     common_present = [name for name in _COMMON_ASPECT_FIELD_ORDER if name in all_fields]
     own_fields = [name for name in all_fields if name not in _COMMON_ASPECT_FIELD_ORDER]
@@ -299,15 +321,17 @@ def _render_field_table(model: Type[BaseModel]) -> str:
     return "\n".join(lines)
 
 
-def _model_doc(model: Type[BaseModel]) -> str:
+def _model_doc(model: type[BaseModel]) -> str:
     if model.__doc__:
         return " ".join(line.strip() for line in model.__doc__.strip().splitlines())
     return ""
 
 
 def build_markdown() -> str:
-    lines: List[str] = []
-    lines.append("<!-- AUTO-GENERATED by scripts/generate_markdown_docs.py -- do not edit by hand. -->")
+    lines: list[str] = []
+    lines.append(
+        "<!-- AUTO-GENERATED by scripts/generate_markdown_docs.py -- do not edit by hand. -->"
+    )
     lines.append("# YAML Metadata Format Reference")
     lines.append("")
     lines.append(

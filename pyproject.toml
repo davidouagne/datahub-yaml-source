@@ -1,0 +1,46 @@
+# Tool configuration only. Packaging is still owned by setup.py (there is
+# deliberately no [build-system] table here); this file exists so Ruff and
+# mypy have the standard home they look for first. See
+# spec/spec-process-cicd-quality.md for the rationale behind each choice.
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+# Pragmatic set for a solo-maintained translation layer: pyflakes/pycodestyle
+# errors (E, F), import sorting (I), pyupgrade (UP), flake8-bugbear (B),
+# flake8-comprehensions (C4), flake8-simplify (SIM) and Ruff's own rules
+# (RUF). Deliberately excludes annotation-completeness (ANN) and the
+# opinionated pylint (PL) families to keep the signal high.
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Re-export surfaces: an unused import is the point.
+"__init__.py" = ["F401"]
+# Test fixtures embed full DataHub URNs and JSON blobs as string literals;
+# these are legitimately long and not meaningfully breakable. The formatter
+# still enforces 100 cols on everything it can reflow.
+"tests/**" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["datahub_yaml_source"]
+
+[tool.mypy]
+# Advisory only -- the quality workflow runs this job with
+# continue-on-error. Scope is the package itself; tests/ and scripts/ are
+# left out until the src/ signal is clean. Non-strict baseline, with the
+# few low-noise warnings that catch real staleness.
+files = ["src"]
+python_version = "3.10"
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# acryl-datahub ships partial/absent type information; its generated
+# metadata classes in particular are untyped. Don't let that drown the
+# signal from our own code.
+module = ["datahub.*", "deepdiff.*"]
+ignore_missing_imports = true

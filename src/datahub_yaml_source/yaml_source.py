@@ -1,7 +1,8 @@
 import logging
 import tempfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from datahub.ingestion.api.common import PipelineContext
@@ -70,7 +71,7 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 logger = logging.getLogger(__name__)
 
 
-def _resolve_aws_connection(aws_connection_config: Optional[Dict[str, Any]]) -> Optional[Any]:
+def _resolve_aws_connection(aws_connection_config: dict[str, Any] | None) -> Any | None:
     """Lazily build an `AwsConnectionConfig` from the config dict, if set.
 
     `AwsConnectionConfig` (datahub.ingestion.source.aws.aws_common) hard-imports
@@ -85,8 +86,7 @@ def _resolve_aws_connection(aws_connection_config: Optional[Dict[str, Any]]) -> 
         from datahub.ingestion.source.aws.aws_common import AwsConnectionConfig
     except ImportError as e:
         raise ImportError(
-            "Reading s3:// paths requires the 's3' extra: "
-            "pip install datahub-yaml-source[s3]"
+            "Reading s3:// paths requires the 's3' extra: pip install datahub-yaml-source[s3]"
         ) from e
     return AwsConnectionConfig.model_validate(aws_connection_config)
 
@@ -100,13 +100,29 @@ def _resolve_aws_connection(aws_connection_config: Optional[Dict[str, Any]]) -> 
 @capability(SourceCapability.LINEAGE_FINE, "Fully declared in YAML via fineGrainedLineages")
 @capability(SourceCapability.OWNERSHIP, "Enabled by default via 'owners' fields")
 @capability(SourceCapability.TAGS, "Enabled by default via TAG documents and 'tags' references")
-@capability(SourceCapability.DOMAINS, "Enabled by default via DOMAIN documents and 'domains' references")
-@capability(SourceCapability.GLOSSARY_TERMS, "Enabled by default via GLOSSARY_TERM documents and 'glossaryTerms' references")
+@capability(
+    SourceCapability.DOMAINS, "Enabled by default via DOMAIN documents and 'domains' references"
+)
+@capability(
+    SourceCapability.GLOSSARY_TERMS,
+    "Enabled by default via GLOSSARY_TERM documents and 'glossaryTerms' references",
+)
 @capability(SourceCapability.DESCRIPTIONS, "Enabled by default via 'description' fields")
-@capability(SourceCapability.PLATFORM_INSTANCE, "Enabled via 'instance' fields on DATASET/CONTAINER")
-@capability(SourceCapability.DATA_PROFILING, "Via 'aspectName: DATASET_PROFILE' raw-aspect passthrough documents")
-@capability(SourceCapability.USAGE_STATS, "Via 'aspectName: DATASET_USAGE_STATISTICS' raw-aspect passthrough documents")
-@capability(SourceCapability.OPERATION_CAPTURE, "Via 'aspectName: OPERATION' raw-aspect passthrough documents")
+@capability(
+    SourceCapability.PLATFORM_INSTANCE, "Enabled via 'instance' fields on DATASET/CONTAINER"
+)
+@capability(
+    SourceCapability.DATA_PROFILING,
+    "Via 'aspectName: DATASET_PROFILE' raw-aspect passthrough documents",
+)
+@capability(
+    SourceCapability.USAGE_STATS,
+    "Via 'aspectName: DATASET_USAGE_STATISTICS' raw-aspect passthrough documents",
+)
+@capability(
+    SourceCapability.OPERATION_CAPTURE,
+    "Via 'aspectName: OPERATION' raw-aspect passthrough documents",
+)
 @capability(SourceCapability.DELETION_DETECTION, "Enabled via stateful ingestion")
 @capability(SourceCapability.TEST_CONNECTION, "Enabled by default")
 class YamlSource(StatefulIngestionSourceBase, TestableSource):
@@ -136,7 +152,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     def get_report(self) -> YamlSourceReport:
         return self.report
 
-    def _resolve_roots(self, checkout_dir: Optional[Path] = None) -> List[str]:
+    def _resolve_roots(self, checkout_dir: Path | None = None) -> list[str]:
         """Resolve every 'path' entry to a root `load_repository()` can scan.
 
         A local-directory entry is checked to exist/be-a-directory here (so a
@@ -146,9 +162,11 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         to check locally, and `load_repository()` reports any listing/read
         problem for them itself, per-URI, via `on_error`.
         """
-        configured_paths = self.config.path if isinstance(self.config.path, list) else [self.config.path]
+        configured_paths = (
+            self.config.path if isinstance(self.config.path, list) else [self.config.path]
+        )
 
-        roots: List[str] = []
+        roots: list[str] = []
         for entry in configured_paths:
             if is_s3_uri(entry) or is_http_uri(entry):
                 roots.append(entry)
@@ -180,7 +198,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         return roots
 
-    def _load_repository(self, checkout_dir: Optional[Path] = None) -> ParsedRepository:
+    def _load_repository(self, checkout_dir: Path | None = None) -> ParsedRepository:
         roots = self._resolve_roots(checkout_dir)
         if not roots:
             return ParsedRepository()
@@ -222,14 +240,13 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         if self.report.files_scanned == 0:
             self.report.warning(
                 title="No YAML files found",
-                message="No '*.yml' / '*.yaml' files were found under the configured "
-                "path.",
+                message="No '*.yml' / '*.yaml' files were found under the configured path.",
                 context=str(roots),
             )
 
         return repository
 
-    def _load_repository_maybe_from_git(self) -> Optional[ParsedRepository]:
+    def _load_repository_maybe_from_git(self) -> ParsedRepository | None:
         """Clone `git_info` into a temp dir (if configured) and load the repository.
 
         Unlike a lazy file-by-file scan, `_load_repository` fully reads and
@@ -264,7 +281,9 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for platform_doc in repository.platforms:
             self.report.platforms_scanned += 1
-            yield from self._safe_build("DATA_PLATFORM", platform_doc.name, build_data_platform, platform_doc)
+            yield from self._safe_build(
+                "DATA_PLATFORM", platform_doc.name, build_data_platform, platform_doc
+            )
 
         for tag_doc in repository.tags:
             self.report.tags_scanned += 1
@@ -290,12 +309,19 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for domain_doc in topological_sort_domains(repository.domains):
             self.report.domains_scanned += 1
-            yield from self._safe_build("DOMAIN", domain_doc.id, build_domain, domain_doc, index, self.report)
+            yield from self._safe_build(
+                "DOMAIN", domain_doc.id, build_domain, domain_doc, index, self.report
+            )
 
         for application_doc in repository.applications:
             self.report.applications_scanned += 1
             yield from self._safe_build(
-                "APPLICATION", application_doc.id, build_application, application_doc, index, self.report
+                "APPLICATION",
+                application_doc.id,
+                build_application,
+                application_doc,
+                index,
+                self.report,
             )
 
         for container_doc in topological_sort_containers(repository.containers):
@@ -345,27 +371,45 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for feature_doc in repository.ml_features:
             self.report.ml_features_scanned += 1
             yield from self._safe_build(
-                "MLFEATURE", f"{feature_doc.featureNamespace}.{feature_doc.name}",
-                build_ml_feature, feature_doc, index, self.report
+                "MLFEATURE",
+                f"{feature_doc.featureNamespace}.{feature_doc.name}",
+                build_ml_feature,
+                feature_doc,
+                index,
+                self.report,
             )
 
         for primary_key_doc in repository.ml_primary_keys:
             self.report.ml_primary_keys_scanned += 1
             yield from self._safe_build(
-                "MLPRIMARY_KEY", f"{primary_key_doc.featureNamespace}.{primary_key_doc.name}",
-                build_ml_primary_key, primary_key_doc, index, self.report
+                "MLPRIMARY_KEY",
+                f"{primary_key_doc.featureNamespace}.{primary_key_doc.name}",
+                build_ml_primary_key,
+                primary_key_doc,
+                index,
+                self.report,
             )
 
         for feature_table_doc in repository.ml_feature_tables:
             self.report.ml_feature_tables_scanned += 1
             yield from self._safe_build(
-                "MLFEATURE_TABLE", feature_table_doc.name, build_ml_feature_table, feature_table_doc, index, self.report
+                "MLFEATURE_TABLE",
+                feature_table_doc.name,
+                build_ml_feature_table,
+                feature_table_doc,
+                index,
+                self.report,
             )
 
         for model_group_doc in repository.ml_model_groups:
             self.report.ml_model_groups_scanned += 1
             yield from self._safe_build(
-                "MLMODEL_GROUP", model_group_doc.name, build_ml_model_group, model_group_doc, index, self.report
+                "MLMODEL_GROUP",
+                model_group_doc.name,
+                build_ml_model_group,
+                model_group_doc,
+                index,
+                self.report,
             )
 
         for model_doc in repository.ml_models:
@@ -378,7 +422,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for semantic_model_doc in repository.semantic_models:
             self.report.semantic_models_scanned += 1
             yield from self._safe_build(
-                "SEMANTIC_MODEL", semantic_model_doc.id, build_semantic_model, semantic_model_doc, index, self.report
+                "SEMANTIC_MODEL",
+                semantic_model_doc.id,
+                build_semantic_model,
+                semantic_model_doc,
+                index,
+                self.report,
             )
 
         for metric_doc in repository.metrics:
@@ -392,7 +441,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for repository_doc in repository.repositories:
             self.report.repositories_scanned += 1
             yield from self._safe_build(
-                "REPOSITORY", repository_doc.id, build_repository, repository_doc, index, self.report
+                "REPOSITORY",
+                repository_doc.id,
+                build_repository,
+                repository_doc,
+                index,
+                self.report,
             )
 
         for api_doc in repository.apis:
@@ -402,7 +456,12 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         for agent_skill_doc in repository.agent_skills:
             self.report.agent_skills_scanned += 1
             yield from self._safe_build(
-                "AGENT_SKILL", agent_skill_doc.id, build_agent_skill, agent_skill_doc, index, self.report
+                "AGENT_SKILL",
+                agent_skill_doc.id,
+                build_agent_skill,
+                agent_skill_doc,
+                index,
+                self.report,
             )
 
         for ai_agent_doc in repository.ai_agents:
@@ -449,9 +508,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
         for raw_doc in repository.raw_aspects:
             self.report.raw_aspects_scanned += 1
-            yield from self._safe_build(
-                "RAW_ASPECT", raw_doc.aspectName, build_raw_aspect, raw_doc
-            )
+            yield from self._safe_build("RAW_ASPECT", raw_doc.aspectName, build_raw_aspect, raw_doc)
 
     def _safe_build(self, kind: str, identifier: str, builder, *args) -> Iterable[MetadataWorkUnit]:
         """Run a builder, converting any failure into a reported warning instead
@@ -510,7 +567,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         return test_report
 
     @staticmethod
-    def _check_s3_connectivity(uri: str, config: "YamlSourceConfig") -> List[str]:
+    def _check_s3_connectivity(uri: str, config: "YamlSourceConfig") -> list[str]:
         try:
             aws_connection = _resolve_aws_connection(config.aws_connection)
         except ImportError as e:
@@ -528,7 +585,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         return []
 
     @staticmethod
-    def _check_http_connectivity(uri: str, config: "YamlSourceConfig") -> List[str]:
+    def _check_http_connectivity(uri: str, config: "YamlSourceConfig") -> list[str]:
         if has_glob_characters(uri):
             return [f"Glob patterns are not supported for http(s):// URIs: {uri}"]
 

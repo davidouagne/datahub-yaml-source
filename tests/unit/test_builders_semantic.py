@@ -36,14 +36,27 @@ def test_build_semantic_model_emits_info_and_ai_context():
 
     wus = list(build_semantic_model(doc, index, report))
     assert not report.dangling_references
-    assert wus[0].metadata.entityUrn == "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+    )
 
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "SemanticModelInfoClass")
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "SemanticModelInfoClass"
+    )
     assert info.name == "Patients actifs"
     assert info.externalUrl == "https://dbt.example.org/marts/patients_actifs"
-    assert info.datasets == ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"]
+    assert info.datasets == [
+        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    ]
 
-    ai_context = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "AiContextClass")
+    ai_context = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "AiContextClass"
+    )
     assert ai_context.synonyms == ["active cohort"]
 
     assert any(wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass" for wu in wus)
@@ -64,20 +77,36 @@ def test_build_metric_requires_semantic_model_and_emits_upstreams_and_relationsh
             "semanticModel": {"platform": "dbt", "path": "models/marts", "id": "patients_actifs"},
             "expression": "count(readmission_30j) / count(*)",
             "derivedFrom": [{"platform": "dbt", "path": "models/marts", "id": "base_metric"}],
-            "relatedMetrics": [{"platform": "dbt", "path": "models/marts", "id": "taux_readmission_90j"}],
-            "datasetUpstreams": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "relatedMetrics": [
+                {"platform": "dbt", "path": "models/marts", "id": "taux_readmission_90j"}
+            ],
+            "datasetUpstreams": [
+                {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+            ],
         }
     )
 
     wus = list(build_metric(doc, index, report))
-    assert wus[0].metadata.entityUrn == "urn:li:metric:(urn:li:dataPlatform:dbt,models/marts,taux_readmission_30j)"
+    assert (
+        wus[0].metadata.entityUrn
+        == "urn:li:metric:(urn:li:dataPlatform:dbt,models/marts,taux_readmission_30j)"
+    )
 
-    info = next(wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MetricInfoClass")
-    assert info.semanticModel == "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+    info = next(
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MetricInfoClass"
+    )
+    assert (
+        info.semanticModel
+        == "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+    )
     assert info.expression.dialects[0].expression == "count(readmission_30j) / count(*)"
 
     relationships = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MetricRelationshipsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MetricRelationshipsClass"
     )
     assert [e.destinationUrn for e in relationships.derivedFrom] == [
         "urn:li:metric:(urn:li:dataPlatform:dbt,models/marts,base_metric)"
@@ -87,7 +116,9 @@ def test_build_metric_requires_semantic_model_and_emits_upstreams_and_relationsh
     ]
 
     upstreams = next(
-        wu.metadata.aspect for wu in wus if wu.metadata.aspect.__class__.__name__ == "MetricUpstreamsClass"
+        wu.metadata.aspect
+        for wu in wus
+        if wu.metadata.aspect.__class__.__name__ == "MetricUpstreamsClass"
     )
     assert [e.destinationUrn for e in upstreams.datasetUpstreams] == [
         "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"

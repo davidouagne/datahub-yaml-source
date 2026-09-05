@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from datahub.ingestion.run.pipeline import Pipeline
 from datahub.testing import mce_helpers
@@ -35,7 +35,7 @@ def _run_yaml_source_to_file(output_path: Path) -> None:
     pipeline.raise_from_status()
 
 
-def _normalize(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _normalize(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Drop run-specific `systemMetadata` and sort for order-insensitive diffing."""
     normalized = []
     for event in events:

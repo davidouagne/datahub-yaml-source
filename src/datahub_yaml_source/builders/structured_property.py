@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
@@ -18,8 +18,7 @@ def build_structured_property(
     allowed_values = None
     if doc.allowedValues:
         allowed_values = [
-            PropertyValueClass(value=v.value, description=v.description)
-            for v in doc.allowedValues
+            PropertyValueClass(value=v.value, description=v.description) for v in doc.allowedValues
         ]
 
     # The friendly YAML shorthand for typeQualifier is a flat list of allowed

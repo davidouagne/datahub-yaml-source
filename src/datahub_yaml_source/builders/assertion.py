@@ -1,5 +1,5 @@
 import re
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
@@ -123,7 +123,9 @@ def _build_volume_assertion(doc: AssertionDoc) -> VolumeAssertionInfoClass:
     # required in the Avro schema despite the generated stub typing them
     # Optional -- passing None parses fine but fails MCP validation at emit
     # time (same trap as `DeprecationClass.note`, see build_deprecation_aspect()).
-    parameters = AssertionStdParametersClass(value=AssertionStdParameterClass(value=str(a.value), type="NUMBER"))
+    parameters = AssertionStdParametersClass(
+        value=AssertionStdParameterClass(value=str(a.value), type="NUMBER")
+    )
     if a.volumeType == "ROW_COUNT_CHANGE":
         return VolumeAssertionInfoClass(
             type="ROW_COUNT_CHANGE",
@@ -161,13 +163,17 @@ def _build_data_schema_assertion(doc: AssertionDoc) -> SchemaAssertionInfoClass:
         platformSchema=OtherSchemaClass(rawSchema=""),
         fields=fields,
     )
-    return SchemaAssertionInfoClass(entity=a.entityUrn, schema=expected_schema, compatibility=a.compatibility)
+    return SchemaAssertionInfoClass(
+        entity=a.entityUrn, schema=expected_schema, compatibility=a.compatibility
+    )
 
 
 def _build_custom_assertion(doc: AssertionDoc) -> CustomAssertionInfoClass:
     a = doc.assertion
     field_spec = (
-        SchemaFieldSpecClass(path=a.fieldPath, type=a.dataType or "string", nativeType=a.nativeDataType or "")
+        SchemaFieldSpecClass(
+            path=a.fieldPath, type=a.dataType or "string", nativeType=a.nativeDataType or ""
+        )
         if a.fieldPath
         else None
     )
@@ -186,7 +192,7 @@ _BUILDERS = {
 }
 
 
-def _build_assertion_actions(actions: Optional[AssertionActionsDoc]) -> Optional[AssertionActionsClass]:
+def _build_assertion_actions(actions: AssertionActionsDoc | None) -> AssertionActionsClass | None:
     if actions is None:
         return None
     return AssertionActionsClass(
@@ -212,7 +218,14 @@ def build_assertion(
     custom_properties = None
     if doc.properties:
         custom_properties = stringify_custom_properties(
-            {k: v for k, v in {"name": doc.properties.name, "dbt_test": doc.properties.dbt_test}.items() if v is not None}
+            {
+                k: v
+                for k, v in {
+                    "name": doc.properties.name,
+                    "dbt_test": doc.properties.dbt_test,
+                }.items()
+                if v is not None
+            }
         )
 
     aspect = AssertionInfoClass(

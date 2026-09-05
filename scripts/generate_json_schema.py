@@ -54,7 +54,12 @@ from datahub_yaml_source.models import (
 )
 
 OUTPUT_PATH = (
-    Path(__file__).parent.parent / "docs" / "sources" / "yaml" / "schema" / "yaml-metadata.schema.json"
+    Path(__file__).parent.parent
+    / "docs"
+    / "sources"
+    / "yaml"
+    / "schema"
+    / "yaml-metadata.schema.json"
 )
 
 # One entry per `kind:` value, plus the `aspectName:`-keyed passthrough doc.

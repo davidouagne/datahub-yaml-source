@@ -1,6 +1,6 @@
 """Builders for the semantic-layer family: SEMANTIC_MODEL, METRIC (Phase 5B)."""
 
-from typing import FrozenSet, Iterable, Optional
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import EdgeClass, MetricUpstreamsClass
@@ -17,10 +17,12 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 # permitting subTypes/applications on both -- native= is narrowed the same way, and
 # externalUrl (present on both info aspects but not as a kwarg either) is set via the
 # same `_ensure_*()` post-construction pattern used for MLModel's type/hyperParameters.
-_SEMANTIC_ENTITY_NATIVE_KWARGS: FrozenSet[str] = frozenset({"owners", "tags", "terms", "domain", "links"})
+_SEMANTIC_ENTITY_NATIVE_KWARGS: frozenset[str] = frozenset(
+    {"owners", "tags", "terms", "domain", "links"}
+)
 
 
-def _ai_context_input(doc: Optional[AiContextDoc]) -> Optional[AiContextInput]:
+def _ai_context_input(doc: AiContextDoc | None) -> AiContextInput | None:
     if doc is None:
         return None
     return AiContextInput(
@@ -55,7 +57,9 @@ def build_semantic_model(
     yield from model.as_workunits()
 
 
-def build_metric(doc: MetricDoc, index: ReferenceIndex, report: YamlSourceReport) -> Iterable[MetadataWorkUnit]:
+def build_metric(
+    doc: MetricDoc, index: ReferenceIndex, report: YamlSourceReport
+) -> Iterable[MetadataWorkUnit]:
     context = f"METRIC '{doc.id}'"
     common = common_sdk_kwargs(doc, index, report, context, native=_SEMANTIC_ENTITY_NATIVE_KWARGS)
 
@@ -65,7 +69,9 @@ def build_metric(doc: MetricDoc, index: ReferenceIndex, report: YamlSourceReport
     if doc.datasetUpstreams:
         extra_aspects.append(
             MetricUpstreamsClass(
-                datasetUpstreams=[EdgeClass(destinationUrn=dataset_urn(d)) for d in doc.datasetUpstreams]
+                datasetUpstreams=[
+                    EdgeClass(destinationUrn=dataset_urn(d)) for d in doc.datasetUpstreams
+                ]
             )
         )
     common["extra_aspects"] = extra_aspects or None
@@ -92,6 +98,8 @@ def build_metric(doc: MetricDoc, index: ReferenceIndex, report: YamlSourceReport
     # as MLModel's `type`/`hyperParameters` (C9).
     if doc.relatedMetrics:
         relationships = metric._ensure_metric_relationships()
-        relationships.relatedMetrics = [EdgeClass(destinationUrn=metric_urn(m)) for m in doc.relatedMetrics]
+        relationships.relatedMetrics = [
+            EdgeClass(destinationUrn=metric_urn(m)) for m in doc.relatedMetrics
+        ]
 
     yield from metric.as_workunits()

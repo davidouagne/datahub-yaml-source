@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit

@@ -11,8 +11,6 @@ emit a warning about a dangling reference (e.g. a `tags: [nope]` pointing at
 a tag that was never declared as its own `TAG` document).
 """
 
-from typing import Optional, Set, Tuple, Union
-
 from datahub.emitter.mce_builder import (
     make_data_platform_urn,
     make_dataplatform_instance_urn,
@@ -53,7 +51,6 @@ from datahub.metadata.urns import (
 from datahub_yaml_source.loader import ParsedRepository
 from datahub_yaml_source.models import (
     ChartRef,
-    ContainerDoc,
     ContainerRef,
     DashboardRef,
     DataFlowJobRef,
@@ -72,7 +69,7 @@ def _passthrough_if_urn(value: str, build) -> str:
     return build(value)
 
 
-def dataset_urn(ref: Union[DatasetRef, DatasetFieldRef]) -> str:
+def dataset_urn(ref: DatasetRef | DatasetFieldRef) -> str:
     return make_dataset_urn_with_platform_instance(
         platform=ref.platform,
         name=ref.name,
@@ -208,7 +205,7 @@ def service_urn(service_id: str) -> str:
     return _passthrough_if_urn(service_id, lambda v: ServiceUrn(v).urn())
 
 
-def data_platform_instance_urn(platform_name: str, instance: Optional[str]) -> Optional[str]:
+def data_platform_instance_urn(platform_name: str, instance: str | None) -> str | None:
     if not instance:
         return None
     return make_dataplatform_instance_urn(platform_name, instance)
@@ -256,7 +253,7 @@ def owner_urn(owner: str) -> str:
     return _passthrough_if_urn(owner, make_user_urn)
 
 
-def container_natural_key(ref: ContainerRef) -> Tuple[str, str, Optional[str]]:
+def container_natural_key(ref: ContainerRef) -> tuple[str, str, str | None]:
     """Hashable natural-key tuple identifying a container, for lookups/sorting.
 
     Deliberately excludes `instance` and `env`, mirroring `container_key()`'s
@@ -272,17 +269,15 @@ class ReferenceIndex:
     """Answers "was this reference declared in the repository?" for warnings."""
 
     def __init__(self, repository: ParsedRepository) -> None:
-        self._tag_names: Set[str] = {t.name for t in repository.tags}
-        self._glossary_term_ids: Set[str] = {t.id for t in repository.glossary_terms}
-        self._glossary_node_ids: Set[str] = {n.id for n in repository.glossary_nodes}
-        self._domain_ids: Set[str] = {d.id for d in repository.domains}
-        self._application_ids: Set[str] = {a.id for a in repository.applications}
-        self._structured_property_names: Set[str] = {
+        self._tag_names: set[str] = {t.name for t in repository.tags}
+        self._glossary_term_ids: set[str] = {t.id for t in repository.glossary_terms}
+        self._glossary_node_ids: set[str] = {n.id for n in repository.glossary_nodes}
+        self._domain_ids: set[str] = {d.id for d in repository.domains}
+        self._application_ids: set[str] = {a.id for a in repository.applications}
+        self._structured_property_names: set[str] = {
             p.qualifiedName for p in repository.structured_properties
         }
-        self._container_keys: Set[Tuple] = {
-            container_natural_key(c) for c in repository.containers
-        }
+        self._container_keys: set[tuple] = {container_natural_key(c) for c in repository.containers}
 
     def has_tag(self, name: str) -> bool:
         return name in self._tag_names

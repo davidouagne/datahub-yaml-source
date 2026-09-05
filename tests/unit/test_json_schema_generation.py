@@ -45,7 +45,9 @@ def test_generated_schema_validates_every_fixture_document():
                 continue
             checked += 1
             errors = list(validator.iter_errors(doc))
-            assert not errors, f"{path}: {doc.get('kind') or doc.get('aspectName')}: {errors[0].message}"
+            assert not errors, (
+                f"{path}: {doc.get('kind') or doc.get('aspectName')}: {errors[0].message}"
+            )
     assert checked > 0
 
 

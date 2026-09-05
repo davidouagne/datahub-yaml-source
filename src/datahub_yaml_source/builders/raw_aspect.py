@@ -10,7 +10,8 @@ small, extensible registry: add a new `_build_<aspect>` function and register
 it to support another aspect.
 """
 
-from typing import Any, Dict, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
@@ -34,7 +35,7 @@ from datahub_yaml_source.models import DatasetRef, RawAspectDoc
 from datahub_yaml_source.urns import dataset_urn, owner_urn
 
 
-def _build_field_profile(raw: Dict[str, Any]) -> DatasetFieldProfileClass:
+def _build_field_profile(raw: dict[str, Any]) -> DatasetFieldProfileClass:
     distinct_value_frequencies = None
     if raw.get("distinctValueFrequencies"):
         distinct_value_frequencies = [
@@ -54,20 +55,20 @@ def _build_field_profile(raw: Dict[str, Any]) -> DatasetFieldProfileClass:
     )
 
 
-def _build_event_granularity(raw: Optional[Dict[str, Any]]) -> Optional[TimeWindowSizeClass]:
+def _build_event_granularity(raw: dict[str, Any] | None) -> TimeWindowSizeClass | None:
     if not raw:
         return None
     return TimeWindowSizeClass(unit=raw["unit"], multiple=raw.get("multiple"))
 
 
-def _build_partition_spec(raw: Optional[Dict[str, Any]]) -> Optional[PartitionSpecClass]:
+def _build_partition_spec(raw: dict[str, Any] | None) -> PartitionSpecClass | None:
     if not raw:
         return None
     return PartitionSpecClass(partition=raw["partition"], type=raw.get("type"))
 
 
-def _build_dataset_profile(payload: Dict[str, Any]) -> DatasetProfileClass:
-    field_profiles: Optional[List[DatasetFieldProfileClass]] = None
+def _build_dataset_profile(payload: dict[str, Any]) -> DatasetProfileClass:
+    field_profiles: list[DatasetFieldProfileClass] | None = None
     if payload.get("fieldProfiles"):
         field_profiles = [_build_field_profile(f) for f in payload["fieldProfiles"]]
 
@@ -83,7 +84,7 @@ def _build_dataset_profile(payload: Dict[str, Any]) -> DatasetProfileClass:
     )
 
 
-def _build_operation(payload: Dict[str, Any]) -> OperationClass:
+def _build_operation(payload: dict[str, Any]) -> OperationClass:
     affected_datasets = None
     if payload.get("affectedDatasets"):
         affected_datasets = [
@@ -107,7 +108,7 @@ def _build_operation(payload: Dict[str, Any]) -> OperationClass:
     )
 
 
-def _build_dataset_usage_statistics(payload: Dict[str, Any]) -> DatasetUsageStatisticsClass:
+def _build_dataset_usage_statistics(payload: dict[str, Any]) -> DatasetUsageStatisticsClass:
     user_counts = None
     if payload.get("userCounts"):
         user_counts = [
@@ -137,7 +138,9 @@ def _build_dataset_usage_statistics(payload: Dict[str, Any]) -> DatasetUsageStat
     )
 
 
-def _build_assertion_run_event(payload: Dict[str, Any], assertion_urn: str) -> AssertionRunEventClass:
+def _build_assertion_run_event(
+    payload: dict[str, Any], assertion_urn: str
+) -> AssertionRunEventClass:
     result = None
     if payload.get("result"):
         result = AssertionResultClass(
@@ -159,7 +162,7 @@ def _build_assertion_run_event(payload: Dict[str, Any], assertion_urn: str) -> A
 
 
 def _build_data_process_instance_run_event(
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
 ) -> DataProcessInstanceRunEventClass:
     result = None
     if payload.get("result"):

@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
@@ -10,7 +10,12 @@ from datahub.metadata.schema_classes import (
     IncidentStatusClass,
 )
 
-from datahub_yaml_source.builders.common import ZERO_AUDIT_STAMP, common_aspect_mcps, mcp_workunit, owner_urn
+from datahub_yaml_source.builders.common import (
+    ZERO_AUDIT_STAMP,
+    common_aspect_mcps,
+    mcp_workunit,
+    owner_urn,
+)
 from datahub_yaml_source.models import IncidentDoc
 from datahub_yaml_source.urns import ReferenceIndex, incident_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
@@ -40,7 +45,10 @@ def build_incident(
             description=doc.description,
             priority=doc.priority,
             assignees=(
-                [IncidentAssigneeClass(actor=owner_urn(a), assignedAt=ZERO_AUDIT_STAMP) for a in doc.assignees]
+                [
+                    IncidentAssigneeClass(actor=owner_urn(a), assignedAt=ZERO_AUDIT_STAMP)
+                    for a in doc.assignees
+                ]
                 if doc.assignees
                 else None
             ),
@@ -57,7 +65,9 @@ def build_incident(
         yield mcp_workunit(
             entity_urn,
             IncidentNotesClass(
-                notes=[IncidentNoteClass(message=note, created=ZERO_AUDIT_STAMP) for note in doc.notes]
+                notes=[
+                    IncidentNoteClass(message=note, created=ZERO_AUDIT_STAMP) for note in doc.notes
+                ]
             ),
         )
 

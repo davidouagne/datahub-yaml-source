@@ -7,7 +7,7 @@ None of these five have an SDK V2 wrapper (verified: no matching module under
 no platform component, unlike every dataset-shaped kind in this connector.
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
@@ -70,7 +70,9 @@ def build_repository(
     if doc.source:
         yield mcp_workunit(
             entity_urn,
-            RepositorySourceClass(externalUrl=doc.source.externalUrl, externalId=doc.source.externalId),
+            RepositorySourceClass(
+                externalUrl=doc.source.externalUrl, externalId=doc.source.externalId
+            ),
         )
     if doc.forkOf:
         yield mcp_workunit(entity_urn, RepositoryLineageClass(forkOf=repository_urn(doc.forkOf)))
@@ -82,7 +84,9 @@ def build_repository(
     yield from common_aspect_mcps(entity_urn, doc, index, report, context)
 
 
-def build_api(doc: ApiDoc, index: ReferenceIndex, report: YamlSourceReport) -> Iterable[MetadataWorkUnit]:
+def build_api(
+    doc: ApiDoc, index: ReferenceIndex, report: YamlSourceReport
+) -> Iterable[MetadataWorkUnit]:
     context = f"API '{doc.id}'"
     entity_urn = api_urn(doc.id)
 
@@ -101,7 +105,9 @@ def build_api(doc: ApiDoc, index: ReferenceIndex, report: YamlSourceReport) -> I
             RestApiPropertiesClass(method=doc.restApi.method, path=doc.restApi.path),
         )
     if doc.signature:
-        yield mcp_workunit(entity_urn, ApiSignatureClass(schemaDefinition=doc.signature.schemaDefinition))
+        yield mcp_workunit(
+            entity_urn, ApiSignatureClass(schemaDefinition=doc.signature.schemaDefinition)
+        )
 
     dpi = build_data_platform_instance_aspect(doc.platform, doc.instance)
     if dpi:
@@ -120,7 +126,9 @@ def build_agent_skill(
     if doc.sourceRepository:
         source_repository = SkillSourceRepositoryClass(
             repositoryUrn=(
-                repository_urn(doc.sourceRepository.repositoryUrn) if doc.sourceRepository.repositoryUrn else None
+                repository_urn(doc.sourceRepository.repositoryUrn)
+                if doc.sourceRepository.repositoryUrn
+                else None
             ),
             url=doc.sourceRepository.url,
             path=doc.sourceRepository.path,
@@ -189,7 +197,9 @@ def build_ai_agent(
         )
 
     if doc.displayProperties:
-        yield mcp_workunit(entity_urn, DisplayPropertiesClass(colorHex=doc.displayProperties.colorHex))
+        yield mcp_workunit(
+            entity_urn, DisplayPropertiesClass(colorHex=doc.displayProperties.colorHex)
+        )
 
     dpi = build_data_platform_instance_aspect(doc.platform, doc.instance)
     if dpi:

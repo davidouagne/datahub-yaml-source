@@ -9,7 +9,7 @@ These models only describe the on-disk shape of the YAML. Translation into
 DataHub aspects/URNs happens in `datahub_yaml_source.builders.*`.
 """
 
-from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
@@ -22,7 +22,7 @@ def _coerce_to_list(value: Any) -> Any:
     return [value]
 
 
-StringList = Annotated[List[str], BeforeValidator(_coerce_to_list)]
+StringList = Annotated[list[str], BeforeValidator(_coerce_to_list)]
 
 
 class OwnerEntry(BaseModel):
@@ -30,10 +30,10 @@ class OwnerEntry(BaseModel):
     type: str = "TECHNICAL_OWNER"
 
 
-OwnersField = Union[OwnerEntry, List[OwnerEntry]]
+OwnersField = OwnerEntry | list[OwnerEntry]
 
 
-def normalize_owners(owners: Optional[OwnersField]) -> List[OwnerEntry]:
+def normalize_owners(owners: OwnersField | None) -> list[OwnerEntry]:
     if owners is None:
         return []
     if isinstance(owners, OwnerEntry):
@@ -41,10 +41,10 @@ def normalize_owners(owners: Optional[OwnersField]) -> List[OwnerEntry]:
     return owners
 
 
-SubTypesField = Union[str, List[str]]
+SubTypesField = str | list[str]
 
 
-def normalize_sub_types(sub_types: Optional[SubTypesField]) -> List[str]:
+def normalize_sub_types(sub_types: SubTypesField | None) -> list[str]:
     if sub_types is None:
         return []
     if isinstance(sub_types, str):
@@ -58,7 +58,7 @@ class DatasetRef(BaseModel):
     platform: str
     name: str
     env: str = "PROD"
-    instance: Optional[str] = None
+    instance: str | None = None
 
 
 class DatasetFieldRef(DatasetRef):
@@ -77,11 +77,11 @@ class ContainerRef(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     platform: str = Field(description="Platform of the container, e.g. 'postgres', 'duckdb', 's3'.")
-    instance: Optional[str] = Field(
+    instance: str | None = Field(
         default=None, description="Platform instance name. Does not affect the container's URN."
     )
-    database: Optional[str] = None
-    schema_name: Optional[str] = Field(default=None, alias="schema")
+    database: str | None = None
+    schema_name: str | None = Field(default=None, alias="schema")
     env: str = Field(default="PROD", description="Does not affect the container's URN.")
 
 
@@ -89,9 +89,11 @@ class ForeignKeyDoc(BaseModel):
     """A foreign key constraint from this dataset's schema to another dataset."""
 
     name: str
-    sourceFields: List[DatasetFieldRef] = Field(default_factory=list, description="Column(s) on this dataset.")
+    sourceFields: list[DatasetFieldRef] = Field(
+        default_factory=list, description="Column(s) on this dataset."
+    )
     foreignDataset: DatasetRef = Field(description="The dataset the foreign key points to.")
-    foreignFields: List[DatasetFieldRef] = Field(
+    foreignFields: list[DatasetFieldRef] = Field(
         default_factory=list, description="Column(s) on the foreign dataset."
     )
 
@@ -107,7 +109,7 @@ class ViewPropertiesDoc(BaseModel):
     viewLogic: str = Field(description="The view's definition, e.g. its SELECT statement.")
     viewLanguage: str = Field(default="SQL", description="e.g. 'SQL'.")
     materialized: bool = Field(default=False, description="True for a materialized view.")
-    formattedViewLogic: Optional[str] = Field(
+    formattedViewLogic: str | None = Field(
         default=None, description="Optional pretty-printed/formatted version of viewLogic."
     )
 
@@ -115,14 +117,16 @@ class ViewPropertiesDoc(BaseModel):
 class FineGrainedLineageDoc(BaseModel):
     """A single column-level lineage edge."""
 
-    upstream: Optional[DatasetFieldRef] = Field(
+    upstream: DatasetFieldRef | None = Field(
         default=None,
         description="Source column. Absent for e.g. operation: CONSTANT, where the downstream "
         "value is a literal with no source column.",
     )
     downstream: DatasetFieldRef
-    operation: Optional[str] = Field(default=None, description="Free-text transform description, e.g. IDENTITY, CONSTANT.")
-    confidence: Optional[float] = 1.0
+    operation: str | None = Field(
+        default=None, description="Free-text transform description, e.g. IDENTITY, CONSTANT."
+    )
+    confidence: float | None = 1.0
 
 
 class UpstreamEntryDoc(BaseModel):
@@ -132,8 +136,10 @@ class UpstreamEntryDoc(BaseModel):
 class UpstreamLineageDoc(BaseModel):
     """Table-level and (optionally) column-level lineage for a dataset."""
 
-    upstreams: List[UpstreamEntryDoc] = Field(default_factory=list, description="Upstream (source) datasets.")
-    fineGrainedLineages: Optional[List[FineGrainedLineageDoc]] = Field(
+    upstreams: list[UpstreamEntryDoc] = Field(
+        default_factory=list, description="Upstream (source) datasets."
+    )
+    fineGrainedLineages: list[FineGrainedLineageDoc] | None = Field(
         default=None, description="Column-level lineage edges."
     )
 
@@ -142,18 +148,22 @@ class LinkDoc(BaseModel):
     """A link surfaced in DataHub's "Links" panel (the `institutionalMemory` aspect)."""
 
     url: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class DeprecationDoc(BaseModel):
     """Marks an entity deprecated. Emits the `deprecation` aspect."""
 
-    deprecated: bool = Field(default=True, description="Set to false to explicitly un-deprecate an entity.")
-    note: Optional[str] = None
-    decommissionTime: Optional[int] = Field(
+    deprecated: bool = Field(
+        default=True, description="Set to false to explicitly un-deprecate an entity."
+    )
+    note: str | None = None
+    decommissionTime: int | None = Field(
         default=None, description="Planned removal time, epoch millis."
     )
-    actor: Optional[str] = Field(default=None, description="Owner name; converted to a corpuser URN if not already one.")
+    actor: str | None = Field(
+        default=None, description="Owner name; converted to a corpuser URN if not already one."
+    )
 
 
 # --- Cross-cutting aspect mixins --------------------------------------------
@@ -189,7 +199,7 @@ class DeprecationDoc(BaseModel):
 #   SERVICE          Y     Y    -     -      -     -      -            -          Y
 #   CONTAINER        Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DATA_FLOW        Y     Y    Y     Y      Y     Y      Y            Y          Y
-#   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)
+#   DATA_JOB         Y     Y    Y     Y      Y     Y      Y            Y          (via `type`, see DataJobDoc)  # noqa: E501
 #   DATA_PRODUCT     Y     Y    Y     Y      Y     Y      Y            Y          Y
 #   DOMAIN           Y     -    -     -      -     Y      Y            Y          -
 #   APPLICATION      Y     Y    -     Y      -     Y      -            Y          Y
@@ -214,45 +224,47 @@ class _AllowExtraFields(BaseModel):
 
 
 class HasOwners(BaseModel):
-    owners: Optional[OwnersField] = None
+    owners: OwnersField | None = None
 
 
 class HasTags(BaseModel):
-    tags: Optional[StringList] = None
+    tags: StringList | None = None
 
 
 class HasTerms(BaseModel):
-    glossaryTerms: Optional[StringList] = None
+    glossaryTerms: StringList | None = None
 
 
 class HasDomain(BaseModel):
-    domains: Optional[str] = None
+    domains: str | None = None
 
 
 class HasApplications(BaseModel):
-    applications: Optional[StringList] = Field(
+    applications: StringList | None = Field(
         default=None, description="ids of the APPLICATION documents this entity belongs to."
     )
 
 
 class HasLinks(BaseModel):
-    links: Optional[List[LinkDoc]] = Field(
-        default=None, description="Links shown in DataHub's 'Links' panel (the institutionalMemory aspect)."
+    links: list[LinkDoc] | None = Field(
+        default=None,
+        description="Links shown in DataHub's 'Links' panel (the institutionalMemory aspect).",
     )
 
 
 class HasDeprecation(BaseModel):
-    deprecation: Optional[DeprecationDoc] = None
+    deprecation: DeprecationDoc | None = None
 
 
 class HasStructuredProps(BaseModel):
-    structuredProperties: Optional[Dict[str, Any]] = Field(
-        default=None, description="Map of structuredProperty qualifiedName -> value (or list of values)."
+    structuredProperties: dict[str, Any] | None = Field(
+        default=None,
+        description="Map of structuredProperty qualifiedName -> value (or list of values).",
     )
 
 
 class HasSubTypes(BaseModel):
-    subTypes: Optional[SubTypesField] = None
+    subTypes: SubTypesField | None = None
 
 
 class SchemaFieldDoc(HasTags, HasTerms, HasStructuredProps, HasDeprecation, BaseModel):
@@ -265,18 +277,22 @@ class SchemaFieldDoc(HasTags, HasTerms, HasStructuredProps, HasDeprecation, Base
     """
 
     fieldPath: str
-    type: str = Field(description="A DataHub schema type: number, string, boolean, date, time, bytes, record.")
-    description: Optional[str] = None
-    nativeDataType: Optional[str] = Field(default=None, description="The source system's own type name, e.g. VARCHAR(255).")
+    type: str = Field(
+        description="A DataHub schema type: number, string, boolean, date, time, bytes, record."
+    )
+    description: str | None = None
+    nativeDataType: str | None = Field(
+        default=None, description="The source system's own type name, e.g. VARCHAR(255)."
+    )
     partOfKey: bool = False
-    nullable: Optional[bool] = None
+    nullable: bool | None = None
 
 
 class SchemaBlock(BaseModel):
     """A dataset's full schema: its fields and any foreign keys."""
 
-    fields: List[SchemaFieldDoc] = Field(default_factory=list)
-    foreignKeys: Optional[List[ForeignKeyDoc]] = None
+    fields: list[SchemaFieldDoc] = Field(default_factory=list)
+    foreignKeys: list[ForeignKeyDoc] | None = None
 
 
 class DisplayPropertiesDoc(BaseModel):
@@ -284,7 +300,7 @@ class DisplayPropertiesDoc(BaseModel):
     (`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an
     icon library/name/style triple with no natural single-field shorthand.)"""
 
-    colorHex: Optional[str] = None
+    colorHex: str | None = None
 
 
 class DataPlatformDoc(_AllowExtraFields):
@@ -293,10 +309,15 @@ class DataPlatformDoc(_AllowExtraFields):
     or `duckdb` -- only for platforms DataHub doesn't already know about."""
 
     kind: Literal["DATA_PLATFORM"]
-    name: str = Field(description="Platform identifier, e.g. 'pathling'. Becomes urn:li:dataPlatform:<name>.")
-    displayName: Optional[str] = None
-    type: str = Field(default="OTHERS", description="One of DataHub's PlatformType enum values, e.g. RELATIONAL_DB, OTHERS.")
-    logoUrl: Optional[str] = None
+    name: str = Field(
+        description="Platform identifier, e.g. 'pathling'. Becomes urn:li:dataPlatform:<name>."
+    )
+    displayName: str | None = None
+    type: str = Field(
+        default="OTHERS",
+        description="One of DataHub's PlatformType enum values, e.g. RELATIONAL_DB, OTHERS.",
+    )
+    logoUrl: str | None = None
     datasetNameDelimiter: str = "."
 
 
@@ -305,33 +326,58 @@ class TagDoc(HasOwners, HasDeprecation, _AllowExtraFields):
 
     kind: Literal["TAG"]
     name: str
-    description: Optional[str] = None
-    colorHex: Optional[str] = None
+    description: str | None = None
+    colorHex: str | None = None
 
 
-class GlossaryNodeDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields):
+class GlossaryNodeDoc(
+    HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields
+):
     """A glossary category/folder that groups related glossary terms."""
 
     kind: Literal["GLOSSARY_NODE"]
-    id: str = Field(description="Stable identifier, becomes urn:li:glossaryNode:<id>. Referenced via 'parentNode'.")
+    id: str = Field(
+        description=(
+            "Stable identifier, becomes urn:li:glossaryNode:<id>. Referenced via 'parentNode'."
+        )
+    )
     name: str
-    definition: Optional[str] = None
-    parentNode: Optional[str] = Field(default=None, description="id of a parent GLOSSARY_NODE, for nested categories.")
-    displayProperties: Optional[DisplayPropertiesDoc] = None
+    definition: str | None = None
+    parentNode: str | None = Field(
+        default=None, description="id of a parent GLOSSARY_NODE, for nested categories."
+    )
+    displayProperties: DisplayPropertiesDoc | None = None
 
 
 class GlossaryRelatedTermsDoc(BaseModel):
     """Relationships to other glossary terms. Emits the `glossaryRelatedTerms`
     aspect. Each list holds ids of other GLOSSARY_TERM documents."""
 
-    isRelatedTerms: Optional[StringList] = Field(default=None, description="'is a' relationships, e.g. this term is a kind of the related term.")
-    hasRelatedTerms: Optional[StringList] = Field(default=None, description="'has a' relationships, e.g. this term has the related term as a part.")
-    values: Optional[StringList] = Field(default=None, description="Related terms representing possible values of this term.")
-    relatedTerms: Optional[StringList] = Field(default=None, description="General 'is related to' relationships.")
+    isRelatedTerms: StringList | None = Field(
+        default=None,
+        description="'is a' relationships, e.g. this term is a kind of the related term.",
+    )
+    hasRelatedTerms: StringList | None = Field(
+        default=None,
+        description="'has a' relationships, e.g. this term has the related term as a part.",
+    )
+    values: StringList | None = Field(
+        default=None, description="Related terms representing possible values of this term."
+    )
+    relatedTerms: StringList | None = Field(
+        default=None, description="General 'is related to' relationships."
+    )
 
 
 class GlossaryTermDoc(
-    HasOwners, HasTags, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps, HasSubTypes,
+    HasOwners,
+    HasTags,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
     _AllowExtraFields,
 ):
     """A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`."""
@@ -339,26 +385,31 @@ class GlossaryTermDoc(
     kind: Literal["GLOSSARY_TERM"]
     id: str = Field(description="Stable identifier, becomes urn:li:glossaryTerm:<id>.")
     name: str
-    definition: Optional[str] = None
-    parentNode: Optional[str] = Field(default=None, description="id of the GLOSSARY_NODE this term belongs to.")
-    glossaryRelatedTerms: Optional[GlossaryRelatedTermsDoc] = None
-    termSource: Optional[str] = Field(default=None, description="e.g. 'EXTERNAL' or 'INTERNAL'.")
-    sourceRef: Optional[str] = Field(default=None, description="Name of the external source this term came from, if termSource is EXTERNAL.")
-    sourceUrl: Optional[str] = None
-    displayProperties: Optional[DisplayPropertiesDoc] = None
+    definition: str | None = None
+    parentNode: str | None = Field(
+        default=None, description="id of the GLOSSARY_NODE this term belongs to."
+    )
+    glossaryRelatedTerms: GlossaryRelatedTermsDoc | None = None
+    termSource: str | None = Field(default=None, description="e.g. 'EXTERNAL' or 'INTERNAL'.")
+    sourceRef: str | None = Field(
+        default=None,
+        description="Name of the external source this term came from, if termSource is EXTERNAL.",
+    )
+    sourceUrl: str | None = None
+    displayProperties: DisplayPropertiesDoc | None = None
 
 
 class AllowedValueDoc(BaseModel):
     value: Any
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class StructuredPropertySettingsDoc(BaseModel):
-    showInAssetSummary: Optional[bool] = None
-    showInSearchFilters: Optional[bool] = None
-    showInColumnsTable: Optional[bool] = None
-    showAsAssetBadge: Optional[bool] = None
-    isHidden: Optional[bool] = None
+    showInAssetSummary: bool | None = None
+    showInSearchFilters: bool | None = None
+    showInColumnsTable: bool | None = None
+    showAsAssetBadge: bool | None = None
+    isHidden: bool | None = None
 
 
 class StructuredPropertyDoc(_AllowExtraFields):
@@ -367,24 +418,32 @@ class StructuredPropertyDoc(_AllowExtraFields):
     """
 
     kind: Literal["STRUCTURED_PROPERTY"]
-    qualifiedName: str = Field(description="Globally unique dotted name, e.g. 'org.example.legalBasis'.")
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    cardinality: str = Field(default="SINGLE", description="SINGLE or MULTIPLE values allowed per entity.")
-    valueType: str = Field(description="One of DataHub's data types: string, number, date, rich_text, urn, ...")
-    allowedValues: Optional[List[AllowedValueDoc]] = Field(
+    qualifiedName: str = Field(
+        description="Globally unique dotted name, e.g. 'org.example.legalBasis'."
+    )
+    displayName: str | None = None
+    description: str | None = None
+    cardinality: str = Field(
+        default="SINGLE", description="SINGLE or MULTIPLE values allowed per entity."
+    )
+    valueType: str = Field(
+        description="One of DataHub's data types: string, number, date, rich_text, urn, ..."
+    )
+    allowedValues: list[AllowedValueDoc] | None = Field(
         default=None, description="Restrict to an enum of allowed values; omit to allow any value."
     )
-    entityTypes: List[str] = Field(
+    entityTypes: list[str] = Field(
         default_factory=list,
-        description="Which entity types this property can be attached to, e.g. [dataset, dataProduct].",
+        description=(
+            "Which entity types this property can be attached to, e.g. [dataset, dataProduct]."
+        ),
     )
-    typeQualifier: Optional[List[str]] = Field(
+    typeQualifier: list[str] | None = Field(
         default=None,
         description="For valueType 'urn': list of allowed target entity-type URNs "
         "(e.g. 'urn:li:entityType:datahub.dataProduct'). Maps to the 'allowedTypes' qualifier.",
     )
-    settings: Optional[StructuredPropertySettingsDoc] = Field(
+    settings: StructuredPropertySettingsDoc | None = Field(
         default=None, description="Where this property is surfaced in the DataHub UI."
     )
 
@@ -396,9 +455,11 @@ class DomainDoc(HasOwners, HasLinks, HasDeprecation, HasStructuredProps, _AllowE
     kind: Literal["DOMAIN"]
     id: str = Field(description="Stable identifier, becomes urn:li:domain:<id>.")
     name: str
-    description: Optional[str] = None
-    parentDomain: Optional[str] = Field(default=None, description="id of a parent DOMAIN, for nested domain trees.")
-    displayProperties: Optional[DisplayPropertiesDoc] = None
+    description: str | None = None
+    parentDomain: str | None = Field(
+        default=None, description="id of a parent DOMAIN, for nested domain trees."
+    )
+    displayProperties: DisplayPropertiesDoc | None = None
 
 
 class ApplicationLineageEdgeDoc(BaseModel):
@@ -406,37 +467,48 @@ class ApplicationLineageEdgeDoc(BaseModel):
     or `dataset` must be set -- `applicationLineage`'s underlying edges accept
     either an `api` or a `dataset` entity, never both."""
 
-    api: Optional[str] = Field(default=None, description="id of an API document.")
-    dataset: Optional[DatasetRef] = None
+    api: str | None = Field(default=None, description="id of an API document.")
+    dataset: DatasetRef | None = None
 
 
 class ApplicationLineageDoc(BaseModel):
     """Which APIs/datasets an APPLICATION consumes and produces."""
 
-    consumes: Optional[List[ApplicationLineageEdgeDoc]] = Field(
+    consumes: list[ApplicationLineageEdgeDoc] | None = Field(
         default=None, description="Upstream APIs/datasets this application reads from."
     )
-    produces: Optional[List[ApplicationLineageEdgeDoc]] = Field(
+    produces: list[ApplicationLineageEdgeDoc] | None = Field(
         default=None, description="Downstream APIs/datasets this application writes to."
     )
 
 
-class ApplicationDoc(HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields):
+class ApplicationDoc(
+    HasOwners, HasTags, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields
+):
     """A source application/system (e.g. an EHR, an ERP). Referenced elsewhere
     via `applications: [<id>]`."""
 
     kind: Literal["APPLICATION"]
     id: str = Field(description="Stable identifier, becomes urn:li:application:<id>.")
     name: str
-    description: Optional[str] = None
-    applicationLineage: Optional[ApplicationLineageDoc] = Field(
+    description: str | None = None
+    applicationLineage: ApplicationLineageDoc | None = Field(
         default=None, description="APIs/datasets this application consumes and produces."
     )
 
 
 class ContainerDoc(
-    ContainerRef, HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation,
-    HasStructuredProps, HasSubTypes, _AllowExtraFields,
+    ContainerRef,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A container (database, schema, bucket, ...). Emitted with parents
     before children automatically, regardless of declaration order across
@@ -444,17 +516,26 @@ class ContainerDoc(
 
     kind: Literal["CONTAINER"]
     name: str
-    description: Optional[str] = None
-    externalUrl: Optional[str] = None
-    parentContainer: Optional[ContainerRef] = Field(
-        default=None, description="Reference to the parent container, if any (e.g. a schema's parent database)."
+    description: str | None = None
+    externalUrl: str | None = None
+    parentContainer: ContainerRef | None = Field(
+        default=None,
+        description="Reference to the parent container, if any (e.g. a schema's parent database).",
     )
-    properties: Optional[Dict[str, Any]] = None
+    properties: dict[str, Any] | None = None
 
 
 class DatasetDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A dataset (table, view, topic, file, ...)."""
 
@@ -464,15 +545,17 @@ class DatasetDoc(
     name: str
     platform: str
     env: str = "PROD"
-    instance: Optional[str] = None
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    container: Optional[ContainerRef] = Field(default=None, description="The dataset's parent container.")
-    schema_block: Optional[SchemaBlock] = Field(default=None, alias="schema")
-    properties: Optional[Dict[str, Any]] = None
-    externalUrl: Optional[str] = None
-    upstreamLineage: Optional[UpstreamLineageDoc] = None
-    viewProperties: Optional[ViewPropertiesDoc] = Field(
+    instance: str | None = None
+    displayName: str | None = None
+    description: str | None = None
+    container: ContainerRef | None = Field(
+        default=None, description="The dataset's parent container."
+    )
+    schema_block: SchemaBlock | None = Field(default=None, alias="schema")
+    properties: dict[str, Any] | None = None
+    externalUrl: str | None = None
+    upstreamLineage: UpstreamLineageDoc | None = None
+    viewProperties: ViewPropertiesDoc | None = Field(
         default=None,
         description="For views: the view's SQL definition. Set subTypes: View alongside it. "
         "No lineage is inferred from viewLogic -- declare upstreamLineage explicitly if needed.",
@@ -494,60 +577,90 @@ class DashboardRef(BaseModel):
 
 
 class ChartDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A chart/visualization from a BI tool (Superset, Looker, Tableau, ...).
     Referenced from a DASHBOARD's `charts:` field by (platform, name)."""
 
     kind: Literal["CHART"]
-    name: str = Field(description="Chart identifier within its platform. Becomes part of the chart URN.")
+    name: str = Field(
+        description="Chart identifier within its platform. Becomes part of the chart URN."
+    )
     platform: str = Field(description="The BI tool, e.g. 'superset', 'looker', 'tableau'.")
-    instance: Optional[str] = None
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    chartUrl: Optional[str] = Field(default=None, description="Link to the chart in its native BI tool.")
-    chartType: Optional[str] = Field(
+    instance: str | None = None
+    displayName: str | None = None
+    description: str | None = None
+    chartUrl: str | None = Field(
+        default=None, description="Link to the chart in its native BI tool."
+    )
+    chartType: str | None = Field(
         default=None, description="One of DataHub's ChartType values, e.g. BAR, LINE, PIE, TABLE."
     )
-    externalUrl: Optional[str] = None
-    container: Optional[ContainerRef] = Field(default=None, description="The chart's parent container, if any.")
-    inputDatasets: Optional[List[DatasetRef]] = Field(
+    externalUrl: str | None = None
+    container: ContainerRef | None = Field(
+        default=None, description="The chart's parent container, if any."
+    )
+    inputDatasets: list[DatasetRef] | None = Field(
         default=None, description="Datasets this chart is built from."
     )
-    properties: Optional[Dict[str, Any]] = None
+    properties: dict[str, Any] | None = None
 
 
 class DashboardDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A dashboard: a collection of charts (and/or nested dashboards) from a
     BI tool (Superset, Looker, Tableau, ...)."""
 
     kind: Literal["DASHBOARD"]
-    name: str = Field(description="Dashboard identifier within its platform. Becomes part of the dashboard URN.")
+    name: str = Field(
+        description="Dashboard identifier within its platform. Becomes part of the dashboard URN."
+    )
     platform: str = Field(description="The BI tool, e.g. 'superset', 'looker', 'tableau'.")
-    instance: Optional[str] = None
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    dashboardUrl: Optional[str] = Field(default=None, description="Link to the dashboard in its native BI tool.")
-    externalUrl: Optional[str] = None
-    container: Optional[ContainerRef] = Field(default=None, description="The dashboard's parent container, if any.")
-    charts: Optional[List[ChartRef]] = Field(default=None, description="Charts shown on this dashboard.")
-    dashboards: Optional[List[DashboardRef]] = Field(
+    instance: str | None = None
+    displayName: str | None = None
+    description: str | None = None
+    dashboardUrl: str | None = Field(
+        default=None, description="Link to the dashboard in its native BI tool."
+    )
+    externalUrl: str | None = None
+    container: ContainerRef | None = Field(
+        default=None, description="The dashboard's parent container, if any."
+    )
+    charts: list[ChartRef] | None = Field(
+        default=None, description="Charts shown on this dashboard."
+    )
+    dashboards: list[DashboardRef] | None = Field(
         default=None, description="Other dashboards nested under this one."
     )
-    inputDatasets: Optional[List[DatasetRef]] = Field(
+    inputDatasets: list[DatasetRef] | None = Field(
         default=None, description="Datasets this dashboard is built from."
     )
-    properties: Optional[Dict[str, Any]] = None
+    properties: dict[str, Any] | None = None
 
 
 class QuerySubjectRef(DatasetRef):
     """A dataset (or, with `fieldPath`, one of its columns) that a QUERY reads."""
 
-    fieldPath: Optional[str] = None
+    fieldPath: str | None = None
 
 
 class QueryDoc(HasSubTypes, _AllowExtraFields):
@@ -556,28 +669,35 @@ class QueryDoc(HasSubTypes, _AllowExtraFields):
 
     kind: Literal["QUERY"]
     id: str = Field(description="Stable identifier, becomes urn:li:query:<id>.")
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
     statement: str = Field(description="The query text, e.g. a SQL SELECT statement.")
     language: str = Field(default="SQL", description="SQL or UNKNOWN.")
-    source: str = Field(default="MANUAL", description="MANUAL (hand-authored here) or SYSTEM (observed).")
-    subjects: Optional[List[QuerySubjectRef]] = Field(
+    source: str = Field(
+        default="MANUAL", description="MANUAL (hand-authored here) or SYSTEM (observed)."
+    )
+    subjects: list[QuerySubjectRef] | None = Field(
         default=None, description="Datasets/columns this query reads."
     )
 
 
 class IncidentStatusDoc(BaseModel):
     state: str = Field(default="ACTIVE", description="ACTIVE or RESOLVED.")
-    stage: Optional[str] = Field(
-        default=None, description="TRIAGE, INVESTIGATION, WORK_IN_PROGRESS, FIXED, or NO_ACTION_REQUIRED."
+    stage: str | None = Field(
+        default=None,
+        description="TRIAGE, INVESTIGATION, WORK_IN_PROGRESS, FIXED, or NO_ACTION_REQUIRED.",
     )
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class IncidentSourceDoc(BaseModel):
     type: str = Field(description="MANUAL or ASSERTION_FAILURE.")
-    sourceUrn: Optional[str] = Field(
-        default=None, description="Full URN of the triggering entity, e.g. an ASSERTION's urn, if type is ASSERTION_FAILURE."
+    sourceUrn: str | None = Field(
+        default=None,
+        description=(
+            "Full URN of the triggering entity, e.g. an ASSERTION's urn, "
+            "if type is ASSERTION_FAILURE."
+        ),
     )
 
 
@@ -590,22 +710,35 @@ class IncidentDoc(HasTags, _AllowExtraFields):
     type: str = Field(
         description="OPERATIONAL, FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM."
     )
-    customType: Optional[str] = Field(default=None, description="Free-text type name, required if type is CUSTOM.")
-    title: Optional[str] = None
-    description: Optional[str] = None
-    priority: Optional[int] = None
-    entities: List[str] = Field(description="Full URNs of the entities (usually datasets) affected.")
-    status: Optional[IncidentStatusDoc] = None
-    assignees: Optional[StringList] = Field(
+    customType: str | None = Field(
+        default=None, description="Free-text type name, required if type is CUSTOM."
+    )
+    title: str | None = None
+    description: str | None = None
+    priority: int | None = None
+    entities: list[str] = Field(
+        description="Full URNs of the entities (usually datasets) affected."
+    )
+    status: IncidentStatusDoc | None = None
+    assignees: StringList | None = Field(
         default=None, description="Owner names; converted to corpuser URNs if not already URNs."
     )
-    source: Optional[IncidentSourceDoc] = None
-    startedAt: Optional[int] = Field(default=None, description="Epoch millis.")
-    notes: Optional[StringList] = Field(default=None, description="Free-text notes about this incident.")
+    source: IncidentSourceDoc | None = None
+    startedAt: int | None = Field(default=None, description="Epoch millis.")
+    notes: StringList | None = Field(
+        default=None, description="Free-text notes about this incident."
+    )
 
 
 class DocumentDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasLinks,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A knowledge-base document (a runbook, a FAQ, an AI-context note, ...).
     `document` permits owners/tags/glossaryTerms/domains/links/
@@ -614,26 +747,40 @@ class DocumentDoc(
     kind: Literal["DOCUMENT"]
     id: str = Field(description="Stable identifier, becomes urn:li:document:<id>.")
     title: str
-    text: Optional[str] = Field(
+    text: str | None = Field(
         default=None,
-        description="Markdown body, stored natively in DataHub. Required unless externalUrl is set.",
+        description=(
+            "Markdown body, stored natively in DataHub. Required unless externalUrl is set."
+        ),
     )
     status: str = Field(default="PUBLISHED", description="PUBLISHED or UNPUBLISHED.")
     showInGlobalContext: bool = Field(
         default=True,
-        description="If false, only reachable via relatedAssets/relatedDocuments -- useful for AI-only context documents.",
+        description=(
+            "If false, only reachable via relatedAssets/relatedDocuments "
+            "-- useful for AI-only context documents."
+        ),
     )
-    platform: Optional[str] = Field(
-        default=None, description="The external system's platform, e.g. 'confluence'. Required if externalUrl is set."
+    platform: str | None = Field(
+        default=None,
+        description=(
+            "The external system's platform, e.g. 'confluence'. Required if externalUrl is set."
+        ),
     )
-    externalUrl: Optional[str] = Field(default=None, description="Link to the document in an external system.")
-    externalId: Optional[str] = None
-    parentDocument: Optional[str] = Field(default=None, description="id of a parent DOCUMENT, for hierarchical organization.")
-    relatedAssets: Optional[List[str]] = Field(
+    externalUrl: str | None = Field(
+        default=None, description="Link to the document in an external system."
+    )
+    externalId: str | None = None
+    parentDocument: str | None = Field(
+        default=None, description="id of a parent DOCUMENT, for hierarchical organization."
+    )
+    relatedAssets: list[str] | None = Field(
         default=None, description="Full URNs of related data assets (datasets, dashboards, ...)."
     )
-    relatedDocuments: Optional[StringList] = Field(default=None, description="ids of related DOCUMENT documents.")
-    properties: Optional[Dict[str, Any]] = None
+    relatedDocuments: StringList | None = Field(
+        default=None, description="ids of related DOCUMENT documents."
+    )
+    properties: dict[str, Any] | None = None
 
 
 class MLFeatureRef(BaseModel):
@@ -656,78 +803,117 @@ class MLModelGroupRef(BaseModel):
     platform: str
     name: str
     env: str = "PROD"
-    instance: Optional[str] = None
+    instance: str | None = None
 
 
 class MLFeatureTableDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A feature store's feature table (e.g. a Feast feature view)."""
 
     kind: Literal["MLFEATURE_TABLE"]
-    name: str = Field(description="Feature table identifier. Becomes part of the mlFeatureTable URN.")
+    name: str = Field(
+        description="Feature table identifier. Becomes part of the mlFeatureTable URN."
+    )
     platform: str = Field(description="The feature store platform, e.g. 'feast'.")
-    description: Optional[str] = None
-    properties: Optional[Dict[str, Any]] = None
-    mlFeatures: Optional[List[MLFeatureRef]] = Field(default=None, description="Features in this table.")
-    mlPrimaryKeys: Optional[List[MLPrimaryKeyRef]] = Field(
+    description: str | None = None
+    properties: dict[str, Any] | None = None
+    mlFeatures: list[MLFeatureRef] | None = Field(
+        default=None, description="Features in this table."
+    )
+    mlPrimaryKeys: list[MLPrimaryKeyRef] | None = Field(
         default=None, description="Primary key(s) of this table."
     )
 
 
 class MLFeatureDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A single feature in a feature store."""
 
     kind: Literal["MLFEATURE"]
-    featureNamespace: str = Field(description="The feature's namespace, usually its feature table's name.")
-    name: str
-    description: Optional[str] = None
-    dataType: Optional[str] = Field(
-        default=None, description="One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT."
+    featureNamespace: str = Field(
+        description="The feature's namespace, usually its feature table's name."
     )
-    properties: Optional[Dict[str, Any]] = None
-    sources: Optional[List[QuerySubjectRef]] = Field(
+    name: str
+    description: str | None = None
+    dataType: str | None = Field(
+        default=None,
+        description="One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT.",
+    )
+    properties: dict[str, Any] | None = None
+    sources: list[QuerySubjectRef] | None = Field(
         default=None, description="Dataset(s)/column(s) this feature is derived from."
     )
 
 
 class MLPrimaryKeyDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A feature table's primary key."""
 
     kind: Literal["MLPRIMARY_KEY"]
     featureNamespace: str
     name: str
-    description: Optional[str] = None
-    dataType: Optional[str] = None
-    properties: Optional[Dict[str, Any]] = None
-    sources: List[QuerySubjectRef] = Field(
+    description: str | None = None
+    dataType: str | None = None
+    properties: dict[str, Any] | None = None
+    sources: list[QuerySubjectRef] = Field(
         description="Dataset(s)/column(s) this primary key is derived from."
     )
 
 
 class MLModelGroupDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A group of related ML model versions (e.g. all versions of one MLflow registered model)."""
 
     kind: Literal["MLMODEL_GROUP"]
     name: str = Field(description="Model group identifier. Becomes part of the mlModelGroup URN.")
     platform: str
-    instance: Optional[str] = None
+    instance: str | None = None
     env: str = "PROD"
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    externalUrl: Optional[str] = None
-    properties: Optional[Dict[str, Any]] = None
-    container: Optional[ContainerRef] = Field(
+    displayName: str | None = None
+    description: str | None = None
+    externalUrl: str | None = None
+    properties: dict[str, Any] | None = None
+    container: ContainerRef | None = Field(
         default=None, description="The model group's parent container, if any."
     )
 
@@ -735,33 +921,33 @@ class MLModelGroupDoc(
 class IntendedUseDoc(BaseModel):
     """[MLMODEL model card] Intended and out-of-scope uses. Emits the `intendedUse` aspect."""
 
-    primaryUses: Optional[List[str]] = None
-    primaryUsers: Optional[List[str]] = None
-    outOfScopeUses: Optional[List[str]] = None
+    primaryUses: list[str] | None = None
+    primaryUsers: list[str] | None = None
+    outOfScopeUses: list[str] | None = None
 
 
 class CaveatDetailsDoc(BaseModel):
-    needsFurtherTesting: Optional[bool] = None
-    caveatDescription: Optional[str] = None
-    groupsNotRepresented: Optional[List[str]] = None
+    needsFurtherTesting: bool | None = None
+    caveatDescription: str | None = None
+    groupsNotRepresented: list[str] | None = None
 
 
 class EthicalConsiderationsDoc(BaseModel):
     """[MLMODEL model card] Emits the `mlModelEthicalConsiderations` aspect."""
 
-    data: Optional[List[str]] = None
-    humanLife: Optional[List[str]] = None
-    mitigations: Optional[List[str]] = None
-    risksAndHarms: Optional[List[str]] = None
-    useCases: Optional[List[str]] = None
+    data: list[str] | None = None
+    humanLife: list[str] | None = None
+    mitigations: list[str] | None = None
+    risksAndHarms: list[str] | None = None
+    useCases: list[str] | None = None
 
 
 class CaveatsAndRecommendationsDoc(BaseModel):
     """[MLMODEL model card] Emits the `mlModelCaveatsAndRecommendations` aspect."""
 
-    caveats: Optional[CaveatDetailsDoc] = None
-    recommendations: Optional[str] = None
-    idealDatasetCharacteristics: Optional[List[str]] = None
+    caveats: CaveatDetailsDoc | None = None
+    recommendations: str | None = None
+    idealDatasetCharacteristics: list[str] | None = None
 
 
 class MLModelDataDoc(BaseModel):
@@ -769,40 +955,51 @@ class MLModelDataDoc(BaseModel):
     the `mlModelTrainingData`/`mlModelEvaluationData` aspects."""
 
     dataset: DatasetRef
-    motivation: Optional[str] = None
-    preProcessing: Optional[List[str]] = None
+    motivation: str | None = None
+    preProcessing: list[str] | None = None
 
 
 class MLModelFactorDoc(BaseModel):
-    groups: Optional[List[str]] = None
-    instrumentation: Optional[List[str]] = None
-    environment: Optional[List[str]] = None
+    groups: list[str] | None = None
+    instrumentation: list[str] | None = None
+    environment: list[str] | None = None
 
 
 class MLModelFactorPromptsDoc(BaseModel):
     """[MLMODEL model card] Emits the `mlModelFactorPrompts` aspect."""
 
-    relevantFactors: Optional[List[MLModelFactorDoc]] = None
-    evaluationFactors: Optional[List[MLModelFactorDoc]] = None
+    relevantFactors: list[MLModelFactorDoc] | None = None
+    evaluationFactors: list[MLModelFactorDoc] | None = None
 
 
 class MLModelMetricsDoc(BaseModel):
     """[MLMODEL model card] Emits the `mlModelMetrics` aspect."""
 
-    performanceMeasures: Optional[List[str]] = None
-    decisionThreshold: Optional[List[str]] = None
+    performanceMeasures: list[str] | None = None
+    decisionThreshold: list[str] | None = None
 
 
 class MLModelSourceCodeDoc(BaseModel):
     type: str = Field(
-        description="TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, or ML_MODEL_SOURCE_CODE."
+        description=(
+            "TRAINING_PIPELINE_SOURCE_CODE, EVALUATION_PIPELINE_SOURCE_CODE, "
+            "or ML_MODEL_SOURCE_CODE."
+        )
     )
     sourceCodeUrl: str
 
 
 class MLModelDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """An ML model version. Its full "model card" is supported: intended use, ethical
     considerations, caveats/recommendations, training/evaluation data, factor prompts,
@@ -815,35 +1012,43 @@ class MLModelDoc(
     kind: Literal["MLMODEL"]
     name: str = Field(description="Model version identifier. Becomes part of the mlModel URN.")
     platform: str
-    instance: Optional[str] = None
+    instance: str | None = None
     env: str = "PROD"
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    type: Optional[str] = Field(default=None, description="Free-text model type, e.g. 'classification'.")
-    externalUrl: Optional[str] = None
-    properties: Optional[Dict[str, Any]] = None
-    hyperParameters: Optional[Dict[str, Any]] = None
-    modelGroup: Optional[MLModelGroupRef] = Field(default=None, description="The MLMODEL_GROUP this version belongs to.")
-    mlFeatures: Optional[List[MLFeatureRef]] = Field(default=None, description="Features this model consumes.")
-    container: Optional[ContainerRef] = Field(default=None, description="The model's parent container, if any.")
-    intendedUse: Optional[IntendedUseDoc] = None
-    ethicalConsiderations: Optional[EthicalConsiderationsDoc] = None
-    caveatsAndRecommendations: Optional[CaveatsAndRecommendationsDoc] = None
-    trainingData: Optional[List[MLModelDataDoc]] = None
-    evaluationData: Optional[List[MLModelDataDoc]] = None
-    factorPrompts: Optional[MLModelFactorPromptsDoc] = None
-    metrics: Optional[MLModelMetricsDoc] = None
-    sourceCode: Optional[List[MLModelSourceCodeDoc]] = None
+    displayName: str | None = None
+    description: str | None = None
+    type: str | None = Field(
+        default=None, description="Free-text model type, e.g. 'classification'."
+    )
+    externalUrl: str | None = None
+    properties: dict[str, Any] | None = None
+    hyperParameters: dict[str, Any] | None = None
+    modelGroup: MLModelGroupRef | None = Field(
+        default=None, description="The MLMODEL_GROUP this version belongs to."
+    )
+    mlFeatures: list[MLFeatureRef] | None = Field(
+        default=None, description="Features this model consumes."
+    )
+    container: ContainerRef | None = Field(
+        default=None, description="The model's parent container, if any."
+    )
+    intendedUse: IntendedUseDoc | None = None
+    ethicalConsiderations: EthicalConsiderationsDoc | None = None
+    caveatsAndRecommendations: CaveatsAndRecommendationsDoc | None = None
+    trainingData: list[MLModelDataDoc] | None = None
+    evaluationData: list[MLModelDataDoc] | None = None
+    factorPrompts: MLModelFactorPromptsDoc | None = None
+    metrics: MLModelMetricsDoc | None = None
+    sourceCode: list[MLModelSourceCodeDoc] | None = None
 
 
 class AiContextDoc(BaseModel):
     """Freeform AI-consumption hints (synonyms, instructions, examples). Emits the
     `aiContext` aspect. Valid on SEMANTIC_MODEL and METRIC."""
 
-    synonyms: Optional[List[str]] = None
-    instructions: Optional[str] = None
-    examples: Optional[List[str]] = None
-    customInstructions: Optional[str] = None
+    synonyms: list[str] | None = None
+    instructions: str | None = None
+    examples: list[str] | None = None
+    customInstructions: str | None = None
 
 
 class SemanticModelRef(BaseModel):
@@ -863,8 +1068,16 @@ class MetricRef(BaseModel):
 
 
 class SemanticModelDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a
     METRIC is defined against. `relationships` (aliased cross-dataset joins) and
@@ -876,22 +1089,30 @@ class SemanticModelDoc(
     platform: str = Field(description="e.g. 'dbt', 'looker'.")
     path: str = Field(description="Logical path/folder. Part of the semanticModel URN.")
     id: str = Field(description="Identifier. Part of the semanticModel URN.")
-    instance: Optional[str] = None
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    externalUrl: Optional[str] = None
-    nativeDefinition: Optional[str] = Field(
+    instance: str | None = None
+    displayName: str | None = None
+    description: str | None = None
+    externalUrl: str | None = None
+    nativeDefinition: str | None = Field(
         default=None, description="The model's native source definition, e.g. its dbt YAML/SQL."
     )
-    datasets: Optional[List[DatasetRef]] = Field(
+    datasets: list[DatasetRef] | None = Field(
         default=None, description="Datasets this semantic model is built from."
     )
-    aiContext: Optional[AiContextDoc] = None
+    aiContext: AiContextDoc | None = None
 
 
 class MetricDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A business metric definition (e.g. a dbt metric), always scoped to a
     SEMANTIC_MODEL."""
@@ -900,22 +1121,26 @@ class MetricDoc(
     platform: str
     path: str = Field(description="Logical path/folder. Part of the metric URN.")
     id: str = Field(description="Identifier. Part of the metric URN.")
-    instance: Optional[str] = None
-    semanticModel: SemanticModelRef = Field(description="The SEMANTIC_MODEL this metric is defined against.")
-    displayName: Optional[str] = None
-    description: Optional[str] = None
-    externalUrl: Optional[str] = None
-    expression: Optional[str] = Field(
+    instance: str | None = None
+    semanticModel: SemanticModelRef = Field(
+        description="The SEMANTIC_MODEL this metric is defined against."
+    )
+    displayName: str | None = None
+    description: str | None = None
+    externalUrl: str | None = None
+    expression: str | None = Field(
         default=None, description="The metric's SQL expression, e.g. 'count(x) / count(*)'."
     )
-    derivedFrom: Optional[List[MetricRef]] = Field(
+    derivedFrom: list[MetricRef] | None = Field(
         default=None, description="Other metrics this one is computed from."
     )
-    relatedMetrics: Optional[List[MetricRef]] = Field(default=None, description="Loosely related metrics.")
-    datasetUpstreams: Optional[List[DatasetRef]] = Field(
+    relatedMetrics: list[MetricRef] | None = Field(
+        default=None, description="Loosely related metrics."
+    )
+    datasetUpstreams: list[DatasetRef] | None = Field(
         default=None, description="Datasets this metric reads from directly."
     )
-    aiContext: Optional[AiContextDoc] = None
+    aiContext: AiContextDoc | None = None
 
 
 class MLModelRef(BaseModel):
@@ -924,26 +1149,28 @@ class MLModelRef(BaseModel):
     platform: str
     name: str
     env: str = "PROD"
-    instance: Optional[str] = None
+    instance: str | None = None
 
 
 class McpServerDoc(BaseModel):
     """If a SERVICE is itself an MCP server -- emits the mcpServerProperties aspect."""
 
     url: str
-    transport: Optional[str] = Field(default=None, description="HTTP, SSE, or WEBSOCKET.")
-    timeout: Optional[float] = None
-    customHeaders: Optional[Dict[str, str]] = None
+    transport: str | None = Field(default=None, description="HTTP, SSE, or WEBSOCKET.")
+    timeout: float | None = None
+    customHeaders: dict[str, str] | None = None
 
 
 class ServiceDefinitionDoc(BaseModel):
     """A service's machine-readable interface definition (e.g. an OpenAPI document),
     emits the serviceDefinition aspect."""
 
-    format: str = Field(description="OPENAPI, GRAPHQL_SDL, GRPC_PROTO, ASYNCAPI, JSON_SCHEMA, or OTHER.")
+    format: str = Field(
+        description="OPENAPI, GRAPHQL_SDL, GRPC_PROTO, ASYNCAPI, JSON_SCHEMA, or OTHER."
+    )
     rawSpec: str = Field(description="The raw definition text, e.g. an OpenAPI YAML document.")
-    version: Optional[str] = None
-    externalUrl: Optional[str] = None
+    version: str | None = None
+    externalUrl: str | None = None
 
 
 class RestApiDoc(BaseModel):
@@ -955,41 +1182,52 @@ class ApiSignatureDoc(BaseModel):
     """Only `schemaDefinition` (free text) is exposed -- structured input/output field
     lists are out of scope. See _PLANNING.md, Phase 5C."""
 
-    schemaDefinition: Optional[str] = None
+    schemaDefinition: str | None = None
 
 
 class RepositorySourceDoc(BaseModel):
-    externalUrl: Optional[str] = None
-    externalId: Optional[str] = None
+    externalUrl: str | None = None
+    externalId: str | None = None
 
 
 class SkillSourceRepositoryDoc(BaseModel):
-    repositoryUrn: Optional[str] = Field(
+    repositoryUrn: str | None = Field(
         default=None, description="id of a REPOSITORY document; converted to a repository URN."
     )
-    url: Optional[str] = None
-    path: Optional[str] = None
+    url: str | None = None
+    path: str | None = None
 
 
 class AIAgentSourceDoc(BaseModel):
     type: str = Field(description="SYSTEM, NATIVE, or EXTERNAL.")
-    clonedFrom: Optional[str] = Field(default=None, description="id of another AI_AGENT this one was cloned from.")
+    clonedFrom: str | None = Field(
+        default=None, description="id of another AI_AGENT this one was cloned from."
+    )
 
 
 class AIAgentDependenciesDoc(BaseModel):
-    skills: Optional[StringList] = Field(default=None, description="ids of AGENT_SKILL documents.")
-    tools: Optional[StringList] = Field(
+    skills: StringList | None = Field(default=None, description="ids of AGENT_SKILL documents.")
+    tools: StringList | None = Field(
         default=None, description="ids of API documents this agent invokes as tools."
     )
-    models: Optional[List[MLModelRef]] = Field(default=None, description="MLMODEL entities this agent relies on.")
+    models: list[MLModelRef] | None = Field(
+        default=None, description="MLMODEL entities this agent relies on."
+    )
 
 
 class DisplayPropertiesDoc(BaseModel):
-    colorHex: Optional[str] = None
+    colorHex: str | None = None
 
 
 class RepositoryDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasLinks,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A source code repository (e.g. a GitLab/GitHub project). `repository`
     permits owners/tags/glossaryTerms/domains/links/structuredProperties/subTypes,
@@ -998,22 +1236,32 @@ class RepositoryDoc(
     kind: Literal["REPOSITORY"]
     id: str = Field(description="Stable identifier, becomes urn:li:repository:<id>.")
     name: str
-    description: Optional[str] = None
-    platform: Optional[str] = Field(
-        default=None, description="e.g. 'gitlab', 'github' -- emits the dataPlatformInstance aspect."
+    description: str | None = None
+    platform: str | None = Field(
+        default=None,
+        description="e.g. 'gitlab', 'github' -- emits the dataPlatformInstance aspect.",
     )
-    instance: Optional[str] = None
-    defaultBranch: Optional[str] = None
-    languages: Optional[StringList] = None
-    license: Optional[str] = None
-    homepageUrl: Optional[str] = None
-    archived: Optional[bool] = None
-    source: Optional[RepositorySourceDoc] = None
-    forkOf: Optional[str] = Field(default=None, description="id of another REPOSITORY this one was forked from.")
+    instance: str | None = None
+    defaultBranch: str | None = None
+    languages: StringList | None = None
+    license: str | None = None
+    homepageUrl: str | None = None
+    archived: bool | None = None
+    source: RepositorySourceDoc | None = None
+    forkOf: str | None = Field(
+        default=None, description="id of another REPOSITORY this one was forked from."
+    )
 
 
 class ApiDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasLinks,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A callable API (e.g. a REST endpoint). `api` permits owners/tags/
     glossaryTerms/domains/links/structuredProperties/subTypes, but not
@@ -1022,19 +1270,25 @@ class ApiDoc(
     kind: Literal["API"]
     id: str = Field(description="Stable identifier, becomes urn:li:api:<id>.")
     name: str
-    description: Optional[str] = None
-    externalUrl: Optional[str] = None
-    sourceRepository: Optional[str] = Field(default=None, description="id of a REPOSITORY document.")
-    restApi: Optional[RestApiDoc] = None
-    signature: Optional[ApiSignatureDoc] = None
-    platform: Optional[str] = Field(
+    description: str | None = None
+    externalUrl: str | None = None
+    sourceRepository: str | None = Field(default=None, description="id of a REPOSITORY document.")
+    restApi: RestApiDoc | None = None
+    signature: ApiSignatureDoc | None = None
+    platform: str | None = Field(
         default=None, description="e.g. 'kong' -- emits the dataPlatformInstance aspect."
     )
-    instance: Optional[str] = None
+    instance: str | None = None
 
 
 class AgentSkillDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasLinks,
+    HasStructuredProps,
+    _AllowExtraFields,
 ):
     """A reusable capability an AI_AGENT can invoke. `agentSkill` permits
     owners/tags/glossaryTerms/domains/links/structuredProperties, but not
@@ -1043,18 +1297,24 @@ class AgentSkillDoc(
     kind: Literal["AGENT_SKILL"]
     id: str = Field(description="Stable identifier, becomes urn:li:agentSkill:<id>.")
     name: str
-    description: Optional[str] = None
-    instructions: Optional[str] = None
-    requiredTools: Optional[StringList] = Field(
+    description: str | None = None
+    instructions: str | None = None
+    requiredTools: StringList | None = Field(
         default=None, description="ids of API documents this skill requires."
     )
-    sourceRepository: Optional[SkillSourceRepositoryDoc] = None
-    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
-    instance: Optional[str] = None
+    sourceRepository: SkillSourceRepositoryDoc | None = None
+    platform: str | None = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: str | None = None
 
 
 class AIAgentDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasLinks, HasStructuredProps, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasLinks,
+    HasStructuredProps,
+    _AllowExtraFields,
 ):
     """An AI agent. `aiAgent` permits owners/tags/glossaryTerms/domains/links/
     structuredProperties, but not applications, deprecation, or subTypes."""
@@ -1062,14 +1322,14 @@ class AIAgentDoc(
     kind: Literal["AI_AGENT"]
     id: str = Field(description="Stable identifier, becomes urn:li:aiAgent:<id>.")
     name: str
-    tagline: Optional[str] = None
-    description: Optional[str] = None
-    instructions: Optional[str] = None
-    source: Optional[AIAgentSourceDoc] = None
-    dependencies: Optional[AIAgentDependenciesDoc] = None
-    displayProperties: Optional[DisplayPropertiesDoc] = None
-    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
-    instance: Optional[str] = None
+    tagline: str | None = None
+    description: str | None = None
+    instructions: str | None = None
+    source: AIAgentSourceDoc | None = None
+    dependencies: AIAgentDependenciesDoc | None = None
+    displayProperties: DisplayPropertiesDoc | None = None
+    platform: str | None = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: str | None = None
 
 
 class ServiceDoc(HasOwners, HasTags, HasSubTypes, _AllowExtraFields):
@@ -1079,20 +1339,32 @@ class ServiceDoc(HasOwners, HasTags, HasSubTypes, _AllowExtraFields):
     kind: Literal["SERVICE"]
     id: str = Field(description="Stable identifier, becomes urn:li:service:<id>.")
     displayName: str
-    description: Optional[str] = None
-    lifecycle: Optional[str] = Field(default=None, description="EXPERIMENTAL, PRODUCTION, or DEPRECATED.")
-    apis: Optional[StringList] = Field(default=None, description="ids of API documents this service exposes.")
-    sourceRepository: Optional[str] = Field(default=None, description="id of a REPOSITORY document.")
-    mcpServer: Optional[McpServerDoc] = None
-    definition: Optional[ServiceDefinitionDoc] = None
-    properties: Optional[Dict[str, Any]] = None
-    platform: Optional[str] = Field(default=None, description="Emits the dataPlatformInstance aspect.")
-    instance: Optional[str] = None
+    description: str | None = None
+    lifecycle: str | None = Field(
+        default=None, description="EXPERIMENTAL, PRODUCTION, or DEPRECATED."
+    )
+    apis: StringList | None = Field(
+        default=None, description="ids of API documents this service exposes."
+    )
+    sourceRepository: str | None = Field(default=None, description="id of a REPOSITORY document.")
+    mcpServer: McpServerDoc | None = None
+    definition: ServiceDefinitionDoc | None = None
+    properties: dict[str, Any] | None = None
+    platform: str | None = Field(default=None, description="Emits the dataPlatformInstance aspect.")
+    instance: str | None = None
 
 
 class DataProductDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A data product: a curated bundle of datasets/jobs presented as a
     single discoverable asset, with its own domain/tags/owners."""
@@ -1100,27 +1372,44 @@ class DataProductDoc(
     kind: Literal["DATA_PRODUCT"]
     id: str = Field(description="Stable identifier, becomes urn:li:dataProduct:<id>.")
     name: str
-    description: Optional[str] = None
-    assets: Optional[List[str]] = Field(
-        default=None, description="Full URNs of the entities (datasets, dataJobs, ...) that make up this product."
+    description: str | None = None
+    assets: list[str] | None = Field(
+        default=None,
+        description=(
+            "Full URNs of the entities (datasets, dataJobs, ...) that make up this product."
+        ),
     )
 
 
 class DataFlowDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
-    HasSubTypes, _AllowExtraFields,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
+    HasSubTypes,
+    _AllowExtraFields,
 ):
     """A pipeline (e.g. an Airflow DAG, a dbt project run)."""
 
     kind: Literal["DATA_FLOW"]
-    orchestrator: str = Field(description="e.g. 'airflow', 'dbt'. Becomes part of the dataFlow URN.")
+    orchestrator: str = Field(
+        description="e.g. 'airflow', 'dbt'. Becomes part of the dataFlow URN."
+    )
     flowId: str
-    cluster: str = Field(default="PROD", description="Deployment/cluster identifier, part of the dataFlow URN.")
+    cluster: str = Field(
+        default="PROD", description="Deployment/cluster identifier, part of the dataFlow URN."
+    )
     name: str
-    description: Optional[str] = None
-    project: Optional[str] = None
-    externalUrl: Optional[str] = None
-    container: Optional[ContainerRef] = Field(default=None, description="The pipeline's parent container, if any.")
+    description: str | None = None
+    project: str | None = None
+    externalUrl: str | None = None
+    container: ContainerRef | None = Field(
+        default=None, description="The pipeline's parent container, if any."
+    )
 
 
 class DataFlowRef(BaseModel):
@@ -1138,7 +1427,14 @@ class DataFlowJobRef(DataFlowRef):
 
 
 class DataJobDoc(
-    HasOwners, HasTags, HasTerms, HasDomain, HasApplications, HasLinks, HasDeprecation, HasStructuredProps,
+    HasOwners,
+    HasTags,
+    HasTerms,
+    HasDomain,
+    HasApplications,
+    HasLinks,
+    HasDeprecation,
+    HasStructuredProps,
     _AllowExtraFields,
 ):
     """A task within a pipeline (DATA_FLOW).
@@ -1151,32 +1447,44 @@ class DataJobDoc(
 
     kind: Literal["DATA_JOB"]
     jobId: str
-    dataFlow: DataFlowRef = Field(description="Reference to the parent DATA_FLOW this task belongs to.")
-    name: str
-    description: Optional[str] = None
-    type: Optional[str] = Field(default=None, description="The job's subtype, e.g. 'RawCopy', 'Transform'.")
-    externalUrl: Optional[str] = None
-    properties: Optional[Dict[str, Any]] = None
-    container: Optional[ContainerRef] = Field(default=None, description="The job's parent container, if any.")
-    inputDatasets: Optional[List[DatasetRef]] = None
-    outputDatasets: Optional[List[DatasetRef]] = None
-    inputDataJobs: Optional[List[DataFlowJobRef]] = Field(
-        default=None, description="Other DATA_JOBs this one depends on -- job-to-job DAG edges with no dataset in between."
+    dataFlow: DataFlowRef = Field(
+        description="Reference to the parent DATA_FLOW this task belongs to."
     )
-    fineGrainedLineages: Optional[List[FineGrainedLineageDoc]] = Field(
+    name: str
+    description: str | None = None
+    type: str | None = Field(
+        default=None, description="The job's subtype, e.g. 'RawCopy', 'Transform'."
+    )
+    externalUrl: str | None = None
+    properties: dict[str, Any] | None = None
+    container: ContainerRef | None = Field(
+        default=None, description="The job's parent container, if any."
+    )
+    inputDatasets: list[DatasetRef] | None = None
+    outputDatasets: list[DatasetRef] | None = None
+    inputDataJobs: list[DataFlowJobRef] | None = Field(
+        default=None,
+        description=(
+            "Other DATA_JOBs this one depends on -- "
+            "job-to-job DAG edges with no dataset in between."
+        ),
+    )
+    fineGrainedLineages: list[FineGrainedLineageDoc] | None = Field(
         default=None, description="Column-level lineage edges from inputDatasets to outputDatasets."
     )
 
 
 class CreatedDoc(BaseModel):
     timestampMillis: int
-    actor: Optional[str] = Field(default=None, description="Owner name; converted to a corpuser URN if not already one.")
+    actor: str | None = Field(
+        default=None, description="Owner name; converted to a corpuser URN if not already one."
+    )
 
 
 class RunEventDoc(BaseModel):
     status: str = Field(description="e.g. STARTED, COMPLETE, FAILURE.")
     timestampMillis: int
-    attempt: Optional[int] = None
+    attempt: int | None = None
 
 
 class DataProcessInstanceDoc(_AllowExtraFields):
@@ -1189,17 +1497,19 @@ class DataProcessInstanceDoc(_AllowExtraFields):
     id: str = Field(description="Stable identifier, becomes urn:li:dataProcessInstance:<id>.")
     name: str
     type: str = "BATCH_SCHEDULED"
-    externalUrl: Optional[str] = None
+    externalUrl: str | None = None
     created: CreatedDoc
-    parentTemplate: DataFlowJobRef = Field(description="Reference to the DATA_JOB this is a run of.")
-    inputs: Optional[List[DatasetRef]] = None
-    outputs: Optional[List[DatasetRef]] = None
-    runEvents: Optional[Annotated[List[RunEventDoc], BeforeValidator(_coerce_to_list)]] = None
+    parentTemplate: DataFlowJobRef = Field(
+        description="Reference to the DATA_JOB this is a run of."
+    )
+    inputs: list[DatasetRef] | None = None
+    outputs: list[DatasetRef] | None = None
+    runEvents: Annotated[list[RunEventDoc], BeforeValidator(_coerce_to_list)] | None = None
 
 
 class AssertionPropertiesDoc(BaseModel):
     name: str
-    dbt_test: Optional[str] = None
+    dbt_test: str | None = None
 
 
 class SchemaFieldSpecDoc(BaseModel):
@@ -1207,7 +1517,7 @@ class SchemaFieldSpecDoc(BaseModel):
 
     path: str
     type: str = "string"
-    nativeType: Optional[str] = None
+    nativeType: str | None = None
 
 
 class AssertionAssertionDoc(BaseModel):
@@ -1220,44 +1530,85 @@ class AssertionAssertionDoc(BaseModel):
     (`AssertionType.pdl`) in favor of `VOLUME`.
     """
 
-    type: str = Field(description="FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM -- selects which fields below apply.")
+    type: str = Field(
+        description=(
+            "FRESHNESS, VOLUME, SQL, FIELD, DATA_SCHEMA, or CUSTOM "
+            "-- selects which fields below apply."
+        )
+    )
     entityUrn: str = Field(description="Full URN of the dataset this assertion checks.")
 
     # FRESHNESS
-    freshnessType: Optional[str] = Field(default=None, description="[FRESHNESS] e.g. DATASET_CHANGE.")
-    scheduleType: Optional[str] = Field(default=None, description="[FRESHNESS] e.g. CRON.")
-    cron: Optional[str] = Field(default=None, description="[FRESHNESS] cron expression, if scheduleType is CRON.")
-    timezone: Optional[str] = Field(default=None, description="[FRESHNESS] IANA timezone for the cron schedule.")
+    freshnessType: str | None = Field(default=None, description="[FRESHNESS] e.g. DATASET_CHANGE.")
+    scheduleType: str | None = Field(default=None, description="[FRESHNESS] e.g. CRON.")
+    cron: str | None = Field(
+        default=None, description="[FRESHNESS] cron expression, if scheduleType is CRON."
+    )
+    timezone: str | None = Field(
+        default=None, description="[FRESHNESS] IANA timezone for the cron schedule."
+    )
 
     # VOLUME
-    volumeType: Optional[str] = Field(
-        default=None, description="[VOLUME] ROW_COUNT_TOTAL or ROW_COUNT_CHANGE -- reuses 'operator'/'value'/'changeType' below."
+    volumeType: str | None = Field(
+        default=None,
+        description=(
+            "[VOLUME] ROW_COUNT_TOTAL or ROW_COUNT_CHANGE -- "
+            "reuses 'operator'/'value'/'changeType' below."
+        ),
     )
 
     # SQL / VOLUME
-    sqlType: Optional[str] = Field(default=None, description="[SQL] e.g. METRIC.")
-    statement: Optional[str] = Field(default=None, description="[SQL] the SQL query to evaluate.")
-    operator: Optional[str] = Field(default=None, description="[SQL/FIELD/VOLUME] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL.")
-    value: Optional[Any] = Field(default=None, description="[SQL/VOLUME] the comparison value for 'operator'.")
-    changeType: Optional[str] = Field(default=None, description="[SQL/VOLUME] e.g. ABSOLUTE, PERCENTAGE.")
+    sqlType: str | None = Field(default=None, description="[SQL] e.g. METRIC.")
+    statement: str | None = Field(default=None, description="[SQL] the SQL query to evaluate.")
+    operator: str | None = Field(
+        default=None, description="[SQL/FIELD/VOLUME] e.g. GREATER_THAN, EQUAL_TO, NOT_NULL."
+    )
+    value: Any | None = Field(
+        default=None, description="[SQL/VOLUME] the comparison value for 'operator'."
+    )
+    changeType: str | None = Field(
+        default=None, description="[SQL/VOLUME] e.g. ABSOLUTE, PERCENTAGE."
+    )
 
     # FIELD
-    fieldType: Optional[str] = Field(default=None, description="[FIELD] FIELD_METRIC or FIELD_VALUES.")
-    fieldPath: Optional[str] = Field(default=None, description="[FIELD] the column this assertion checks.")
-    dataType: Optional[str] = Field(default=None, description="[FIELD] the column's DataHub schema type.")
-    nativeDataType: Optional[str] = Field(default=None, description="[FIELD] the column's native source type.")
-    metric: Optional[str] = Field(default=None, description="[FIELD, FIELD_METRIC] e.g. UNIQUE_PERCENTAGE.")
-    metricOperator: Optional[str] = Field(default=None, description="[FIELD, FIELD_METRIC] comparison operator for 'metric'.")
-    metricValue: Optional[Any] = Field(default=None, description="[FIELD, FIELD_METRIC] the comparison value.")
-    excludeNulls: Optional[bool] = Field(default=None, description="[FIELD, FIELD_VALUES] ignore nulls when checking 'operator'.")
+    fieldType: str | None = Field(default=None, description="[FIELD] FIELD_METRIC or FIELD_VALUES.")
+    fieldPath: str | None = Field(
+        default=None, description="[FIELD] the column this assertion checks."
+    )
+    dataType: str | None = Field(
+        default=None, description="[FIELD] the column's DataHub schema type."
+    )
+    nativeDataType: str | None = Field(
+        default=None, description="[FIELD] the column's native source type."
+    )
+    metric: str | None = Field(
+        default=None, description="[FIELD, FIELD_METRIC] e.g. UNIQUE_PERCENTAGE."
+    )
+    metricOperator: str | None = Field(
+        default=None, description="[FIELD, FIELD_METRIC] comparison operator for 'metric'."
+    )
+    metricValue: Any | None = Field(
+        default=None, description="[FIELD, FIELD_METRIC] the comparison value."
+    )
+    excludeNulls: bool | None = Field(
+        default=None, description="[FIELD, FIELD_VALUES] ignore nulls when checking 'operator'."
+    )
 
     # DATA_SCHEMA
-    schemaFields: Optional[List[SchemaFieldSpecDoc]] = Field(default=None, description="[DATA_SCHEMA] the expected columns.")
-    compatibility: Optional[str] = Field(default=None, description="[DATA_SCHEMA] e.g. EXACT_MATCH, SUPERSET.")
+    schemaFields: list[SchemaFieldSpecDoc] | None = Field(
+        default=None, description="[DATA_SCHEMA] the expected columns."
+    )
+    compatibility: str | None = Field(
+        default=None, description="[DATA_SCHEMA] e.g. EXACT_MATCH, SUPERSET."
+    )
 
     # CUSTOM
-    customType: Optional[str] = Field(default=None, description="[CUSTOM] free-text assertion type name.")
-    logic: Optional[str] = Field(default=None, description="[CUSTOM] free-text description of the custom check's logic.")
+    customType: str | None = Field(
+        default=None, description="[CUSTOM] free-text assertion type name."
+    )
+    logic: str | None = Field(
+        default=None, description="[CUSTOM] free-text description of the custom check's logic."
+    )
 
 
 class AssertionActionDoc(BaseModel):
@@ -1267,21 +1618,23 @@ class AssertionActionDoc(BaseModel):
 class AssertionActionsDoc(BaseModel):
     """Declarative on-failure/on-success actions. Emits the `assertionActions` aspect."""
 
-    onSuccess: Optional[List[AssertionActionDoc]] = None
-    onFailure: Optional[List[AssertionActionDoc]] = None
+    onSuccess: list[AssertionActionDoc] | None = None
+    onFailure: list[AssertionActionDoc] | None = None
 
 
 class AssertionDoc(HasOwners, HasTags, _AllowExtraFields):
-    """A data quality assertion (freshness, volume, SQL-based, field-level, schema, or custom check)."""
+    """A data quality assertion (freshness, volume, SQL-based, field-level, schema, or custom check)."""  # noqa: E501
 
     kind: Literal["ASSERTION"]
     id: str = Field(description="Stable identifier, becomes urn:li:assertion:<id>.")
-    description: Optional[str] = None
+    description: str | None = None
     sourceType: str = "NATIVE"
-    properties: Optional[AssertionPropertiesDoc] = None
+    properties: AssertionPropertiesDoc | None = None
     assertion: AssertionAssertionDoc
-    assertionNote: Optional[str] = Field(default=None, description="Free-text note about this assertion's most recent run.")
-    assertionActions: Optional[AssertionActionsDoc] = None
+    assertionNote: str | None = Field(
+        default=None, description="Free-text note about this assertion's most recent run."
+    )
+    assertionActions: AssertionActionsDoc | None = None
 
 
 class RawAspectDoc(BaseModel):
@@ -1301,10 +1654,10 @@ class RawAspectDoc(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     aspectName: str
-    dataset: Optional[DatasetRef] = None
-    assertionUrn: Optional[str] = None
-    dataProcessInstanceUrn: Optional[str] = None
-    entityUrn: Optional[str] = None
+    dataset: DatasetRef | None = None
+    assertionUrn: str | None = None
+    dataProcessInstanceUrn: str | None = None
+    entityUrn: str | None = None
 
 
 ENTITY_DOC_TYPES_BY_KIND = {
@@ -1341,48 +1694,48 @@ ENTITY_DOC_TYPES_BY_KIND = {
     "ASSERTION": AssertionDoc,
 }
 
-EntityDoc = Union[
-    DataPlatformDoc,
-    TagDoc,
-    GlossaryNodeDoc,
-    GlossaryTermDoc,
-    StructuredPropertyDoc,
-    DomainDoc,
-    ApplicationDoc,
-    ContainerDoc,
-    DatasetDoc,
-    ChartDoc,
-    DashboardDoc,
-    QueryDoc,
-    IncidentDoc,
-    DocumentDoc,
-    MLFeatureTableDoc,
-    MLFeatureDoc,
-    MLPrimaryKeyDoc,
-    MLModelGroupDoc,
-    MLModelDoc,
-    SemanticModelDoc,
-    MetricDoc,
-    RepositoryDoc,
-    ApiDoc,
-    AgentSkillDoc,
-    AIAgentDoc,
-    ServiceDoc,
-    DataProductDoc,
-    DataFlowDoc,
-    DataJobDoc,
-    DataProcessInstanceDoc,
-    AssertionDoc,
-]
+EntityDoc = (
+    DataPlatformDoc
+    | TagDoc
+    | GlossaryNodeDoc
+    | GlossaryTermDoc
+    | StructuredPropertyDoc
+    | DomainDoc
+    | ApplicationDoc
+    | ContainerDoc
+    | DatasetDoc
+    | ChartDoc
+    | DashboardDoc
+    | QueryDoc
+    | IncidentDoc
+    | DocumentDoc
+    | MLFeatureTableDoc
+    | MLFeatureDoc
+    | MLPrimaryKeyDoc
+    | MLModelGroupDoc
+    | MLModelDoc
+    | SemanticModelDoc
+    | MetricDoc
+    | RepositoryDoc
+    | ApiDoc
+    | AgentSkillDoc
+    | AIAgentDoc
+    | ServiceDoc
+    | DataProductDoc
+    | DataFlowDoc
+    | DataJobDoc
+    | DataProcessInstanceDoc
+    | AssertionDoc
+)
 
-ParsedDoc = Union[EntityDoc, RawAspectDoc]
+ParsedDoc = EntityDoc | RawAspectDoc
 
 
 class DocumentParseError(ValueError):
     """Raised when a YAML document doesn't match any known kind/aspectName shape."""
 
 
-def parse_document(raw: Dict[str, Any]) -> ParsedDoc:
+def parse_document(raw: dict[str, Any]) -> ParsedDoc:
     """Dispatch a raw YAML document dict to the correct Pydantic model."""
     if not isinstance(raw, dict):
         raise DocumentParseError(f"Expected a YAML mapping document, got {type(raw)}")
@@ -1392,8 +1745,7 @@ def parse_document(raw: Dict[str, Any]) -> ParsedDoc:
         model_cls = ENTITY_DOC_TYPES_BY_KIND.get(kind)
         if model_cls is None:
             raise DocumentParseError(
-                f"Unknown kind '{kind}'. Supported kinds: "
-                f"{sorted(ENTITY_DOC_TYPES_BY_KIND)}"
+                f"Unknown kind '{kind}'. Supported kinds: {sorted(ENTITY_DOC_TYPES_BY_KIND)}"
             )
         return model_cls.model_validate(raw)
 

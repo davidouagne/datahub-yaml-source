@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 from datetime import datetime, timezone
-from typing import FrozenSet, Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.sdk.document import Document
@@ -13,7 +13,9 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 # kwarg (unlike Dataset/Chart/Dashboard/DataFlow/DataJob) -- an
 # institutionalMemory aspect a document has still gets emitted, just via
 # `extra_aspects` instead of a constructor kwarg (see `common_sdk_kwargs()`).
-_DOCUMENT_NATIVE_KWARGS: FrozenSet[str] = frozenset({"owners", "tags", "terms", "domain", "subtype"})
+_DOCUMENT_NATIVE_KWARGS: frozenset[str] = frozenset(
+    {"owners", "tags", "terms", "domain", "subtype"}
+)
 
 # Without these, `create_document()`/`create_external_document()` stamp
 # `datetime.now()` on `created`/`lastModified` -- unlike every other SDK V2
@@ -54,7 +56,9 @@ def build_document(
         )
     else:
         if doc.text is None:
-            raise ValueError(f"{context} requires 'text' for a native document (no 'externalUrl' set)")
+            raise ValueError(
+                f"{context} requires 'text' for a native document (no 'externalUrl' set)"
+            )
         document = Document.create_document(
             id=doc.id,
             title=doc.title,

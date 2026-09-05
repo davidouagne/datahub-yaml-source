@@ -2,7 +2,10 @@ from setuptools import find_packages, setup
 
 setup(
     name="datahub-yaml-source",
-    version="0.1.0",
+    # Version is derived from Git tags by setuptools-scm; see
+    # [tool.setuptools_scm] in pyproject.toml. Do not add a static
+    # version= here -- the presence of that table is what activates the
+    # plugin, and a static value would shadow it.
     description="DataHub ingestion source that reads declarative YAML metadata files.",
     package_dir={"": "src"},
     packages=find_packages(where="src"),

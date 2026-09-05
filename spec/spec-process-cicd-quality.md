@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Code Quality (Ruff + mypy)
-version: 1.0
+version: 1.1
 date_created: 2026-09-05
 last_updated: 2026-09-05
 owner: David Ouagne
@@ -95,6 +95,9 @@ mypy_result: status   # advisory; surfaced in logs, not consumed as a gate
   not Python-version-sensitive at the project's `target-version` (`py310`), so no matrix.
 - **Network**: Outbound to the Python package index only, for dependency installation.
 - **Permissions**: Read-only `contents` (SEC-001).
+- **Checkout depth**: Both `actions/checkout` steps use `fetch-depth: 0` (full history + tags), so
+  `setuptools-scm` (`pyproject.toml` `[tool.setuptools_scm]`) can derive the package version during
+  `pip install -e ".[dev]"`; a shallow clone would resolve every install to the `0.0.0` fallback.
 
 ## Tooling Configuration (authoritative pointers)
 
@@ -196,6 +199,7 @@ protection configuration for `main`.
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-09-05 | Initial specification. Ruff (blocking: `check` + `format --check`) and mypy (advisory, `continue-on-error`) added as `.github/workflows/quality.yml`; `[tool.ruff]` / `[tool.mypy]` introduced in a new `pyproject.toml`; `ruff`/`mypy` pinned in `setup.py`'s `dev` extra. One-off `ruff format` + safe `ruff check --fix` applied across `src/`, `tests/`, `scripts/`. Recorded mypy baseline: 31 errors / 11 files. | David Ouagne |
+| 1.1 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: `pyproject.toml` gained a `[build-system]` + `[tool.setuptools_scm]` (issue #3), so the editable install now needs full history + tags to resolve a real version. | David Ouagne |
 
 ## Related Specifications
 

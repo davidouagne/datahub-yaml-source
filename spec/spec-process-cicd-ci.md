@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.1
+version: 1.2
 date_created: 2026-08-16
-last_updated: 2026-08-16
+last_updated: 2026-09-05
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -114,6 +114,11 @@ coverage_report: text           # Description: per-module coverage summary emitt
 - **Concurrency**: One in-flight run per ref; a new push cancels the previous run for the same ref (PERF-002).
 - **Resource Limits**: Standard hosted Linux runner; no elevated compute required (no compilation of native
   extensions beyond what `pip install` resolves from wheels).
+- **Checkout depth**: Every `actions/checkout` step uses `fetch-depth: 0` (full history + tags). The
+  package version is derived from Git tags by `setuptools-scm` (`pyproject.toml` `[tool.setuptools_scm]`);
+  under the default shallow clone `setuptools-scm` sees no tags and every install resolves to the
+  `0.0.0` fallback. This is a build-input requirement, not a behavioural one — the test suite itself
+  still contacts no network service.
 
 ### Environmental Constraints
 
@@ -245,6 +250,7 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 |---------|------|---------|--------|
 | 1.0 | 2026-08-16 | Initial specification, written against a repository with no existing CI workflow | David Ouagne |
 | 1.1 | 2026-08-16 | Corrected the Python matrix from 3.9–3.12 to 3.10–3.12: `acryl-datahub>=1.7.0`, a mandatory dependency, itself requires Python >=3.10 (confirmed via its PyPI classifiers), so a 3.9 leg was unsatisfiable. Marked the workflow as implemented at `.github/workflows/ci.yml`. | David Ouagne |
+| 1.2 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: the package version is now derived from Git tags by `setuptools-scm` (issue #3), which needs full history + tags rather than the default shallow clone. | David Ouagne |
 
 ## Related Specifications
 

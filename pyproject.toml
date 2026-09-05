@@ -1,7 +1,27 @@
-# Tool configuration only. Packaging is still owned by setup.py (there is
-# deliberately no [build-system] table here); this file exists so Ruff and
-# mypy have the standard home they look for first. See
-# spec/spec-process-cicd-quality.md for the rationale behind each choice.
+# setup.py still holds the package metadata (deps, extras, entry points);
+# this file adds the PEP 517 build-system and the tool config that Ruff,
+# mypy and setuptools-scm look for here first. The package version is not
+# written anywhere -- setuptools-scm derives it from Git tags at build
+# time (see [tool.setuptools_scm] below and
+# spec/spec-process-cicd-quality.md / spec-process-cicd-ci.md for the CI
+# `fetch-depth: 0` this needs).
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8,<9"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+# no-guess-dev: an untagged commit is X.Y.Z.post1.devN (explicitly "after
+#   the last release"), not X.Y.(Z+1).devN which would imply an unreleased
+#   future version that may never ship.
+# no-local-version: drop the +g<hash> local segment -- PyPI / TestPyPI
+#   reject local versions, so any non-tag build (e.g. a CI dev upload)
+#   stays valid. Clean tag builds are unaffected either way.
+# fallback_version: a build from a source archive with no .git and no
+#   SETUPTOOLS_SCM_PRETEND_VERSION degrades to 0.0.0 instead of hard-failing.
+version_scheme = "no-guess-dev"
+local_scheme = "no-local-version"
+fallback_version = "0.0.0"
 
 [tool.ruff]
 line-length = 100

@@ -27,6 +27,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        # Full history + tags so setuptools-scm derives the real version
+        # (pyproject.toml [tool.setuptools_scm]); a shallow clone would
+        # leave every install at the 0.0.0 fallback.
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
@@ -57,6 +62,11 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
+        # Full history + tags so setuptools-scm derives the real version
+        # (pyproject.toml [tool.setuptools_scm]); a shallow clone would
+        # leave every install at the 0.0.0 fallback.
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:

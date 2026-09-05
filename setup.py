@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from setuptools import find_packages, setup
+
+_long_description = Path(__file__).parent.joinpath("README.md").read_text(encoding="utf-8")
 
 setup(
     name="datahub-yaml-source",
@@ -7,6 +11,33 @@ setup(
     # version= here -- the presence of that table is what activates the
     # plugin, and a static value would shadow it.
     description="DataHub ingestion source that reads declarative YAML metadata files.",
+    long_description=_long_description,
+    long_description_content_type="text/markdown",
+    author="David Ouagne",
+    author_email="david.ouagne@aphp.fr",
+    license="Apache-2.0",
+    license_files=["LICENSE"],
+    url="https://github.com/davidouagne/datahub-yaml-source",
+    project_urls={
+        "Homepage": "https://github.com/davidouagne/datahub-yaml-source",
+        "Issues": "https://github.com/davidouagne/datahub-yaml-source/issues",
+        "Changelog": "https://github.com/davidouagne/datahub-yaml-source/releases",
+    },
+    keywords=["datahub", "metadata", "ingestion", "yaml", "metadata-as-code", "data-catalog"],
+    classifiers=[
+        # An untagged pre-1.0 connector maintained by one person, outside the
+        # DataHub Ingestion team -- mirrors yaml_source.py's @support_status.
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Database",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     # acryl-datahub>=1.7.0 itself requires Python >=3.10 (its PyPI

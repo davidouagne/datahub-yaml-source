@@ -1,0 +1,20 @@
+# setuptools-scm (pyproject.toml [tool.setuptools_scm]) turns on a file
+# finder that otherwise sweeps *every* Git-tracked path into the sdist.
+# Keep the sdist to what a consumer of the package actually needs; the
+# rest lives on GitHub.
+
+prune tests
+prune docs
+prune spec
+prune scripts
+prune .github
+
+exclude AGENTS.md
+exclude CLAUDE.md
+exclude _PLANNING.md
+exclude skills-lock.json
+exclude bash.exe.stackdump
+exclude .gitignore
+
+include LICENSE
+include README.md

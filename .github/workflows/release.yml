@@ -1,0 +1,127 @@
+name: Release
+
+# Implements the contract documented in spec/spec-process-cicd-release.md.
+# Keep the two in sync: any change to the trigger, jobs, gates or
+# permissions here should update that spec first, per its Change
+# Management section.
+#
+# Upstream gate: ci.yml only runs on branch pushes and PRs, never on a
+# tag, so this workflow re-runs the test suite itself against the tagged
+# commit before anything is built or published (see the `build` job).
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+# Nothing at the top level. Each job opts in to exactly what it needs;
+# only `pypi-publish` gets `id-token: write`, only `github-release` gets
+# `contents: write`.
+permissions: {}
+
+concurrency:
+  # One release per tag; never cancel a publish that is already running.
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build + verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history + tags so setuptools-scm derives the real version.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: setup.py
+
+      - name: Install (dev extras) + build front-end
+        run: |
+          pip install -e ".[dev]"
+          pip install build twine
+
+      - name: Run the test suite against the tagged commit
+        run: python -m pytest tests/unit tests/integration -q
+
+      - name: Build sdist + wheel
+        run: python -m build
+
+      - name: Verify the build matches the tag
+        run: |
+          ls -l dist/
+          tag="${GITHUB_REF_NAME#v}"
+          if [ ! -f "dist/datahub_yaml_source-${tag}.tar.gz" ]; then
+            echo "::error::built artifacts do not match tag ${GITHUB_REF_NAME}"
+            echo "::error::expected dist/datahub_yaml_source-${tag}.tar.gz -- a dirty"
+            echo "::error::tree or a tag not on a clean commit makes setuptools-scm"
+            echo "::error::append a dev/local segment."
+            exit 1
+          fi
+
+      - name: twine check
+        run: twine check --strict dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  pypi-publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The `pypi` environment carries a required-reviewer protection rule:
+    # the maintainer must approve this job before the (irreversible)
+    # upload runs. Its name is half of the PyPI Trusted Publisher config
+    # (see issue #8); keep it stable.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/datahub-yaml-source/
+    permissions:
+      # OIDC token for Trusted Publishing -- no API token, no secret.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub Release
+    needs: pypi-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            --latest \
+            dist/*

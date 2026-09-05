@@ -1,0 +1,33 @@
+# Categorisation for the auto-generated release notes that
+# `.github/workflows/release.yml` requests via `gh release create
+# --generate-notes`. GitHub groups merged PRs by their labels, in the
+# order listed here; the first matching category wins.
+
+changelog:
+  exclude:
+    labels:
+      - wayfinder:map
+      - wayfinder:research
+      - wayfinder:prototype
+      - wayfinder:grilling
+      - wayfinder:task
+      - question
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: 🚀 Features
+      labels:
+        - enhancement
+    - title: 🐛 Fixes
+      labels:
+        - bug
+    - title: 📚 Documentation
+      labels:
+        - documentation
+    - title: ⬆️ Dependencies
+      labels:
+        - dependencies
+    - title: Other Changes
+      labels:
+        - "*"

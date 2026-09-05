@@ -14,7 +14,20 @@ setup(
         # >=1.6.0 for the SDK V2 constructor kwargs the cross-cutting aspect
         # helpers in builders/common.py depend on (e.g. DataFlow/DataJob's
         # `parent_container=`, `links=`, `structured_properties=`).
-        "acryl-datahub>=1.7.0",
+        #
+        # Upper bound <1.7.0.5: the (still ExperimentalWarning) datahub.sdk.*
+        # surface this connector builds on takes undeprecated breaks inside
+        # the 1.7.0.x series --
+        #   * 1.7.0.5: SemanticModel.add_dataset stops accepting bare
+        #     dataset URNs (now needs a SemanticModelDataset), breaking
+        #     builders/semantic.py and the integration golden;
+        #   * 1.7.0.8: the SupportStatus enum is renamed
+        #     (CERTIFIED/INCUBATING/TESTING -> ALPHA/BETA/GA), breaking
+        #     yaml_source.py's @support_status at import.
+        # 1.7.0.4 is the last release the suite passes on. Lifting this cap
+        # means migrating both call sites (and regenerating the golden) --
+        # tracked as its own task, not folded in here.
+        "acryl-datahub>=1.7.0,<1.7.0.5",
         "pyyaml>=6.0",
         # models.py/loader.py/yaml_source_config.py import pydantic directly
         # for the config schema and validation. Only ever a transitive dep

@@ -23,6 +23,14 @@ jobs:
     name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Job-level permissions REPLACE the workflow-level grant, they do not
+    # merge -- so `contents: read` is restated here alongside the
+    # `id-token: write` that Codecov's OIDC upload needs. Only this job
+    # gets it; see spec/spec-process-cicd-codecov.md (SEC-002) and the
+    # Security Controls note in spec/spec-process-cicd-ci.md.
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -56,8 +64,22 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest tests/unit tests/integration \
-            --cov=datahub_yaml_source --cov-report=term-missing \
+            --cov=datahub_yaml_source --cov-report=term-missing --cov-report=xml \
             --cov-fail-under=80
+
+      # Reporting only -- Codecov never gates `main`; --cov-fail-under=80
+      # above is the coverage gate. All three matrix legs upload, tagged by
+      # Python version; Codecov merges them. OIDC auth (no CODECOV_TOKEN).
+      # `fail_ci_if_error: false` + `if: always()`: a Codecov outage, or a
+      # fork PR with no OIDC token, must never fail this job or `CI status`.
+      # Contract: spec/spec-process-cicd-codecov.md
+      - name: Upload coverage to Codecov
+        if: ${{ always() }}
+        uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+          flags: py${{ matrix.python-version }}
+          fail_ci_if_error: false
 
   minimal-install-check:
     name: minimal install (no extras)

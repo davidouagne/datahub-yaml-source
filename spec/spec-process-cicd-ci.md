@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.7
+version: 1.8
 date_created: 2026-08-16
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -287,6 +287,7 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | 1.5 | 2026-09-07 | Refreshed the `acryl-datahub` dependency-range Edge Case row: the floor is now `>=1.7.0.9,<1.8` (issue #12 lifted the `<1.7.0.5` stopgap and kept a `<1.8` bound). No workflow-file change. | David Ouagne |
 | 1.6 | 2026-09-07 | Added `mypy` to `main`'s required status checks (issue #13 promoted it to blocking). No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
 | 1.7 | 2026-09-07 | The `test` job will also emit `coverage.xml` (`--cov-report=xml`) and upload it to Codecov via `codecov/codecov-action` using GitHub OIDC (`id-token: write` on `test`; no stored token). Reporting only — no new required check, `--cov-fail-under=80` unchanged. Contract in the new `spec/spec-process-cicd-codecov.md`; the `ci.yml` change itself is deferred to wayfinder map issue #40's wiring ticket. This revision records the Secrets/Outputs/Security-Controls/Edge-Case impact and refreshes the stale "None yet" Related Specifications stub. | David Ouagne |
+| 1.8 | 2026-09-07 | Workflow-file change: the `test` job now runs `pytest ... --cov-report=xml`, sets job-level `permissions: {contents: read, id-token: write}`, and has a `codecov/codecov-action@v5` upload step (`use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, `if: always()`). Implements what 1.7 specified; `spec/spec-process-cicd-codecov.md` → 1.1 in the same change. `CI status` still aggregates only `test` + `minimal-install-check`; the Codecov step cannot fail the job. | David Ouagne |
 
 ## Related Specifications
 

@@ -1,0 +1,29 @@
+# Codecov behaviour for datahub-yaml-source.
+#
+# Reporting only: Codecov is NOT a required check on `main`. The coverage
+# gate is `pytest --cov-fail-under=80` in .github/workflows/ci.yml. Both
+# `project` and `patch` statuses are `informational`, so Codecov posts a
+# number but never a red X that blocks merge.
+#
+# Design contract: spec/spec-process-cicd-codecov.md
+
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  # `flags` in the layout is why all three Python matrix legs upload.
+  layout: "reach, diff, flags, files"
+  require_changes: true       # stay quiet on PRs that don't move coverage
+  after_n_builds: 3           # wait for py3.10 + py3.11 + py3.12 before settling
+
+github_checks:
+  annotations: false          # no inline "line not covered" marks on the diff

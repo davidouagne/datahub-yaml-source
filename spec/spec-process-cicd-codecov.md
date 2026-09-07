@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Coverage Reporting (Codecov)
-version: 1.0
+version: 1.1
 date_created: 2026-09-07
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -22,13 +22,13 @@ request targeting `main`; manual dispatch).
 
 **Target Environments**: None. Reporting only, no deployment target.
 
-> **Status**: The `.github/workflows/ci.yml` integration this document specifies is
-> **not yet implemented**. It lands in the wayfinder wiring ticket (map issue #40,
-> child "Wire codecov-action into the test job + commit codecov.yml"). Until that
-> merges, this document is the contract that change must satisfy, not a description
-> of a running integration. The Codecov side is already provisioned: the Codecov
-> GitHub App is installed on `davidouagne/datahub-yaml-source`, auth is GitHub
-> OIDC, and no upload token is stored (map issue #40, "Provision Codecov").
+> **Status**: Implemented — the upload step lives in `.github/workflows/ci.yml`'s
+> `test` job and `codecov.yml` sits at the repo root. This document is the design
+> contract those must satisfy; changes to either should keep the other in sync,
+> per Change Management below. The Codecov side is provisioned: the Codecov GitHub
+> App is installed on `davidouagne/datahub-yaml-source`, auth is GitHub OIDC, and
+> no upload token is stored. The README badge is added separately (map issue #40,
+> "README: add Codecov badge to the badge row").
 
 ## Execution Flow Diagram
 
@@ -48,14 +48,14 @@ graph TD
 
 ## Configuration (authoritative pointers)
 
-Two configuration surfaces, both landing in the wiring ticket:
+Two configuration surfaces:
 
 1. The upload step in `.github/workflows/ci.yml` (the `test` job).
 2. `codecov.yml` at the repository root — Codecov's own behaviour (commit
-   statuses, PR comment). Once committed, that file is authoritative for
-   everything in the "`codecov.yml` contents" table below; this spec records the
-   intent and rationale, the same way `spec/spec-process-cicd-ci.md` records the
-   intent behind `ci.yml`.
+   statuses, PR comment). That file is authoritative for everything in the
+   "`codecov.yml` contents" table below; this spec records the intent and
+   rationale, the same way `spec/spec-process-cicd-ci.md` records the intent
+   behind `ci.yml`.
 
 Codecov project settings live in the Codecov dashboard for
 `davidouagne/datahub-yaml-source`; this repo stores no Codecov API token, so they
@@ -97,8 +97,7 @@ python -m pytest tests/unit tests/integration \
 ```
 
 `coverage.xml` is written to the repo root and is a build artifact only — it is
-covered by `.gitignore` (`*.xml` is not currently ignored, so the wiring ticket
-adds a `coverage.xml` line).
+listed in `.gitignore`.
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
@@ -217,7 +216,7 @@ spec (drop `informational`) **and** a `main` branch-protection change
 
 ## Validation Criteria
 
-- **VLD-001**: After the wiring ticket merges, `.github/workflows/ci.yml`'s `test` job contains a `codecov/codecov-action@v5` step with `use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, and a job-level `permissions` block granting `contents: read` **and** `id-token: write`.
+- **VLD-001**: `.github/workflows/ci.yml`'s `test` job contains a `codecov/codecov-action@v5` step with `use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, and a job-level `permissions` block granting `contents: read` **and** `id-token: write`.
 - **VLD-002**: The pytest command in the `test` job passes `--cov-report=xml` alongside the existing `--cov-report=term-missing` and `--cov-fail-under=80`.
 - **VLD-003**: `codecov.yml` at the repo root sets `project` and `patch` statuses to `informational: true`, `comment.after_n_builds: 3`, `comment.require_changes: true`, `github_checks.annotations: false`.
 - **VLD-004**: `gh api repos/davidouagne/datahub-yaml-source/branches/main/protection` does not list any `codecov/*` context.
@@ -247,6 +246,7 @@ branch-protection change:
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. Codecov as **reporting-only** coverage publishing appended to CI's `test` job: `codecov/codecov-action@v5`, GitHub OIDC (`use_oidc: true`, `id-token: write` on `test`, no stored token), upload from all three Python matrix legs with `flags`, `fail_ci_if_error: false`. `codecov.yml` sets `project` / `patch` statuses `informational`, PR comment after 3 builds on change only, diff annotations off. `pytest --cov-fail-under=80` remains the coverage gate (`spec/spec-process-cicd-ci.md` REQ-004); no `codecov/*` check is required on `main`. Workflow, `codecov.yml`, and README changes land in a separate wiring ticket (wayfinder map issue #40). | David Ouagne |
+| 1.1 | 2026-09-07 | Implemented: the `codecov/codecov-action@v5` step and job-level `id-token: write` are in `ci.yml`'s `test` job, `--cov-report=xml` added to the pytest call, `codecov.yml` committed at the repo root, `coverage.xml` added to `.gitignore`. Status banner flipped from "not yet implemented" to "implemented"; future-tense wording in Configuration / VLD-001 made present-tense. README badge still pending (map issue #40). `ci.md` → 1.8 in the same change. | David Ouagne |
 
 ## Related Specifications
 

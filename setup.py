@@ -102,7 +102,7 @@ setup(
             # (see spec/spec-process-cicd-quality.md). Ruff is capped to a
             # minor because its lint rules shift between minors; local and CI
             # must agree on the exact ruleset.
-            "ruff>=0.12,<0.13",
+            "ruff>=0.12,<0.17",
             "mypy>=1.17",
             "types-PyYAML>=6.0",
         ],

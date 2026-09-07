@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.5
+version: 1.6
 date_created: 2026-08-16
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -193,16 +193,16 @@ maintainer with no second reviewer available:
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
-| Required status checks | exactly **`CI status`** (this workflow's aggregate gate) and **`ruff`** (`spec/spec-process-cicd-quality.md`) | The two blocking gates. Names are the check-run `name:` values, matched verbatim. |
+| Required status checks | exactly **`CI status`** (this workflow's aggregate gate), **`ruff`** and **`mypy`** (`spec/spec-process-cicd-quality.md`) | The three blocking gates. Names are the check-run `name:` values, matched verbatim. |
 | `strict` (require branch up to date before merge) | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
 | CodeQL / `Analyze (*)` | **not required** | Advisory only at this stage (map issue #1 Notes; `spec/spec-process-cicd-codeql.md`). |
-| `mypy (advisory)` | **not required** | `continue-on-error` job by design (`spec/spec-process-cicd-quality.md` REQ-006). |
 | `required_pull_request_reviews` | none | No second reviewer exists; a review requirement would be self-blocking. |
 | `enforce_admins` | `false` | The maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
 | `restrictions` | none | Single maintainer; no push allow-list needed. |
 
-Renaming the `CI status` or `ruff` check is a breaking change: update this list and re-apply the
-protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`.
+Renaming the `CI status`, `ruff` or `mypy` check is a breaking change: update this list and re-apply
+the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`.
+`mypy` was added to the set when it was promoted to blocking (issue #13).
 
 ## Compliance & Governance
 
@@ -273,6 +273,7 @@ protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/mai
 | 1.3 | 2026-09-07 | Dependent Workflows table: added Dependabot (`.github/dependabot.yml`, issue #6) as an upstream PR producer this workflow gates; refreshed the stale "Release/publish (not yet specified)" row to point at the now-existing `spec/spec-process-cicd-release.md`. No workflow-file change. | David Ouagne |
 | 1.4 | 2026-09-07 | Documented `main` branch protection (issue #9): new "Branch protection on `main`" subsection with the concrete config (required checks `CI status` + `ruff` only; `strict: false`; no required reviews; `enforce_admins: false`). Corrected the recurring `ci-status` → `CI status` conflation — branch protection matches the job's `name:` (`CI status`, with a space), not the job id `ci-status`. No workflow-file change. | David Ouagne |
 | 1.5 | 2026-09-07 | Refreshed the `acryl-datahub` dependency-range Edge Case row: the floor is now `>=1.7.0.9,<1.8` (issue #12 lifted the `<1.7.0.5` stopgap and kept a `<1.8` bound). No workflow-file change. | David Ouagne |
+| 1.6 | 2026-09-07 | Added `mypy` to `main`'s required status checks (issue #13 promoted it to blocking). No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
 
 ## Related Specifications
 

@@ -306,6 +306,7 @@ def test_build_assertion_custom():
                 "type": "CUSTOM",
                 "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
                 "customType": "GREAT_EXPECTATIONS",
+                "fieldPath": "patient_id",
                 "logic": "expect_column_values_to_not_be_null(patient_id)",
             },
         }
@@ -317,6 +318,31 @@ def test_build_assertion_custom():
     aspect = wus[0].metadata.aspect
     assert aspect.customAssertion.type == "GREAT_EXPECTATIONS"
     assert "not_be_null" in aspect.customAssertion.logic
+    # `field` is a schemaField URN string (not a SchemaFieldSpec), derived from
+    # the dataset URN + the column path.
+    assert aspect.customAssertion.field == (
+        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD),patient_id)"
+    )
+
+
+def test_build_assertion_custom_without_field():
+    doc = AssertionDoc.model_validate(
+        {
+            "kind": "ASSERTION",
+            "id": "id8b",
+            "assertion": {
+                "type": "CUSTOM",
+                "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,x,PROD)",
+                "customType": "GREAT_EXPECTATIONS",
+                "logic": "row_count > 0",
+            },
+        }
+    )
+    repo = ParsedRepository()
+    index = ReferenceIndex(repo)
+    report = YamlSourceReport()
+    wus = list(build_assertion(doc, index, report))
+    assert wus[0].metadata.aspect.customAssertion.field is None
 
 
 def test_build_assertion_emits_note_and_actions():

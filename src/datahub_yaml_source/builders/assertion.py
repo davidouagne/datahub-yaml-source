@@ -1,6 +1,8 @@
 import re
 from collections.abc import Iterable
+from typing import Any
 
+from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
     AssertionActionClass,
@@ -170,15 +172,11 @@ def _build_data_schema_assertion(doc: AssertionDoc) -> SchemaAssertionInfoClass:
 
 def _build_custom_assertion(doc: AssertionDoc) -> CustomAssertionInfoClass:
     a = doc.assertion
-    field_spec = (
-        SchemaFieldSpecClass(
-            path=a.fieldPath, type=a.dataType or "string", nativeType=a.nativeDataType or ""
-        )
-        if a.fieldPath
-        else None
-    )
+    # `CustomAssertionInfoClass.field` is a schemaField URN string, not a
+    # SchemaFieldSpec -- build the URN from the dataset URN + the column path.
+    field_urn = make_schema_field_urn(a.entityUrn, a.fieldPath) if a.fieldPath else None
     return CustomAssertionInfoClass(
-        type=a.customType or "CUSTOM", entity=a.entityUrn, field=field_spec, logic=a.logic or ""
+        type=a.customType or "CUSTOM", entity=a.entityUrn, field=field_urn, logic=a.logic or ""
     )
 
 
@@ -228,12 +226,15 @@ def build_assertion(
             }
         )
 
+    # The sub-assertion kwarg name is chosen from `_BUILDERS` at runtime; `Any`
+    # is the honest element type for that dispatch.
+    sub_assertion_kwarg: dict[str, Any] = {kwarg_name: sub_assertion}
     aspect = AssertionInfoClass(
         type=doc.assertion.type,
         description=doc.description,
         customProperties=custom_properties,
         source=AssertionSourceClass(type=doc.sourceType),
-        **{kwarg_name: sub_assertion},
+        **sub_assertion_kwarg,
     )
     yield mcp_workunit(entity_urn, aspect)
 

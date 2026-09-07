@@ -2,6 +2,7 @@ from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import DisplayPropertiesClass
+from datahub.metadata.urns import GlossaryTermUrn
 from datahub.sdk.glossary_node import GlossaryNode
 from datahub.sdk.glossary_term import GlossaryTerm
 
@@ -26,10 +27,12 @@ def _resolve_related_term_urns(
     report: YamlSourceReport,
     context: str,
     relation: str,
-) -> list[str] | None:
+) -> list[str | GlossaryTermUrn] | None:
+    # Returns URN strings; the `str | GlossaryTermUrn` element type just matches
+    # `GlossaryTerm`'s constructor params (a `list[str]` won't assign to them).
     if not term_ids:
         return None
-    urns = []
+    urns: list[str | GlossaryTermUrn] = []
     for term_id in term_ids:
         if not index.has_glossary_term(term_id):
             report.report_dangling_reference(

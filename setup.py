@@ -104,6 +104,7 @@ setup(
             # must agree on the exact ruleset.
             "ruff>=0.12,<0.13",
             "mypy>=1.17",
+            "types-PyYAML>=6.0",
         ],
     },
     entry_points={

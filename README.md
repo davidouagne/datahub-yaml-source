@@ -1,6 +1,7 @@
 # datahub-yaml-source
 
 [![CI](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml/badge.svg)](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/davidouagne/datahub-yaml-source/branch/main/graph/badge.svg)](https://codecov.io/gh/davidouagne/datahub-yaml-source)
 [![PyPI](https://img.shields.io/pypi/v/datahub-yaml-source)](https://pypi.org/project/datahub-yaml-source/)
 [![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/datahub-yaml-source/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/davidouagne/datahub-yaml-source/blob/main/LICENSE)

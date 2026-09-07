@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Coverage Reporting (Codecov)
-version: 1.1
+version: 1.2
 date_created: 2026-09-07
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -23,12 +23,12 @@ request targeting `main`; manual dispatch).
 **Target Environments**: None. Reporting only, no deployment target.
 
 > **Status**: Implemented — the upload step lives in `.github/workflows/ci.yml`'s
-> `test` job and `codecov.yml` sits at the repo root. This document is the design
-> contract those must satisfy; changes to either should keep the other in sync,
-> per Change Management below. The Codecov side is provisioned: the Codecov GitHub
-> App is installed on `davidouagne/datahub-yaml-source`, auth is GitHub OIDC, and
-> no upload token is stored. The README badge is added separately (map issue #40,
-> "README: add Codecov badge to the badge row").
+> `test` job, `codecov.yml` sits at the repo root, and the README badge row
+> carries the Codecov badge. This document is the design contract those must
+> satisfy; changes to any of them should keep the other in sync, per Change
+> Management below. The Codecov side is provisioned: the Codecov GitHub App is
+> installed on `davidouagne/datahub-yaml-source`, auth is GitHub OIDC, and no
+> upload token is stored.
 
 ## Execution Flow Diagram
 
@@ -247,6 +247,7 @@ branch-protection change:
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. Codecov as **reporting-only** coverage publishing appended to CI's `test` job: `codecov/codecov-action@v5`, GitHub OIDC (`use_oidc: true`, `id-token: write` on `test`, no stored token), upload from all three Python matrix legs with `flags`, `fail_ci_if_error: false`. `codecov.yml` sets `project` / `patch` statuses `informational`, PR comment after 3 builds on change only, diff annotations off. `pytest --cov-fail-under=80` remains the coverage gate (`spec/spec-process-cicd-ci.md` REQ-004); no `codecov/*` check is required on `main`. Workflow, `codecov.yml`, and README changes land in a separate wiring ticket (wayfinder map issue #40). | David Ouagne |
 | 1.1 | 2026-09-07 | Implemented: the `codecov/codecov-action@v5` step and job-level `id-token: write` are in `ci.yml`'s `test` job, `--cov-report=xml` added to the pytest call, `codecov.yml` committed at the repo root, `coverage.xml` added to `.gitignore`. Status banner flipped from "not yet implemented" to "implemented"; future-tense wording in Configuration / VLD-001 made present-tense. README badge still pending (map issue #40). `ci.md` → 1.8 in the same change. | David Ouagne |
+| 1.2 | 2026-09-07 | README badge row now carries the Codecov badge (`branch/main/graph/badge.svg`); verified rendering ~97% off the first `main` upload. Status banner updated — the whole destination on wayfinder map issue #40 is now reached. | David Ouagne |
 
 ## Related Specifications
 

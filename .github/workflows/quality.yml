@@ -52,14 +52,12 @@ jobs:
         run: ruff format --check --diff .
 
   mypy:
-    # Advisory only: mypy currently reports a known, non-empty error
-    # baseline (see the spec). continue-on-error keeps a regression
-    # visible in the run without blocking merge. Promoting this to a
-    # required check is tracked as fog on the wayfinder map (issue #1).
-    name: mypy (advisory)
+    # Blocking (issue #13). The mypy baseline was driven to zero, so a new
+    # type error now fails the build. This job's name is a required status
+    # check wired into branch protection for `main` -- keep it stable ("mypy").
+    name: mypy
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
         # Full history + tags so setuptools-scm derives the real version

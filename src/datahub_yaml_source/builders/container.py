@@ -21,7 +21,9 @@ from datahub_yaml_source.urns import (
 )
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
-NaturalKey = tuple[str, object, str, object, str]
+# Mirrors `urns.container_natural_key()`: (platform, database, schema-or-None).
+# `instance`/`env` are deliberately excluded -- they never affect a container's URN.
+NaturalKey = tuple[str, str, str | None]
 
 
 def topological_sort_containers(containers: list[ContainerDoc]) -> list[ContainerDoc]:

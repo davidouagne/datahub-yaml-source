@@ -162,6 +162,9 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         to check locally, and `load_repository()` reports any listing/read
         problem for them itself, per-URI, via `on_error`.
         """
+        # `path` is `str | list[str]` here: YamlSourceConfig's model validator
+        # (`_default_path_and_require_source`) has already defaulted or rejected None.
+        assert self.config.path is not None
         configured_paths = (
             self.config.path if isinstance(self.config.path, list) else [self.config.path]
         )
@@ -542,6 +545,8 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
                 return test_report
 
             problems = []
+            # See the note in `get_workunits_internal`: `path` is non-None post-validation.
+            assert config.path is not None
             entries = config.path if isinstance(config.path, list) else [config.path]
             for entry in entries:
                 if is_s3_uri(entry):

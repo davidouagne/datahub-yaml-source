@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Code Quality (Ruff + mypy)
-version: 1.1
+version: 1.2
 date_created: 2026-09-05
-last_updated: 2026-09-05
+last_updated: 2026-09-07
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, lint, format, typing, ruff, mypy]
 ---
@@ -10,9 +10,10 @@ tags: [process, cicd, github-actions, automation, python, lint, format, typing, 
 ## Workflow Overview
 
 **Purpose**: On every push and pull request, enforce a single lint + format standard for all
-first-party Python (`src/`, `tests/`, `scripts/`) via Ruff, and surface (without gating) static
-type-checking findings from mypy over the package source. Complements `spec/spec-process-cicd-ci.md`,
-which owns install/test/coverage; this workflow owns style and typing only.
+first-party Python (`src/`, `tests/`, `scripts/`) via Ruff, and enforce a clean static
+type-check of the package source with mypy. Complements `spec/spec-process-cicd-ci.md`,
+which owns install/test/coverage; this workflow owns style and typing only. Both jobs are
+blocking (issue #13 drove the mypy baseline to zero).
 
 **Trigger Events**: Push to `main`; pull request targeting `main`; manual dispatch.
 
@@ -26,19 +27,19 @@ which owns install/test/coverage; this workflow owns style and typing only.
 ```mermaid
 graph TD
     A[Trigger: push / PR to main / manual] --> B[ruff: check + format --check]
-    A --> C["mypy (advisory, continue-on-error)"]
+    A --> C[mypy: type-check src/]
 
     style A fill:#e1f5fe
     style B fill:#e8f5e8
-    style C fill:#fff3e0
+    style C fill:#e8f5e8
 ```
 
 ## Jobs & Dependencies
 
 | Job Name | Purpose | Blocking? | Dependencies | Execution Context |
 |----------|---------|-----------|--------------|-------------------|
-| `ruff` | `ruff check` (lint) + `ruff format --check` (format) over the repo. Its job name is the stable required-check string for branch protection on `main`. | Yes | None | Linux runner, Python 3.12 |
-| `mypy (advisory)` | Run mypy over `src/` using the `[tool.mypy]` config in `pyproject.toml`. Reports findings in the run log; never fails the workflow (`continue-on-error: true`). | No | None | Linux runner, Python 3.12 |
+| `ruff` | `ruff check` (lint) + `ruff format --check` (format) over the repo. Its job name is a stable required-check string for branch protection on `main`. | Yes | None | Linux runner, Python 3.12 |
+| `mypy` | Run mypy over `src/` using the `[tool.mypy]` config in `pyproject.toml`. Fails the workflow on any error. Its job name is a stable required-check string for branch protection on `main`. | Yes | None | Linux runner, Python 3.12 |
 
 ## Requirements Matrix
 
@@ -50,9 +51,9 @@ graph TD
 | REQ-002 | Enforce a single auto-format. | High | `ruff format --check .` reports no file would be reformatted. |
 | REQ-003 | Lint/format config is version-controlled and single-source. | High | `[tool.ruff]` lives in `pyproject.toml`; no competing `ruff.toml`/`setup.cfg` lint config exists. |
 | REQ-004 | Tool versions match between CI and a local `pip install -e ".[dev]"`. | Medium | `ruff` and `mypy` are pinned in `setup.py`'s `dev` extra; the workflow installs only that extra, no ad-hoc tool install. |
-| REQ-005 | Run mypy over the package source and surface its output. | Medium | `mypy` runs against `files = ["src"]`; findings appear in the job log. |
-| REQ-006 | mypy never blocks merge (for now). | High | The `mypy` job is `continue-on-error: true`; a non-zero mypy exit does not fail the workflow or any required check. |
-| REQ-007 | The blocking check has one stable name for branch protection. | High | The blocking job is named exactly `ruff`; renaming it is a breaking change requiring a branch-protection update (see `spec/spec-process-cicd-ci.md` REQ-007 for the analogous `ci-status`). |
+| REQ-005 | Type-check the package source with mypy. | High | `mypy` runs against `files = ["src"]` with the `[tool.mypy]` config; a clean tree exits 0. |
+| REQ-006 | A new type error blocks merge. | High | The `mypy` job has no `continue-on-error`; a non-zero mypy exit fails the workflow and the required check. The baseline is zero (issue #13). |
+| REQ-007 | Each blocking check has one stable name for branch protection. | High | The blocking jobs are named exactly `ruff` and `mypy`; renaming either is a breaking change requiring a branch-protection update (see `spec/spec-process-cicd-ci.md` "Branch protection on `main`"). |
 
 ### Security Requirements
 
@@ -134,15 +135,22 @@ schema + docs (per `AGENTS.md`) and confirming no drift.
 | `check_untyped_defs` | `true` | Type-check bodies of unannotated functions — most of the value on a codebase with sparse annotations. |
 | `warn_unused_ignores`, `warn_redundant_casts` | `true` | Low-noise staleness detectors. |
 | overrides: `datahub.*`, `deepdiff.*` | `ignore_missing_imports = true` | `acryl-datahub` ships partial/absent type information; without this the log is dominated by import errors rather than findings about our code. |
-| `strict` | *not set* | Advisory job; a strict baseline would be noise, not signal. Tightening toward strict is tracked as fog on the wayfinder map. |
+| `strict` | *not set* | A strict baseline would be noise on a codebase with sparse annotations. Tightening toward strict, once the SDK's own types improve, is a possible future step. |
 
-### Known mypy baseline
+### mypy baseline: zero (issue #13)
 
-At v1.0 of this spec, `mypy` reports **31 errors across 11 files** (chiefly `arg-type` mismatches
-where our models pass `list[str]` / `str | None` into `acryl-datahub` SDK constructors that expect
-`list[str | SomeUrn]` / `str`). This is recorded, not suppressed: the job is advisory precisely so
-this baseline is visible and can be driven down before mypy is promoted to blocking. There is no
-mypy baseline/ignore file and no `# type: ignore` sweep.
+At v1.0–1.1 of this spec `mypy` reported **31 errors across 11 files** (all pre-existing; it was the
+first time mypy had run on the repo). Issue #13 drove that to **zero** and flipped the job to
+blocking. The 31 broke down as: `list[str]` passed where the SDK types `list[str | SomeUrn]` (fixed
+by widening our helper return annotations); `str | None` reaching a `list[str]` / `str` param (fixed
+with explicit guards / `assert`s documenting a validator invariant); `*Doc` passed where a `*Ref`
+was typed (fixed with structural `Protocol`s in `urns.py`); `AssertionInfoClass(**payload)` (an
+intermediate `dict[str, Any]`); a stale 5-tuple `NaturalKey` alias (aligned to the real 3-tuple); a
+duplicate `DisplayPropertiesDoc` class (deleted); `types-PyYAML` added to the `dev` extra; and one
+genuine bug — a CUSTOM assertion passed a `SchemaFieldSpec` where `field=` wants a schemaField URN
+string. No `mypy` baseline/ignore file, and **no `# type: ignore` comments** — every error was
+resolved by a real annotation, guard, `cast`, or fix. `warn_unused_ignores` stays on so any future
+suppression can't silently rot.
 
 ## Error Handling Strategy
 
@@ -150,7 +158,7 @@ mypy baseline/ignore file and no `# type: ignore` sweep.
 |------------|----------|------------------|
 | Lint violation | Fail the `ruff` job | Run `ruff check --fix .` locally; hand-fix what `--fix` won't. |
 | Formatting difference | Fail the `ruff` job | Run `ruff format .` locally and commit. |
-| mypy error(s) | Logged; job still succeeds (`continue-on-error`) | Address opportunistically; drives the baseline in this spec down over time. |
+| mypy error(s) | Fail the `mypy` job | Fix the annotation/guard, or (last resort, with a justifying comment) `# type: ignore[<code>]`. |
 | Dependency install failure | Fail the affected job | Investigate resolution against `setup.py`. |
 
 ## Quality Gates
@@ -159,7 +167,7 @@ mypy baseline/ignore file and no `# type: ignore` sweep.
 |------|----------|---------------------|
 | Lint | `ruff check .` clean | None; rule-set changes require updating this spec. |
 | Format | `ruff format --check .` clean | None. |
-| Types | mypy run completes and output is captured | Never a gate at this spec version; promotion requires a spec update. |
+| Types | `mypy` exits 0 over `src/` | None; the baseline is zero. New errors must be fixed, not suppressed without cause. |
 
 ## Integration Points
 
@@ -167,15 +175,15 @@ mypy baseline/ignore file and no `# type: ignore` sweep.
 
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
-| Branch protection on `main` | Consumes the `ruff` check as a required status check | GitHub branch protection API (see the branch-protection ticket on wayfinder map issue #1) |
+| Branch protection on `main` | Consumes both `ruff` and `mypy` as required status checks | GitHub branch protection API (see `spec/spec-process-cicd-ci.md` "Branch protection on `main`") |
 | `spec/spec-process-cicd-ci.md` (CI) | Sibling; disjoint responsibility (install/test/coverage). Both gate `main`. | Same trigger events |
 
 ## Validation Criteria
 
 - **VLD-001**: On a branch with a deliberate lint violation, the `ruff` job fails.
 - **VLD-002**: On a branch with an unformatted file, the `ruff` job fails with a diff in the log.
-- **VLD-003**: On a branch that adds a new mypy error, the workflow still concludes successfully and
-  the `mypy (advisory)` job shows the error in its log.
+- **VLD-003**: On a branch that adds a new mypy error, the `mypy` job fails and the workflow
+  concludes unsuccessfully.
 - **VLD-004**: No job in this workflow references a secret.
 - **VLD-005**: `pip install -e ".[dev]"` on a clean checkout provides `ruff` and `mypy` at the
   versions the workflow runs.
@@ -191,8 +199,8 @@ mypy baseline/ignore file and no `# type: ignore` sweep.
 4. **Testing**: Confirm the Validation Criteria on a trial PR.
 5. **Deployment**: Merge once the trial run conforms.
 
-Renaming the `ruff` job, or promoting `mypy` to blocking, additionally requires updating the branch
-protection configuration for `main`.
+Renaming the `ruff` or `mypy` job additionally requires updating the branch protection configuration
+for `main` (its required status checks match job names verbatim).
 
 ### Version History
 
@@ -200,6 +208,7 @@ protection configuration for `main`.
 |---------|------|---------|--------|
 | 1.0 | 2026-09-05 | Initial specification. Ruff (blocking: `check` + `format --check`) and mypy (advisory, `continue-on-error`) added as `.github/workflows/quality.yml`; `[tool.ruff]` / `[tool.mypy]` introduced in a new `pyproject.toml`; `ruff`/`mypy` pinned in `setup.py`'s `dev` extra. One-off `ruff format` + safe `ruff check --fix` applied across `src/`, `tests/`, `scripts/`. Recorded mypy baseline: 31 errors / 11 files. | David Ouagne |
 | 1.1 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: `pyproject.toml` gained a `[build-system]` + `[tool.setuptools_scm]` (issue #3), so the editable install now needs full history + tags to resolve a real version. | David Ouagne |
+| 1.2 | 2026-09-07 | **mypy promoted to blocking** (issue #13). Baseline driven 31 → 0 with real fixes (no `# type: ignore`, no baseline file); one genuine bug fixed on the way (CUSTOM assertion `field=`). Job renamed `mypy (advisory)` → `mypy`, `continue-on-error` removed. `types-PyYAML` added to the `dev` extra. `mypy` added to `main`'s required status checks alongside `ruff`. | David Ouagne |
 
 ## Related Specifications
 

@@ -9,7 +9,7 @@ These models only describe the on-disk shape of the YAML. Translation into
 DataHub aspects/URNs happens in `datahub_yaml_source.builders.*`.
 """
 
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
@@ -1272,10 +1272,6 @@ class AIAgentDependenciesDoc(BaseModel):
     )
 
 
-class DisplayPropertiesDoc(BaseModel):
-    colorHex: str | None = None
-
-
 class RepositoryDoc(
     HasOwners,
     HasTags,
@@ -1717,7 +1713,7 @@ class RawAspectDoc(BaseModel):
     entityUrn: str | None = None
 
 
-ENTITY_DOC_TYPES_BY_KIND = {
+ENTITY_DOC_TYPES_BY_KIND: dict[str, type[BaseModel]] = {
     "DATA_PLATFORM": DataPlatformDoc,
     "TAG": TagDoc,
     "GLOSSARY_NODE": GlossaryNodeDoc,
@@ -1804,7 +1800,9 @@ def parse_document(raw: dict[str, Any]) -> ParsedDoc:
             raise DocumentParseError(
                 f"Unknown kind '{kind}'. Supported kinds: {sorted(ENTITY_DOC_TYPES_BY_KIND)}"
             )
-        return model_cls.model_validate(raw)
+        # `ENTITY_DOC_TYPES_BY_KIND` maps each kind to its own `EntityDoc` member;
+        # that value type can't be expressed as a useful mypy annotation on the dict.
+        return cast("ParsedDoc", model_cls.model_validate(raw))
 
     if "aspectName" in raw:
         return RawAspectDoc.model_validate(raw)

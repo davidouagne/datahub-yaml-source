@@ -84,7 +84,7 @@ A glossary category/folder that groups related glossary terms.
 | `name` | string | **yes** | - |  |
 | `definition` | string | no | - |  |
 | `parentNode` | string | no | - | id of a parent GLOSSARY_NODE, for nested categories. |
-| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+| `displayProperties` | [DisplayPropertiesDoc](#displaypropertiesdoc) | no | - |  |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 
@@ -112,7 +112,7 @@ A glossary term. Referenced elsewhere via `glossaryTerms: [<id>]`.
 | `termSource` | string | no | - | e.g. 'EXTERNAL' or 'INTERNAL'. |
 | `sourceRef` | string | no | - | Name of the external source this term came from, if termSource is EXTERNAL. |
 | `sourceUrl` | string | no | - |  |
-| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+| `displayProperties` | [DisplayPropertiesDoc](#displaypropertiesdoc) | no | - |  |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 
@@ -155,7 +155,7 @@ A business domain, used to group related datasets/data products. Referenced else
 | `name` | string | **yes** | - |  |
 | `description` | string | no | - |  |
 | `parentDomain` | string | no | - | id of a parent DOMAIN, for nested domain trees. |
-| `displayProperties` | DisplayPropertiesDoc | no | - |  |
+| `displayProperties` | [DisplayPropertiesDoc](#displaypropertiesdoc) | no | - |  |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 
@@ -1211,6 +1211,8 @@ Only `schemaDefinition` (free text) is exposed -- structured input/output field 
 | `models` | list of [MLModelRef](#mlmodelref) | no | - | MLMODEL entities this agent relies on. |
 
 ### DisplayPropertiesDoc
+
+Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect. (`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an icon library/name/style triple with no natural single-field shorthand.)
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |

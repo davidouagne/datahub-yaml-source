@@ -85,14 +85,15 @@ checks CI runs (`.github/workflows/quality.yml`, contract in
 ```bash
 ruff check .            # lint (blocking in CI)
 ruff format --check .   # formatting (blocking in CI); drop --check to apply
-mypy                    # type check over src/ (advisory in CI, not a gate)
+mypy                    # type check over src/ (blocking in CI)
 ```
 
 `ruff check --fix .` auto-fixes most lint findings. `ruff` config
 (`[tool.ruff]`, line length 100, target `py310`) and `mypy` config
-(`[tool.mypy]`, `src/` only, non-strict) both live in `pyproject.toml`. mypy
-currently has a known non-empty error baseline — see the spec — so a new mypy
-error won't fail CI, but don't add to it.
+(`[tool.mypy]`, `src/` only, non-strict) both live in `pyproject.toml`. The mypy
+baseline is zero — `mypy` must exit clean before a PR can merge. Fix a new error
+with a real annotation/guard; a `# type: ignore[<code>]` is a last resort and
+needs a one-line reason.
 
 ## Submitting changes
 

@@ -99,7 +99,6 @@ def build_dataset(
     context = f"DATASET '{doc.name}'"
     common = common_sdk_kwargs(doc, index, report, context)
 
-    parent_container = None
     if doc.container is not None:
         if not index.has_container(doc.container):
             report.report_dangling_reference(
@@ -107,7 +106,10 @@ def build_dataset(
                 f"(platform={doc.container.platform}, database={doc.container.database}, "
                 f"schema={doc.container.schema_name})"
             )
-        parent_container = container_key(doc.container)
+        # `parent_container=` defaults to a private `Unset` sentinel, not `None`;
+        # passing `None` emits an unwanted empty `browsePathsV2` (see _PLANNING.md).
+        # Only include it when a container is actually declared -- same as chart.py.
+        common["parent_container"] = container_key(doc.container)
 
     schema_metadata = None
     if doc.schema_block is not None:
@@ -124,7 +126,6 @@ def build_dataset(
         display_name=doc.displayName,
         external_url=doc.externalUrl,
         custom_properties=stringify_custom_properties(doc.properties),
-        parent_container=parent_container,
         schema=schema_metadata,
         upstreams=upstreams,
         view_definition=(build_view_properties(doc.viewProperties) if doc.viewProperties else None),

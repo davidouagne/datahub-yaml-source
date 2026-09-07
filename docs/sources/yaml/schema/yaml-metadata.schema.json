@@ -324,7 +324,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__2"
+              "$ref": "#/$defs/DisplayPropertiesDoc"
             },
             {
               "type": "null"
@@ -3948,6 +3948,25 @@
       "title": "DeprecationDoc",
       "type": "object"
     },
+    "DisplayPropertiesDoc": {
+      "description": "Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.\n(`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an\nicon library/name/style triple with no natural single-field shorthand.)",
+      "properties": {
+        "colorHex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Colorhex"
+        }
+      },
+      "title": "DisplayPropertiesDoc",
+      "type": "object"
+    },
     "DocumentDoc": {
       "additionalProperties": true,
       "description": "A knowledge-base document (a runbook, a FAQ, an AI-context note, ...).\n`document` permits owners/tags/glossaryTerms/domains/links/\nstructuredProperties/subTypes, but not applications or deprecation.",
@@ -4309,7 +4328,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
+              "$ref": "#/$defs/DisplayPropertiesDoc"
             },
             {
               "type": "null"
@@ -4632,7 +4651,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
+              "$ref": "#/$defs/DisplayPropertiesDoc"
             },
             {
               "type": "null"
@@ -4935,7 +4954,7 @@
         "displayProperties": {
           "anyOf": [
             {
-              "$ref": "#/$defs/datahub_yaml_source__models__DisplayPropertiesDoc__1"
+              "$ref": "#/$defs/DisplayPropertiesDoc"
             },
             {
               "type": "null"
@@ -9005,43 +9024,6 @@
         "viewLogic"
       ],
       "title": "ViewPropertiesDoc",
-      "type": "object"
-    },
-    "datahub_yaml_source__models__DisplayPropertiesDoc__1": {
-      "description": "Colour surfaced in the DataHub UI. Emits the `displayProperties` aspect.\n(`icon` is not supported yet -- DataHub's `IconPropertiesClass` needs an\nicon library/name/style triple with no natural single-field shorthand.)",
-      "properties": {
-        "colorHex": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Colorhex"
-        }
-      },
-      "title": "DisplayPropertiesDoc",
-      "type": "object"
-    },
-    "datahub_yaml_source__models__DisplayPropertiesDoc__2": {
-      "properties": {
-        "colorHex": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Colorhex"
-        }
-      },
-      "title": "DisplayPropertiesDoc",
       "type": "object"
     }
   }

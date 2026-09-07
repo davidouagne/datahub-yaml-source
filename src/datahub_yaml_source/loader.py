@@ -17,7 +17,7 @@ reason.
 import logging
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -316,7 +316,7 @@ def discover_yaml_files(root: str | Path, aws_connection: Any | None = None) -> 
 
 
 def load_repository(
-    roots: str | Path | list[str | Path],
+    roots: str | Path | Sequence[str | Path],
     on_error: OnErrorCallback,
     on_file_scanned: OnFileScannedCallback | None = None,
     on_unknown_fields: OnUnknownFieldsCallback | None = None,
@@ -334,7 +334,7 @@ def load_repository(
     `on_unknown_fields` and still processed, ignoring only that field.
     """
     repository = ParsedRepository()
-    root_list = roots if isinstance(roots, list) else [roots]
+    root_list = [roots] if isinstance(roots, str | Path) else list(roots)
 
     seen_uris: set = set()
     for root in root_list:

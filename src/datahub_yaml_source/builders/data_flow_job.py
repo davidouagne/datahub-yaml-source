@@ -2,6 +2,7 @@ from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import ContainerClass
+from datahub.metadata.urns import DatasetUrn
 from datahub.sdk.dataflow import DataFlow
 from datahub.sdk.datajob import DataJob
 
@@ -55,8 +56,9 @@ def build_data_job(
     context = f"DATA_JOB '{doc.jobId}'"
     common = common_sdk_kwargs(doc, index, report, context)
 
-    input_urns = [dataset_urn(ref) for ref in (doc.inputDatasets or [])]
-    output_urns = [dataset_urn(ref) for ref in (doc.outputDatasets or [])]
+    # `str | DatasetUrn` element type matches DataJob's inlets/outlets params.
+    input_urns: list[str | DatasetUrn] = [dataset_urn(ref) for ref in (doc.inputDatasets or [])]
+    output_urns: list[str | DatasetUrn] = [dataset_urn(ref) for ref in (doc.outputDatasets or [])]
     input_job_urns = [data_job_urn(ref) for ref in (doc.inputDataJobs or [])]
     fine_grained = build_fine_grained_lineage_list(doc.fineGrainedLineages)
 

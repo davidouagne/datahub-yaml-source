@@ -11,6 +11,8 @@ emit a warning about a dangling reference (e.g. a `tags: [nope]` pointing at
 a tag that was never declared as its own `TAG` document).
 """
 
+from typing import Protocol
+
 from datahub.emitter.mce_builder import (
     make_data_platform_urn,
     make_dataplatform_instance_urn,
@@ -55,11 +57,7 @@ from datahub_yaml_source.models import (
     DashboardRef,
     DataFlowJobRef,
     DataFlowRef,
-    DatasetFieldRef,
-    DatasetRef,
-    MLFeatureRef,
     MLModelGroupRef,
-    MLPrimaryKeyRef,
 )
 
 
@@ -69,7 +67,23 @@ def _passthrough_if_urn(value: str, build) -> str:
     return build(value)
 
 
-def dataset_urn(ref: DatasetRef | DatasetFieldRef) -> str:
+# Structural types: the URN helpers only read a handful of fields, and both the
+# `*Ref` reference models and the full `*Doc` documents carry them. Typing the
+# helpers against these Protocols lets a builder pass whichever it already holds
+# without a conversion step (see _PLANNING.md "reference-resolution strategy").
+class _DatasetKeyLike(Protocol):
+    platform: str
+    name: str
+    instance: str | None
+    env: str
+
+
+class _MLFeatureKeyLike(Protocol):
+    featureNamespace: str
+    name: str
+
+
+def dataset_urn(ref: _DatasetKeyLike) -> str:
     return make_dataset_urn_with_platform_instance(
         platform=ref.platform,
         name=ref.name,
@@ -155,11 +169,11 @@ def ml_feature_table_urn(ref) -> str:
     return MlFeatureTableUrn(ref.platform, ref.name).urn()
 
 
-def ml_feature_urn(ref: MLFeatureRef) -> str:
+def ml_feature_urn(ref: _MLFeatureKeyLike) -> str:
     return MlFeatureUrn(ref.featureNamespace, ref.name).urn()
 
 
-def ml_primary_key_urn(ref: MLPrimaryKeyRef) -> str:
+def ml_primary_key_urn(ref: _MLFeatureKeyLike) -> str:
     return MlPrimaryKeyUrn(ref.featureNamespace, ref.name).urn()
 
 

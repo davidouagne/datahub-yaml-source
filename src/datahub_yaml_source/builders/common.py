@@ -69,7 +69,20 @@ from datahub_yaml_source.urns import (
 DEFAULT_ACTOR_URN = "urn:li:corpuser:datahub"
 ZERO_AUDIT_STAMP = AuditStampClass(time=0, actor=DEFAULT_ACTOR_URN)
 
-_TYPE_MAP = {
+# Every value is one of the classes `SchemaFieldDataTypeClass(type=...)` accepts;
+# the explicit union keeps that guarantee visible to the type checker.
+_SchemaNativeType = (
+    type[NumberTypeClass]
+    | type[StringTypeClass]
+    | type[BooleanTypeClass]
+    | type[DateTypeClass]
+    | type[TimeTypeClass]
+    | type[BytesTypeClass]
+    | type[RecordTypeClass]
+    | type[NullTypeClass]
+)
+
+_TYPE_MAP: dict[str, _SchemaNativeType] = {
     "number": NumberTypeClass,
     "string": StringTypeClass,
     "boolean": BooleanTypeClass,

@@ -25,7 +25,11 @@ def _application_lineage_edges(
                 f"{context} applicationLineage.{direction}[{i}] must set "
                 f"exactly one of 'api' or 'dataset'"
             )
-        destination_urn = api_urn(edge.api) if edge.api else dataset_urn(edge.dataset)
+        if edge.api:
+            destination_urn = api_urn(edge.api)
+        else:
+            assert edge.dataset is not None  # guaranteed by the exactly-one check above
+            destination_urn = dataset_urn(edge.dataset)
         result.append(EdgeClass(destinationUrn=destination_urn))
     return result
 

@@ -49,19 +49,18 @@ setup(
         # helpers in builders/common.py depend on (e.g. DataFlow/DataJob's
         # `parent_container=`, `links=`, `structured_properties=`).
         #
-        # Upper bound <1.7.0.5: the (still ExperimentalWarning) datahub.sdk.*
-        # surface this connector builds on takes undeprecated breaks inside
-        # the 1.7.0.x series --
-        #   * 1.7.0.5: SemanticModel.add_dataset stops accepting bare
-        #     dataset URNs (now needs a SemanticModelDataset), breaking
-        #     builders/semantic.py and the integration golden;
-        #   * 1.7.0.8: the SupportStatus enum is renamed
-        #     (CERTIFIED/INCUBATING/TESTING -> ALPHA/BETA/GA), breaking
-        #     yaml_source.py's @support_status at import.
-        # 1.7.0.4 is the last release the suite passes on. Lifting this cap
-        # means migrating both call sites (and regenerating the golden) --
-        # tracked as its own task, not folded in here.
-        "acryl-datahub>=1.7.0,<1.7.0.5",
+        # Floor >=1.7.0.9: the (still ExperimentalWarning) datahub.sdk.*
+        # surface this connector builds on took two undeprecated breaks
+        # inside the 1.7.0.x series, both absorbed in issue #12 --
+        #   * 1.7.0.5: SemanticModel membership no longer accepts bare
+        #     dataset URNs; builders/semantic.py now builds
+        #     SemanticModelDataset (alias + resolved schema);
+        #   * 1.7.0.8: the SupportStatus enum was renamed
+        #     (CERTIFIED/INCUBATING/TESTING -> ALPHA/BETA/GA);
+        #     yaml_source.py's @support_status now uses ALPHA.
+        # Upper bound <1.8: the datahub.sdk.* surface is still
+        # ExperimentalWarning-flagged, so a minor bump can break again.
+        "acryl-datahub>=1.7.0.9,<1.8",
         "pyyaml>=6.0",
         # models.py/loader.py/yaml_source_config.py import pydantic directly
         # for the config schema and validation. Only ever a transitive dep

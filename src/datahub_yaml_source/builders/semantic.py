@@ -3,12 +3,17 @@
 from collections.abc import Iterable
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
-from datahub.metadata.schema_classes import EdgeClass, MetricUpstreamsClass
+from datahub.metadata.schema_classes import EdgeClass
 from datahub.sdk.metric import AiContextInput, Metric
-from datahub.sdk.semantic_model import SemanticModel
+from datahub.sdk.semantic_model import SemanticFieldInput, SemanticModel, SemanticModelDataset
 
 from datahub_yaml_source.builders.common import common_sdk_kwargs
-from datahub_yaml_source.models import AiContextDoc, MetricDoc, SemanticModelDoc
+from datahub_yaml_source.models import (
+    AiContextDoc,
+    MetricDoc,
+    SemanticModelDatasetDoc,
+    SemanticModelDoc,
+)
 from datahub_yaml_source.urns import ReferenceIndex, dataset_urn, metric_urn, semantic_model_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -33,11 +38,52 @@ def _ai_context_input(doc: AiContextDoc | None) -> AiContextInput | None:
     )
 
 
+def _semantic_model_dataset(
+    member: SemanticModelDatasetDoc, doc: SemanticModelDoc, sm_urn: str
+) -> SemanticModelDataset:
+    """Build one logical dataset of a SEMANTIC_MODEL.
+
+    Lands on its own URN (the model's platform, name defaulting to
+    ``<path>/<id>.<alias>``) so it never collides with a physical DATASET document.
+    """
+    name = member.name or f"{doc.path}/{doc.id}.{member.alias}"
+    return SemanticModelDataset(
+        platform=doc.platform,
+        name=name,
+        env=member.env,
+        platform_instance=doc.instance,
+        semantic_model=sm_urn,
+        alias=member.alias,
+        description=member.description,
+        view_definition=member.viewDefinition,
+        schema=[
+            SemanticFieldInput(
+                field_path=f.fieldPath,
+                type=f.type,
+                semantic_type=f.semanticType,
+                description=f.description,
+                nullable=f.nullable,
+                is_part_of_key=f.partOfKey,
+                expression=f.expression,
+                aggregation_function=f.aggregationFunction,
+                is_time_dimension=f.isTimeDimension,
+            )
+            for f in member.fields
+        ],
+        upstreams=(
+            [dataset_urn(d) for d in member.sourceDatasets] if member.sourceDatasets else None
+        ),
+    )
+
+
 def build_semantic_model(
     doc: SemanticModelDoc, index: ReferenceIndex, report: YamlSourceReport
 ) -> Iterable[MetadataWorkUnit]:
     context = f"SEMANTIC_MODEL '{doc.id}'"
     common = common_sdk_kwargs(doc, index, report, context, native=_SEMANTIC_ENTITY_NATIVE_KWARGS)
+
+    sm_urn = semantic_model_urn(doc)
+    members = [_semantic_model_dataset(m, doc, sm_urn) for m in (doc.datasets or [])]
 
     model = SemanticModel(
         platform=doc.platform,
@@ -47,7 +93,7 @@ def build_semantic_model(
         name=doc.displayName,
         description=doc.description,
         native_definition=doc.nativeDefinition,
-        datasets=[dataset_urn(d) for d in doc.datasets] if doc.datasets else None,
+        datasets=members or None,
         ai_context=_ai_context_input(doc.aiContext),
         **common,
     )
@@ -55,6 +101,12 @@ def build_semantic_model(
         model._ensure_model_props().externalUrl = doc.externalUrl
 
     yield from model.as_workunits()
+    # Each logical dataset is a distinct `dataset` entity (aliased view + its own schema +
+    # per-field semanticFieldAnnotation + lineage to the physical sources); it carries the
+    # membership back-reference (`semanticModelProperties.semanticModel`), so `SemanticModel`
+    # itself no longer needs a `datasets` URN list.
+    for member in members:
+        yield from member.as_workunits()
 
 
 def build_metric(
@@ -62,19 +114,6 @@ def build_metric(
 ) -> Iterable[MetadataWorkUnit]:
     context = f"METRIC '{doc.id}'"
     common = common_sdk_kwargs(doc, index, report, context, native=_SEMANTIC_ENTITY_NATIVE_KWARGS)
-
-    # `metricUpstreams` has no SDK involvement at all (unlike `metricRelationships`,
-    # which the SDK partially owns -- see below), so it's a plain extra_aspects entry.
-    extra_aspects = list(common.get("extra_aspects") or [])
-    if doc.datasetUpstreams:
-        extra_aspects.append(
-            MetricUpstreamsClass(
-                datasetUpstreams=[
-                    EdgeClass(destinationUrn=dataset_urn(d)) for d in doc.datasetUpstreams
-                ]
-            )
-        )
-    common["extra_aspects"] = extra_aspects or None
 
     metric = Metric(
         platform=doc.platform,
@@ -86,6 +125,12 @@ def build_metric(
         description=doc.description,
         expression=doc.expression,
         derived_from=[metric_urn(m) for m in doc.derivedFrom] if doc.derivedFrom else None,
+        # `metricUpstreams` became SDK-owned in acryl-datahub 1.7.0.5 (like
+        # `metricRelationships` below); a second `extra_aspects` entry would race with the
+        # SDK's own empty one and lose. Use the constructor kwarg.
+        upstream_datasets=(
+            [dataset_urn(d) for d in doc.datasetUpstreams] if doc.datasetUpstreams else None
+        ),
         ai_context=_ai_context_input(doc.aiContext),
         **common,
     )

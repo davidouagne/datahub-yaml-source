@@ -89,8 +89,8 @@ Phase 5C. All 12 kinds targeted by Phase 5 have now shipped.
 | `MLFEATURE_TABLE` | `mlFeatureTable` | platform, name, mlFeatures, mlPrimaryKeys | Raw MCP (`MLFeatureTablePropertiesClass`) + `common_aspect_mcps()` |
 | `MLMODEL_GROUP` | `mlModelGroup` | platform, name, container | SDK V2 `MLModelGroup` + `common_sdk_kwargs()` (narrowed `native=`, no `subtype=`/`applications=`/`container=` kwarg) |
 | `MLMODEL` | `mlModel` | platform, name, modelGroup, mlFeatures, container, hyperParameters, type, full model card (intendedUse, ethicalConsiderations, caveatsAndRecommendations, trainingData, evaluationData, factorPrompts, metrics, sourceCode) | SDK V2 `MLModel` + `common_sdk_kwargs()` (same narrowed `native=`); model-card aspects always via `extra_aspects=` (valid only on `mlModel`, not a shared mixin) |
-| `SEMANTIC_MODEL` | `semanticModel` | platform, path, id, nativeDefinition, datasets, aiContext | SDK V2 `SemanticModel` + `common_sdk_kwargs()` (narrowed `native=`, no `subtype=`/`applications=` kwarg); `externalUrl` via `_ensure_model_props()` (no constructor kwarg, C9) |
-| `METRIC` | `metric` | platform, path, id, semanticModel (required), expression, derivedFrom, relatedMetrics, datasetUpstreams, aiContext | SDK V2 `Metric` + `common_sdk_kwargs()` (same narrowed `native=`); `externalUrl`/`relatedMetrics` via `_ensure_metric_props()`/`_ensure_metric_relationships()` (C9); emitted after `SEMANTIC_MODEL` — `semantic_model=` is a required constructor kwarg |
+| `SEMANTIC_MODEL` | `semanticModel` | platform, path, id, nativeDefinition, datasets, aiContext | SDK V2 `SemanticModel` + `common_sdk_kwargs()` (narrowed `native=`, no `subtype=`/`applications=` kwarg); `externalUrl` via `_ensure_model_props()` (no constructor kwarg, C9). `datasets` are **logical** `SemanticModelDataset` members (alias + inline schema + per-field `semanticFieldAnnotation` + lineage to physical sources), each emitted onto its own `dataset` URN on the model's platform — never a physical table (C11) |
+| `METRIC` | `metric` | platform, path, id, semanticModel (required), expression, derivedFrom, relatedMetrics, datasetUpstreams, aiContext | SDK V2 `Metric` + `common_sdk_kwargs()` (same narrowed `native=`); `externalUrl`/`relatedMetrics` via `_ensure_metric_props()`/`_ensure_metric_relationships()` (C9); `datasetUpstreams` via the `upstream_datasets=` constructor kwarg (SDK-owned since 1.7.0.5 — C11); emitted after `SEMANTIC_MODEL` — `semantic_model=` is a required constructor kwarg |
 | `REPOSITORY` | `repository` | id, name, defaultBranch, languages, license, homepageUrl, archived, source (externalUrl/externalId), forkOf, platform/instance | Raw MCP (`repositoryProperties`, `repositorySource`, `repositoryLineage`) + `common_aspect_mcps()`; `platform`/`instance` emit a standalone `dataPlatformInstance` aspect (no `Has*` mixin — see Phase 5C notes) |
 | `API` | `api` | id, name, externalUrl, sourceRepository, restApi (method/path), signature (schemaDefinition), platform/instance | Raw MCP (`apiProperties`, `restApiProperties`, `apiSignature`) + `common_aspect_mcps()` |
 | `AGENT_SKILL` | `agentSkill` | id, name, instructions, requiredTools (API ids — `array[Urn]` in the PDL, not free text), sourceRepository, platform/instance | Raw MCP (`agentSkillInfo`) + `common_aspect_mcps()`; no `subTypes` (registry doesn't permit it on `agentSkill`) |
@@ -166,7 +166,7 @@ emit workunits → support stateful stale-entity removal) is identical to an API
 
 ```
 datahub-yaml-source/
-├── setup.py                                  # own entry point + deps (pyyaml, acryl-datahub>=1.7.0)
+├── setup.py                                  # own entry point + deps (pyyaml, acryl-datahub>=1.7.0.9,<1.8)
 ├── src/
 │   └── datahub_yaml_source/
 │       ├── __init__.py                       # exports YamlSource
@@ -536,6 +536,41 @@ Two more traps, not spec-related:
   `HasLinks` mixin that contradicted the verified entity-registry matrix (`tag` doesn't
   support `institutionalMemory`) — caught by writing the matrix comment in `models.py`
   *before* the class declarations and checking each one against it.
+
+### C11 — the semantic-layer SDK took undeprecated breaks inside 1.7.0.x (issue #12)
+
+`datahub.sdk.*` ships with an explicit `ExperimentalWarning` and no ascending-compat
+guarantee. Between `1.7.0.4` (last green) and `1.7.0.9` it broke this connector in three
+places; `main` CI was capped at `<1.7.0.5` (issue #11) as a stopgap until #12 absorbed
+all three:
+
+1. **`SemanticModel` membership (1.7.0.5).** `SemanticModel(datasets=[<bare dataset URN>])`
+   is refused: *"requires a `SemanticModelDataset`; bare dataset URNs are not supported."*
+   `SemanticModelDataset` is not a pointer — it's a `Dataset` **subclass** whose
+   `as_workunits()` writes `schemaMetadata` / `subTypes` / `semanticModelProperties` /
+   per-field `semanticFieldAnnotation` onto the dataset URN it's keyed by. Pointing one at
+   a physical table would clobber that table's real schema.
+   **Decision (option B):** model `SEMANTIC_MODEL.datasets` as *logical* datasets —
+   `SemanticModelDatasetDoc` carries `alias` + an inline `schema` (`SemanticFieldSpecDoc`:
+   fieldPath / type / semanticType DIMENSION·MEASURE·FILTER·OTHER / …) + `sourceDatasets`
+   for physical lineage. Each lands on `urn:li:dataset:(<model platform>,<path>/<id>.<alias>,<env>)`
+   — its own URN, never a physical one. The `SemanticModel` no longer needs a `datasets`
+   URN list (`semanticModelInfo.datasets` is now `[]`); membership is the logical dataset's
+   `semanticModelProperties.semanticModel` back-reference. This is the aliased-dataset
+   sub-feature Phase 5B had deferred; `relationships` (aliased cross-dataset joins) is a
+   follow-up on top of it, still out of scope.
+2. **`Metric.metricUpstreams` became SDK-owned (1.7.0.5).** The SDK now constructs its own
+   (empty) `metricUpstreams`; our hand-built `MetricUpstreamsClass` in `extra_aspects`
+   raced with it and lost (the `metricRelationships` precedent, one aspect wider).
+   Fixed via the new `upstream_datasets=` constructor kwarg.
+3. **`SupportStatus` enum renamed (1.7.0.8).** `CERTIFIED`/`INCUBATING`/`TESTING` dropped
+   with no alias; `ALPHA`/`BETA`/`GA`/`UNKNOWN` replace them. `@support_status` now uses
+   `ALPHA` (grilling session #2, Q12: `ALPHA` = "early-stage, community/team-outside-Ingestion,
+   may change without notice" — the role `INCUBATING` played for non-core connectors;
+   `BETA` claims Ingestion-team maintenance, false here).
+
+Floor moved to `acryl-datahub>=1.7.0.9,<1.8` (upper bound kept — the surface can break again
+on a minor). mypy advisory baseline unchanged (31 / 11). CI tested green on 1.7.0.10.
 
 ## Known Limitations
 

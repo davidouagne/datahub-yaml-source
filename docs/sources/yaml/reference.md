@@ -561,7 +561,7 @@ Plus these [common metadata fields](#common-metadata-fields), which every kind a
 
 ## SEMANTIC_MODEL
 
-A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a METRIC is defined against. `relationships` (aliased cross-dataset joins) and `semanticContent` (vector embeddings) are deliberately out of scope: the former needs an aliased-dataset sub-feature this connector doesn't model, the latter is system-computed. See _PLANNING.md, Phase 5B.
+A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a METRIC is defined against.  `datasets` are the model's *logical* datasets (aliased, schema-bearing views), authored inline via `SemanticModelDatasetDoc` -- the SDK stopped accepting bare dataset URNs for membership in acryl-datahub 1.7.0.5 (see _PLANNING.md, Phase 5B). `relationships` (aliased cross-dataset joins) and `semanticContent` (vector embeddings) remain out of scope: the latter is system-computed, the former is a follow-up on top of the aliased datasets now modelled here.
 
 | Field | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
@@ -574,7 +574,7 @@ A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entit
 | `description` | string | no | - |  |
 | `externalUrl` | string | no | - |  |
 | `nativeDefinition` | string | no | - | The model's native source definition, e.g. its dbt YAML/SQL. |
-| `datasets` | list of [DatasetRef](#datasetref) | no | - | Datasets this semantic model is built from. |
+| `datasets` | list of SemanticModelDatasetDoc | no | - | Logical datasets this semantic model exposes (aliased, schema-bearing). |
 | `aiContext` | [AiContextDoc](#aicontextdoc) | no | - |  |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:

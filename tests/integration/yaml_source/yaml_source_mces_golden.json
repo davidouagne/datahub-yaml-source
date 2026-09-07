@@ -3190,13 +3190,11 @@
             "name": "Patients actifs",
             "description": "Active patient cohort semantic model",
             "nativeDefinition": "select * from {{ ref('ehr_public_patient') }} where actif",
-            "datasets": [
-                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
-            ]
+            "datasets": []
         }
     },
     "systemMetadata": {
-        "lastObserved": 1787120785899,
+        "lastObserved": 1788774417289,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -3239,21 +3237,277 @@
     }
 },
 {
-    "entityType": "metric",
-    "entityUrn": "urn:li:metric:(urn:li:dataPlatform:dbt,models/marts,taux_readmission_30j)",
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
     "changeType": "UPSERT",
-    "aspectName": "metricUpstreams",
+    "aspectName": "dataPlatformInstance",
     "aspect": {
         "json": {
-            "datasetUpstreams": [
+            "platform": "urn:li:dataPlatform:dbt"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417290,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "upstreamLineage",
+    "aspect": {
+        "json": {
+            "upstreams": [
                 {
-                    "destinationUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+                    "auditStamp": {
+                        "time": 0,
+                        "actor": "urn:li:corpuser:unknown"
+                    },
+                    "dataset": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)",
+                    "type": "TRANSFORMED"
                 }
             ]
         }
     },
     "systemMetadata": {
-        "lastObserved": 1787120785899,
+        "lastObserved": 1788774417290,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "datasetProperties",
+    "aspect": {
+        "json": {
+            "customProperties": {},
+            "description": "Active-patient view exposed by the semantic model",
+            "tags": []
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417290,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "subTypes",
+    "aspect": {
+        "json": {
+            "typeNames": [
+                "Semantic Model Dataset"
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417290,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "semanticModelProperties",
+    "aspect": {
+        "json": {
+            "alias": "patients",
+            "semanticModel": "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417291,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "schemaMetadata",
+    "aspect": {
+        "json": {
+            "schemaName": "",
+            "platform": "urn:li:dataPlatform:dbt",
+            "version": 0,
+            "created": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "lastModified": {
+                "time": 0,
+                "actor": "urn:li:corpuser:unknown"
+            },
+            "hash": "",
+            "platformSchema": {
+                "com.linkedin.schema.Schemaless": {}
+            },
+            "fields": [
+                {
+                    "fieldPath": "patient_id",
+                    "nullable": true,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NullType": {}
+                        }
+                    },
+                    "nativeDataType": "BIGSERIAL",
+                    "recursive": false,
+                    "isPartOfKey": true
+                },
+                {
+                    "fieldPath": "nom",
+                    "nullable": true,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.NullType": {}
+                        }
+                    },
+                    "nativeDataType": "VARCHAR(255)",
+                    "recursive": false,
+                    "isPartOfKey": false
+                },
+                {
+                    "fieldPath": "date_naissance",
+                    "nullable": true,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.DateType": {}
+                        }
+                    },
+                    "nativeDataType": "DATE",
+                    "recursive": false,
+                    "isPartOfKey": false
+                },
+                {
+                    "fieldPath": "actif",
+                    "nullable": true,
+                    "type": {
+                        "type": {
+                            "com.linkedin.schema.BooleanType": {}
+                        }
+                    },
+                    "nativeDataType": "BOOLEAN",
+                    "recursive": false,
+                    "isPartOfKey": false
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417292,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),patient_id)",
+    "changeType": "UPSERT",
+    "aspectName": "semanticFieldAnnotation",
+    "aspect": {
+        "json": {
+            "type": "OTHER",
+            "expression": {
+                "dialects": [
+                    {
+                        "dialect": "ANSI_SQL",
+                        "expression": "patients.patient_id"
+                    }
+                ]
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417292,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),nom)",
+    "changeType": "UPSERT",
+    "aspectName": "semanticFieldAnnotation",
+    "aspect": {
+        "json": {
+            "type": "DIMENSION",
+            "expression": {
+                "dialects": [
+                    {
+                        "dialect": "ANSI_SQL",
+                        "expression": "patients.nom"
+                    }
+                ]
+            },
+            "dimension": {
+                "isTime": false
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417293,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),date_naissance)",
+    "changeType": "UPSERT",
+    "aspectName": "semanticFieldAnnotation",
+    "aspect": {
+        "json": {
+            "type": "DIMENSION",
+            "expression": {
+                "dialects": [
+                    {
+                        "dialect": "ANSI_SQL",
+                        "expression": "patients.date_naissance"
+                    }
+                ]
+            },
+            "dimension": {
+                "isTime": true
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417293,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),actif)",
+    "changeType": "UPSERT",
+    "aspectName": "semanticFieldAnnotation",
+    "aspect": {
+        "json": {
+            "type": "FILTER",
+            "expression": {
+                "dialects": [
+                    {
+                        "dialect": "ANSI_SQL",
+                        "expression": "patients.actif"
+                    }
+                ]
+            }
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417294,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -3344,6 +3598,26 @@
     },
     "systemMetadata": {
         "lastObserved": 1787120785901,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "metric",
+    "entityUrn": "urn:li:metric:(urn:li:dataPlatform:dbt,models/marts,taux_readmission_30j)",
+    "changeType": "UPSERT",
+    "aspectName": "metricUpstreams",
+    "aspect": {
+        "json": {
+            "datasetUpstreams": [
+                {
+                    "destinationUrn": "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+                }
+            ]
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1787120785899,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }
@@ -5153,6 +5427,22 @@
 },
 {
     "entityType": "dataset",
+    "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417325,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "dataset",
     "entityUrn": "urn:li:dataset:(urn:li:dataPlatform:duckdb,warehouse_raw_layer_patient,PROD)",
     "changeType": "UPSERT",
     "aspectName": "status",
@@ -5387,6 +5677,70 @@
     },
     "systemMetadata": {
         "lastObserved": 1787120785926,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),actif)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417329,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),date_naissance)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417329,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),nom)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417329,
+        "runId": "yaml-source-golden-test",
+        "lastRunId": "no-run-id-provided"
+    }
+},
+{
+    "entityType": "schemaField",
+    "entityUrn": "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD),patient_id)",
+    "changeType": "UPSERT",
+    "aspectName": "status",
+    "aspect": {
+        "json": {
+            "removed": false
+        }
+    },
+    "systemMetadata": {
+        "lastObserved": 1788774417330,
         "runId": "yaml-source-golden-test",
         "lastRunId": "no-run-id-provided"
     }

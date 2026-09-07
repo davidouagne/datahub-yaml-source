@@ -1059,6 +1059,58 @@ class SemanticModelRef(BaseModel):
     id: str
 
 
+class SemanticFieldSpecDoc(BaseModel):
+    """One field of a SEMANTIC_MODEL logical dataset (see `SemanticModelDatasetDoc`).
+
+    Maps to the SDK's `SemanticFieldInput`; emits a `semanticFieldAnnotation` aspect on
+    the field. Unlike `SchemaFieldDoc` (a physical column) this carries semantic-layer
+    intent: whether the field is a dimension, a measure, a filter, or plain metadata.
+    """
+
+    fieldPath: str
+    type: str = Field(
+        default="string", description="Native type name, e.g. 'VARCHAR(255)', 'BIGINT'."
+    )
+    semanticType: Literal["DIMENSION", "MEASURE", "FILTER", "OTHER"] = Field(
+        default="OTHER", description="The field's role in the semantic model."
+    )
+    description: str | None = None
+    nullable: bool = True
+    partOfKey: bool = False
+    expression: str | None = Field(
+        default=None, description="SQL expression for a derived field or measure."
+    )
+    aggregationFunction: str | None = Field(
+        default=None, description="e.g. 'sum', 'count_distinct'. Only meaningful for a MEASURE."
+    )
+    isTimeDimension: bool = False
+
+
+class SemanticModelDatasetDoc(_AllowExtraFields):
+    """A *logical* dataset a SEMANTIC_MODEL exposes: an aliased, schema-bearing view,
+    distinct from any physical source table.
+
+    Emits onto its own dataset URN -- platform = the model's platform, name defaults to
+    ``<model path>/<model id>.<alias>`` -- so it never collides with a physical DATASET
+    document. `sourceDatasets` records the physical lineage. See _PLANNING.md, Phase 5B.
+    """
+
+    alias: str = Field(description="Alias used to reference this dataset in metric expressions.")
+    name: str | None = Field(
+        default=None,
+        description="Logical dataset name; defaults to '<model path>/<model id>.<alias>'.",
+    )
+    env: str = "PROD"
+    description: str | None = None
+    viewDefinition: str | None = Field(
+        default=None, description="The view's native SQL/definition."
+    )
+    fields: list[SemanticFieldSpecDoc] = Field(default_factory=list, alias="schema")
+    sourceDatasets: list[DatasetRef] | None = Field(
+        default=None, description="Physical dataset(s) this logical dataset is derived from."
+    )
+
+
 class MetricRef(BaseModel):
     """Reference to a METRIC by its natural (platform, path, id) key."""
 
@@ -1080,10 +1132,14 @@ class SemanticModelDoc(
     _AllowExtraFields,
 ):
     """A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a
-    METRIC is defined against. `relationships` (aliased cross-dataset joins) and
-    `semanticContent` (vector embeddings) are deliberately out of scope: the former needs
-    an aliased-dataset sub-feature this connector doesn't model, the latter is
-    system-computed. See _PLANNING.md, Phase 5B."""
+    METRIC is defined against.
+
+    `datasets` are the model's *logical* datasets (aliased, schema-bearing views), authored
+    inline via `SemanticModelDatasetDoc` -- the SDK stopped accepting bare dataset URNs for
+    membership in acryl-datahub 1.7.0.5 (see _PLANNING.md, Phase 5B). `relationships`
+    (aliased cross-dataset joins) and `semanticContent` (vector embeddings) remain out of
+    scope: the latter is system-computed, the former is a follow-up on top of the aliased
+    datasets now modelled here."""
 
     kind: Literal["SEMANTIC_MODEL"]
     platform: str = Field(description="e.g. 'dbt', 'looker'.")
@@ -1096,8 +1152,9 @@ class SemanticModelDoc(
     nativeDefinition: str | None = Field(
         default=None, description="The model's native source definition, e.g. its dbt YAML/SQL."
     )
-    datasets: list[DatasetRef] | None = Field(
-        default=None, description="Datasets this semantic model is built from."
+    datasets: list[SemanticModelDatasetDoc] | None = Field(
+        default=None,
+        description="Logical datasets this semantic model exposes (aliased, schema-bearing).",
     )
     aiContext: AiContextDoc | None = None
 

@@ -99,9 +99,11 @@ setup(
             "GitPython>=3.1.37,<4",
             "boto3>=1.35.0,<2",
             # Lint/format and type-check, run by .github/workflows/quality.yml
-            # (see spec/spec-process-cicd-quality.md). Ruff is capped to a
-            # minor because its lint rules shift between minors; local and CI
-            # must agree on the exact ruleset.
+            # (see spec/spec-process-cicd-quality.md). Ruff's lint rules and
+            # formatter shift between minors, so it carries an upper bound;
+            # local and CI must agree on the exact ruleset. 0.12..0.16 is a
+            # clean range for this tree (0.16 added Markdown code-block
+            # formatting, hence the `*.md` exclude in pyproject.toml).
             "ruff>=0.12,<0.17",
             "mypy>=1.17",
             "types-PyYAML>=6.0",

@@ -381,3 +381,15 @@ types, defaults), see the generated [reference.md](reference.md).
 - **"Glob patterns are not supported for http(s):// URIs"**: an `http(s)://`
   entry in `path` has no directory listing — it must be the URL of a single
   YAML file, not a wildcard.
+- **Structured-property writes rejected: "no valid property assignments remain
+  after removing values for non-existent properties: [...]"**: this tree both
+  defines a structured property (`kind: STRUCTURED_PROPERTY`) and assigns it
+  (`structuredProperties:` on some document), and the `datahub-rest` sink's
+  default `mode: ASYNC_BATCH` packed the definition and an assignment
+  referencing it into the same atomic write batch. GMS validates the batch
+  against already-committed state, so the assignment fails and the whole batch
+  — definition included — is rejected. Set `mode: ASYNC` on the sink (one MCP
+  at a time, in order) so each definition lands before its assignment. The
+  source emits all definitions before any assignment already; this is purely a
+  sink batching effect, and large trees often avoid it by chance (early batches
+  fill up with definitions) while small ones don't.

@@ -104,3 +104,12 @@ sink:
   type: datahub-rest
   config:
     server: http://localhost:8080
+    # If this tree both *defines* structured properties (kind: STRUCTURED_PROPERTY)
+    # and *assigns* them (structuredProperties: on other documents), set
+    # mode: ASYNC. The default ASYNC_BATCH can pack a property definition and an
+    # assignment that references it into the same atomic write batch; GMS then
+    # rejects the batch ("no valid property assignments remain ... non-existent
+    # properties"), losing the definition too. ASYNC sends one MCP at a time in
+    # order, so the definition lands before the assignment. Large trees usually
+    # avoid this by luck (definitions fill whole early batches); small ones don't.
+    # mode: ASYNC

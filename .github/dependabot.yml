@@ -1,0 +1,51 @@
+# Dependency updates for a single-maintainer repo. No auto-merge: every
+# Dependabot PR is reviewed and merged by hand (decision recorded on the
+# wayfinder map, issue #1). Minor + patch bumps are grouped into one PR
+# per ecosystem to keep that manual queue short; major bumps arrive as
+# individual PRs so each breaking change is reviewed on its own.
+#
+# Design contract: spec/spec-process-cicd-dependabot.md
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      pip-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # No `ignore` entry for acryl-datahub majors. setup.py deliberately
+    # caps it at <1.7.0.5 (undeprecated breaks in the still-experimental
+    # datahub.sdk.* surface -- see the comment there). Dependabot will
+    # open a PR to lift that cap; the by-hand review every dependency PR
+    # already gets is the intended gate, and an `ignore` would only hide
+    # a bump the maintainer wants to see queued.
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

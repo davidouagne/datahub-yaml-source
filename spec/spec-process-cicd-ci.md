@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.2
+version: 1.3
 date_created: 2026-08-16
-last_updated: 2026-09-05
+last_updated: 2026-09-07
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -183,7 +183,8 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
-| Release/publish (not yet specified) | Downstream, out of scope for this spec | Would depend on `ci-status` succeeding on `main`, if introduced |
+| Release (`spec/spec-process-cicd-release.md`) | Downstream; its `build+verify` job re-runs this suite on the tagged commit before publishing | Independent trigger (version tag), not chained to a `main` CI run |
+| Dependabot (`.github/dependabot.yml`, `spec/spec-process-cicd-dependabot.md`) | Upstream PR producer — opens weekly grouped dependency-update PRs that this workflow (and `quality.yml`) gate before a by-hand merge | Dependabot's own weekly schedule; resulting PRs trigger this workflow via `pull_request` to `main` |
 
 ## Compliance & Governance
 
@@ -251,6 +252,7 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 | 1.0 | 2026-08-16 | Initial specification, written against a repository with no existing CI workflow | David Ouagne |
 | 1.1 | 2026-08-16 | Corrected the Python matrix from 3.9–3.12 to 3.10–3.12: `acryl-datahub>=1.7.0`, a mandatory dependency, itself requires Python >=3.10 (confirmed via its PyPI classifiers), so a 3.9 leg was unsatisfiable. Marked the workflow as implemented at `.github/workflows/ci.yml`. | David Ouagne |
 | 1.2 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: the package version is now derived from Git tags by `setuptools-scm` (issue #3), which needs full history + tags rather than the default shallow clone. | David Ouagne |
+| 1.3 | 2026-09-07 | Dependent Workflows table: added Dependabot (`.github/dependabot.yml`, issue #6) as an upstream PR producer this workflow gates; refreshed the stale "Release/publish (not yet specified)" row to point at the now-existing `spec/spec-process-cicd-release.md`. No workflow-file change. | David Ouagne |
 
 ## Related Specifications
 

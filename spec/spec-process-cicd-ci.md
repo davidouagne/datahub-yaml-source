@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.6
+version: 1.7
 date_created: 2026-08-16
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -60,7 +60,7 @@ graph TD
 
 | ID | Requirement | Implementation Constraint |
 |----|-------------|---------------------------|
-| SEC-001 | Grant the workflow no more repository access than reading source. | Token permissions scoped to read-only contents; no write, no packages, no deployments scope. |
+| SEC-001 | Grant the workflow no more repository access than reading source. | Token permissions scoped to read-only contents; no packages, no deployments scope. The one exception: the `test` job adds `id-token: write` for Codecov's OIDC upload (`spec/spec-process-cicd-codecov.md`) — an identity assertion that grants no write access to repository contents. See Security Controls. |
 | SEC-002 | Require no secrets. | The workflow must not reference any repository or organization secret — the test suite is fully hermetic (no live DataHub instance, no cloud credentials, no registry credentials). |
 | SEC-003 | Never let CI mutate golden/reference artifacts and treat that as passing. | The golden-file *update* mode must never be invoked in this workflow; only the read/compare mode runs. |
 
@@ -86,7 +86,9 @@ branches: [main]   # push trigger scope
 # None required.
 
 # Secrets
-# None required.
+# None. The `test` job additionally sets `permissions: id-token: write` for
+# Codecov's OIDC coverage upload (spec/spec-process-cicd-codecov.md) -- an
+# identity-assertion permission, not a repository or organization secret.
 ```
 
 ### Outputs
@@ -97,13 +99,15 @@ test_result: status            # Description: pass/fail per Python-version matri
 minimal_install_result: status # Description: pass/fail of the base-dependency install/registration check
 ci_status: status               # Description: aggregate pass/fail consumed by branch protection
 coverage_report: text           # Description: per-module coverage summary emitted to job logs
+coverage_xml: artifact          # Description: coverage.xml from each `test` leg, uploaded to Codecov (best-effort, non-fatal; spec/spec-process-cicd-codecov.md)
 ```
 
 ### Secrets & Variables
 
 | Type | Name | Purpose | Scope |
 |------|------|---------|-------|
-| — | — | None required | — |
+| — | — | No repository secrets or variables. | — |
+| Permission | `id-token: write` | GitHub OIDC exchange for the Codecov coverage upload (`spec/spec-process-cicd-codecov.md`) — a workflow permission, not a secret. | `test` job only |
 
 ## Execution Constraints
 
@@ -217,8 +221,15 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 
 ### Security Controls
 
-- **Access Control**: Read-only `contents` permission (SEC-001); no write-scoped tokens.
-- **Secret Management**: Not applicable — no secrets are used (SEC-002).
+- **Access Control**: Workflow-level `contents: read` (SEC-001). The `test` job additionally sets
+  `id-token: write` — required for Codecov's OIDC coverage upload
+  (`spec/spec-process-cicd-codecov.md`) and the sole exception to "no write-scoped tokens".
+  `id-token: write` mints a short-lived OIDC identity assertion; it confers no write access to
+  repository contents, releases, or packages. `minimal-install-check` and `ci-status` remain
+  read-only. Job-level `permissions` replace rather than merge the workflow default, so the `test`
+  job restates `contents: read` alongside `id-token: write`.
+- **Secret Management**: No secrets are used (SEC-002). Codecov uploads authenticate via GitHub OIDC,
+  not a stored `CODECOV_TOKEN`.
 - **Vulnerability Scanning**: Not currently in scope for this workflow; dependency vulnerability scanning is
   a candidate future addition, not a current requirement.
 
@@ -234,6 +245,7 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | Optional extra (`git`, `s3`) dependency accidentally imported at module level in core code | `minimal-install-check` fails at import time | Confirmed empirically: a base-only install (no extras) imports the plugin entry point successfully today |
 | Contributor runs `--update-golden-files` locally and commits an unintended change | Not caught by this workflow directly — CI compares against whatever golden file is committed | Relies on human review of the golden-file diff, as instructed in `CONTRIBUTING.md` |
 | A new `acryl-datahub` release within the pinned range (`>=1.7.0.9,<1.8`) breaks the experimental `datahub.sdk.*` surface this connector builds on | `test` job fails on the affected leg | The `<1.8` upper bound (issue #12) contains the blast radius to a minor; Dependabot opens the bump as its own PR (`spec/spec-process-cicd-dependabot.md`), reviewed by hand. A break inside the patch range still needs a fix + a tighter pin, as in #11/#12. |
+| Codecov upload fails, is rate-limited, or runs from a fork PR (no OIDC token) | The `codecov/codecov-action` step is non-fatal (`fail_ci_if_error: false`); the `test` job and `CI status` stay green. Coverage history simply has a gap for that commit. | Confirmed by design; `spec/spec-process-cicd-codecov.md` REQ-005 / VLD-006. |
 
 ## Validation Criteria
 
@@ -274,8 +286,16 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | 1.4 | 2026-09-07 | Documented `main` branch protection (issue #9): new "Branch protection on `main`" subsection with the concrete config (required checks `CI status` + `ruff` only; `strict: false`; no required reviews; `enforce_admins: false`). Corrected the recurring `ci-status` → `CI status` conflation — branch protection matches the job's `name:` (`CI status`, with a space), not the job id `ci-status`. No workflow-file change. | David Ouagne |
 | 1.5 | 2026-09-07 | Refreshed the `acryl-datahub` dependency-range Edge Case row: the floor is now `>=1.7.0.9,<1.8` (issue #12 lifted the `<1.7.0.5` stopgap and kept a `<1.8` bound). No workflow-file change. | David Ouagne |
 | 1.6 | 2026-09-07 | Added `mypy` to `main`'s required status checks (issue #13 promoted it to blocking). No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
+| 1.7 | 2026-09-07 | The `test` job will also emit `coverage.xml` (`--cov-report=xml`) and upload it to Codecov via `codecov/codecov-action` using GitHub OIDC (`id-token: write` on `test`; no stored token). Reporting only — no new required check, `--cov-fail-under=80` unchanged. Contract in the new `spec/spec-process-cicd-codecov.md`; the `ci.yml` change itself is deferred to wayfinder map issue #40's wiring ticket. This revision records the Secrets/Outputs/Security-Controls/Edge-Case impact and refreshes the stale "None yet" Related Specifications stub. | David Ouagne |
 
 ## Related Specifications
 
-- None yet. A future release/publish workflow specification, if introduced, should reference this document
-  as its upstream gate.
+- `spec/spec-process-cicd-codecov.md` — Codecov coverage **reporting**. Appends a `coverage.xml` upload
+  step to this workflow's `test` job; adds no required check. This spec owns the coverage *gate*
+  (`--cov-fail-under=80`, REQ-004); that one owns publishing the number.
+- `spec/spec-process-cicd-quality.md` — Ruff (blocking) + mypy; the style/type sibling. `ruff` and
+  `mypy` both gate `main` alongside this workflow's `CI status`.
+- `spec/spec-process-cicd-codeql.md` — CodeQL SAST; advisory, gates nothing.
+- `spec/spec-process-cicd-dependabot.md` — upstream PR producer that this workflow gates.
+- `spec/spec-process-cicd-release.md` — release pipeline; its `build+verify` job re-runs this suite on
+  the tagged commit before publishing.

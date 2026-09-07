@@ -1,6 +1,9 @@
 # datahub-yaml-source
 
 [![CI](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml/badge.svg)](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/datahub-yaml-source)](https://pypi.org/project/datahub-yaml-source/)
+[![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/datahub-yaml-source/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 A standalone [DataHub](https://datahubproject.io/) ingestion source plugin that
 reads a directory tree of declarative YAML "metadata as code" files and emits

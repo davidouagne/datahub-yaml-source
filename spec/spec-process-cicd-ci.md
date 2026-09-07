@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.3
+version: 1.4
 date_created: 2026-08-16
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -40,7 +40,7 @@ graph TD
 |----------|---------|--------------|-------------------|
 | `test` | Install with dev extras; run unit + integration tests with coverage across the supported Python matrix. Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner, matrix over Python 3.10–3.12 |
 | `minimal-install-check` | Install with base dependencies only (no optional extras); confirm the package imports and the `yaml` source plugin registers. | None | Linux runner, single Python version |
-| `ci-status` | Aggregate gate: succeeds only if `test` (all matrix legs) and `minimal-install-check` succeed. Gives branch protection one stable required-check name. | `test`, `minimal-install-check` | Linux runner, no build steps |
+| `ci-status` (job id; **check-run name `CI status`**) | Aggregate gate: succeeds only if `test` (all matrix legs) and `minimal-install-check` succeed. Its `name:` — `CI status`, *with a space* — is the exact context string `main` branch protection requires (not the job id `ci-status`). | `test`, `minimal-install-check` | Linux runner, no build steps |
 
 ## Requirements Matrix
 
@@ -139,7 +139,7 @@ coverage_report: text           # Description: per-module coverage summary emitt
 | Golden-file mismatch | Fail via the golden-file comparison test | Review whether the output change is intentional; if so, regenerate the golden file locally and review the diff by hand before committing — never regenerate inside CI |
 | Coverage below threshold | Fail the `test` job | Add tests for the newly uncovered lines, or justify and adjust the threshold deliberately |
 | Minimal-install / plugin-registration failure | Fail `minimal-install-check` | Audit for a module-level import of an optional-extra dependency (`GitPython`, `boto3`) that should be lazy |
-| Any required job failure | `ci-status` fails | Branch protection blocks merge until resolved |
+| Any required job failure | `CI status` (the `ci-status` job) fails | Branch protection blocks merge until resolved |
 
 ## Quality Gates
 
@@ -157,7 +157,7 @@ coverage_report: text           # Description: per-module coverage summary emitt
 
 ### Key Metrics
 
-- **Success Rate**: Track `ci-status` pass rate on `main` over time; a healthy `main` should stay green.
+- **Success Rate**: Track `CI status` pass rate on `main` over time; a healthy `main` should stay green.
 - **Execution Time**: Track `test` job duration per matrix leg against PERF-001.
 - **Resource Usage**: Not tracked beyond standard hosted-runner minutes consumption.
 
@@ -165,7 +165,7 @@ coverage_report: text           # Description: per-module coverage summary emitt
 
 | Condition | Severity | Notification Target |
 |-----------|----------|----------------------|
-| `ci-status` fails on `main` (post-merge) | High | Repository maintainer(s) via default GitHub notification on the failing commit |
+| `CI status` fails on `main` (post-merge) | High | Repository maintainer(s) via default GitHub notification on the failing commit |
 | Repeated flakiness in the `test` job across unrelated PRs | Medium | Repository maintainer(s), for investigation as a suite reliability issue |
 
 ## Integration Points
@@ -185,6 +185,24 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 |----------|---------------|---------------------|
 | Release (`spec/spec-process-cicd-release.md`) | Downstream; its `build+verify` job re-runs this suite on the tagged commit before publishing | Independent trigger (version tag), not chained to a `main` CI run |
 | Dependabot (`.github/dependabot.yml`, `spec/spec-process-cicd-dependabot.md`) | Upstream PR producer — opens weekly grouped dependency-update PRs that this workflow (and `quality.yml`) gate before a by-hand merge | Dependabot's own weekly schedule; resulting PRs trigger this workflow via `pull_request` to `main` |
+
+### Branch protection on `main` (issue #9)
+
+`main` is protected with **required status checks only** — the posture chosen for a single
+maintainer with no second reviewer available:
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| Required status checks | exactly **`CI status`** (this workflow's aggregate gate) and **`ruff`** (`spec/spec-process-cicd-quality.md`) | The two blocking gates. Names are the check-run `name:` values, matched verbatim. |
+| `strict` (require branch up to date before merge) | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
+| CodeQL / `Analyze (*)` | **not required** | Advisory only at this stage (map issue #1 Notes; `spec/spec-process-cicd-codeql.md`). |
+| `mypy (advisory)` | **not required** | `continue-on-error` job by design (`spec/spec-process-cicd-quality.md` REQ-006). |
+| `required_pull_request_reviews` | none | No second reviewer exists; a review requirement would be self-blocking. |
+| `enforce_admins` | `false` | The maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
+| `restrictions` | none | Single maintainer; no push allow-list needed. |
+
+Renaming the `CI status` or `ruff` check is a breaking change: update this list and re-apply the
+protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`.
 
 ## Compliance & Governance
 
@@ -253,6 +271,7 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 | 1.1 | 2026-08-16 | Corrected the Python matrix from 3.9–3.12 to 3.10–3.12: `acryl-datahub>=1.7.0`, a mandatory dependency, itself requires Python >=3.10 (confirmed via its PyPI classifiers), so a 3.9 leg was unsatisfiable. Marked the workflow as implemented at `.github/workflows/ci.yml`. | David Ouagne |
 | 1.2 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: the package version is now derived from Git tags by `setuptools-scm` (issue #3), which needs full history + tags rather than the default shallow clone. | David Ouagne |
 | 1.3 | 2026-09-07 | Dependent Workflows table: added Dependabot (`.github/dependabot.yml`, issue #6) as an upstream PR producer this workflow gates; refreshed the stale "Release/publish (not yet specified)" row to point at the now-existing `spec/spec-process-cicd-release.md`. No workflow-file change. | David Ouagne |
+| 1.4 | 2026-09-07 | Documented `main` branch protection (issue #9): new "Branch protection on `main`" subsection with the concrete config (required checks `CI status` + `ruff` only; `strict: false`; no required reviews; `enforce_admins: false`). Corrected the recurring `ci-status` → `CI status` conflation — branch protection matches the job's `name:` (`CI status`, with a space), not the job id `ci-status`. No workflow-file change. | David Ouagne |
 
 ## Related Specifications
 

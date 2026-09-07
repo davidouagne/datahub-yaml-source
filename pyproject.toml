@@ -7,7 +7,7 @@
 # `fetch-depth: 0` this needs).
 
 [build-system]
-requires = ["setuptools>=84.0.0", "setuptools-scm>=8,<9"]
+requires = ["setuptools>=84.0.0", "setuptools-scm>=10.2.3,<11"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]

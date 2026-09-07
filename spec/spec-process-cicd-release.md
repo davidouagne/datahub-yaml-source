@@ -115,6 +115,10 @@ github_release: release       # a GitHub Release for the tag, notes auto-generat
   `py3-none-any`, so a matrix would add nothing.
 - **Checkout depth**: `fetch-depth: 0` on every checkout — setuptools-scm needs the tag and history to
   derive the version; a shallow clone would build `0.0.0`.
+- **Environment deployment policy**: the `pypi` Environment restricts deployments to a single ref
+  pattern — `v*`, type **tag** (not branch). This matches the workflow trigger; `main` and every other
+  branch are intentionally not allowed to deploy to `pypi`. Set up in issue #8 alongside the
+  required-reviewer rule.
 - **Network**: PyPI upload endpoint + the Python package index for install. No other egress.
 
 ## Error Handling Strategy

@@ -3,7 +3,7 @@
 [![CI](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml/badge.svg)](https://github.com/davidouagne/datahub-yaml-source/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/datahub-yaml-source)](https://pypi.org/project/datahub-yaml-source/)
 [![Python versions](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/datahub-yaml-source/)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/davidouagne/datahub-yaml-source/blob/main/LICENSE)
 
 A standalone [DataHub](https://datahubproject.io/) ingestion source plugin that
 reads a directory tree of declarative YAML "metadata as code" files and emits
@@ -11,14 +11,14 @@ the DataHub entities they describe (platforms, tags, glossary, domains,
 containers, datasets with schema/lineage, data products, pipelines, pipeline
 run history, and data quality assertions).
 
-See [docs/sources/yaml/yaml.md](docs/sources/yaml/yaml.md) for a narrative
-introduction, [docs/sources/yaml/reference.md](docs/sources/yaml/reference.md)
+See [docs/sources/yaml/yaml.md](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/sources/yaml/yaml.md) for a narrative
+introduction, [docs/sources/yaml/reference.md](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/sources/yaml/reference.md)
 for a generated field-by-field reference of every `kind`, and
-[docs/sources/yaml/yaml_recipe.yml](docs/sources/yaml/yaml_recipe.yml) for an
-example recipe. See [_PLANNING.md](_PLANNING.md) for the architecture
+[docs/sources/yaml/yaml_recipe.yml](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/sources/yaml/yaml_recipe.yml) for an
+example recipe. See [_PLANNING.md](https://github.com/davidouagne/datahub-yaml-source/blob/main/_PLANNING.md) for the architecture
 decisions behind this connector.
 
-A [JSON Schema](docs/sources/yaml/schema/yaml-metadata.schema.json) for the
+A [JSON Schema](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/sources/yaml/schema/yaml-metadata.schema.json) for the
 document format (autocomplete/validation in VS Code, IntelliJ, ...) is also
 generated from the Pydantic models -- see the "Editor autocomplete and
 validation" section in `yaml.md`.

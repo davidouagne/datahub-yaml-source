@@ -151,6 +151,22 @@ permissions to configure.
   authenticated endpoint — the bearer token or basic-auth credentials set in
   `http_connection`.
 
+### Target GMS compatibility
+
+This source only *emits* metadata change proposals; whether the target
+DataHub GMS accepts and surfaces every aspect depends on that deployment's
+version. Two aspects to be aware of on an older GMS:
+
+- **`DOCUMENT`** (`kind: document`) MCPs are rejected outright by a GMS that
+  predates native document support.
+- **`schemaField`-level annotations** (e.g. a column tagged PII) are accepted
+  but may not surface in the UI unless the target GMS indexes `schemaField`
+  entities.
+
+Neither is a connector defect — the MCPs are well-formed — and neither blocks
+ingestion of the rest of a run. If you target an older GMS, treat these two
+as known gaps and verify them against your own deployment.
+
 ## Document Format
 
 Every file may contain multiple YAML documents separated by `---`. Each document

@@ -27,6 +27,10 @@ fallback_version = "0.0.0"
 line-length = 100
 target-version = "py310"
 src = ["src", "tests", "scripts"]
+# Ruff's scope here is first-party Python only. Since 0.16 `ruff format` also
+# reformats ```python blocks inside Markdown; the illustrative snippets in
+# `_PLANNING.md` are hand-shaped for reading, so keep prose docs out.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 # Pragmatic set for a solo-maintained translation layer: pyflakes/pycodestyle

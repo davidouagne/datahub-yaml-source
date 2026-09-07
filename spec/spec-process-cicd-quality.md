@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Code Quality (Ruff + mypy)
-version: 1.2
+version: 1.3
 date_created: 2026-09-05
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -113,6 +113,7 @@ The exact configuration lives in `pyproject.toml`; this section records the deci
 | `lint.select` | `E`, `F`, `I`, `UP`, `B`, `C4`, `SIM`, `RUF` | pycodestyle/pyflakes errors, import sorting, pyupgrade, bugbear, comprehensions, simplify, Ruff-native. Deliberately excludes `ANN` (annotation completeness — that is mypy's job, advisory) and `PL` (too opinionated for a solo maintainer). |
 | `lint.per-file-ignores` | `__init__.py` → `F401`; `tests/**` → `E501` | Re-export modules use unused imports on purpose; test fixtures embed full DataHub URNs and JSON blobs as string literals that are not meaningfully breakable. The formatter still enforces 100 cols on everything it can reflow. |
 | `lint.isort.known-first-party` | `["datahub_yaml_source"]` | Correct first/third-party split in a `src/` layout. |
+| `extend-exclude` | `["*.md"]` | Ruff's scope is first-party Python. Ruff 0.16 `ruff format` also reformats ` ```python ` blocks inside Markdown; the illustrative snippets in `_PLANNING.md` are hand-shaped, so prose docs are excluded from both `check` and `format`. |
 
 Two `# noqa: E501` are carried in `src/datahub_yaml_source/models.py`: one on an aligned ASCII
 capability matrix in a comment block (reflowing destroys the alignment) and one on a single-line class
@@ -209,6 +210,7 @@ for `main` (its required status checks match job names verbatim).
 | 1.0 | 2026-09-05 | Initial specification. Ruff (blocking: `check` + `format --check`) and mypy (advisory, `continue-on-error`) added as `.github/workflows/quality.yml`; `[tool.ruff]` / `[tool.mypy]` introduced in a new `pyproject.toml`; `ruff`/`mypy` pinned in `setup.py`'s `dev` extra. One-off `ruff format` + safe `ruff check --fix` applied across `src/`, `tests/`, `scripts/`. Recorded mypy baseline: 31 errors / 11 files. | David Ouagne |
 | 1.1 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: `pyproject.toml` gained a `[build-system]` + `[tool.setuptools_scm]` (issue #3), so the editable install now needs full history + tags to resolve a real version. | David Ouagne |
 | 1.2 | 2026-09-07 | **mypy promoted to blocking** (issue #13). Baseline driven 31 → 0 with real fixes (no `# type: ignore`, no baseline file); one genuine bug fixed on the way (CUSTOM assertion `field=`). Job renamed `mypy (advisory)` → `mypy`, `continue-on-error` removed. `types-PyYAML` added to the `dev` extra. `mypy` added to `main`'s required status checks alongside `ruff`. | David Ouagne |
+| 1.3 | 2026-09-07 | Ruff dev-dependency range widened to `>=0.12,<0.17` (Dependabot #21). Added `extend-exclude = ["*.md"]` to `[tool.ruff]`: 0.16's `ruff format` reformats Python blocks inside Markdown, which would rewrite `_PLANNING.md`'s hand-shaped snippets. No `.py` file changed under 0.16. | David Ouagne |
 
 ## Related Specifications
 

@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.4
+version: 1.5
 date_created: 2026-08-16
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -233,7 +233,7 @@ protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/mai
 | PR modifies `models.py` and regenerates docs/schema correctly | `test` job passes | Standard test run |
 | Optional extra (`git`, `s3`) dependency accidentally imported at module level in core code | `minimal-install-check` fails at import time | Confirmed empirically: a base-only install (no extras) imports the plugin entry point successfully today |
 | Contributor runs `--update-golden-files` locally and commits an unintended change | Not caught by this workflow directly — CI compares against whatever golden file is committed | Relies on human review of the golden-file diff, as instructed in `CONTRIBUTING.md` |
-| Dependency floor (`acryl-datahub>=1.7.0`) resolves a newer release that drops a transitive dependency the code relies on (`requests`, `pydantic`) | Install or import may fail unpredictably | Not currently guarded by a pinned upper bound; a floating risk noted for future hardening, not fixed by this workflow alone |
+| A new `acryl-datahub` release within the pinned range (`>=1.7.0.9,<1.8`) breaks the experimental `datahub.sdk.*` surface this connector builds on | `test` job fails on the affected leg | The `<1.8` upper bound (issue #12) contains the blast radius to a minor; Dependabot opens the bump as its own PR (`spec/spec-process-cicd-dependabot.md`), reviewed by hand. A break inside the patch range still needs a fix + a tighter pin, as in #11/#12. |
 
 ## Validation Criteria
 
@@ -272,6 +272,7 @@ protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/mai
 | 1.2 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: the package version is now derived from Git tags by `setuptools-scm` (issue #3), which needs full history + tags rather than the default shallow clone. | David Ouagne |
 | 1.3 | 2026-09-07 | Dependent Workflows table: added Dependabot (`.github/dependabot.yml`, issue #6) as an upstream PR producer this workflow gates; refreshed the stale "Release/publish (not yet specified)" row to point at the now-existing `spec/spec-process-cicd-release.md`. No workflow-file change. | David Ouagne |
 | 1.4 | 2026-09-07 | Documented `main` branch protection (issue #9): new "Branch protection on `main`" subsection with the concrete config (required checks `CI status` + `ruff` only; `strict: false`; no required reviews; `enforce_admins: false`). Corrected the recurring `ci-status` → `CI status` conflation — branch protection matches the job's `name:` (`CI status`, with a space), not the job id `ci-status`. No workflow-file change. | David Ouagne |
+| 1.5 | 2026-09-07 | Refreshed the `acryl-datahub` dependency-range Edge Case row: the floor is now `>=1.7.0.9,<1.8` (issue #12 lifted the `<1.7.0.5` stopgap and kept a `<1.8` bound). No workflow-file change. | David Ouagne |
 
 ## Related Specifications
 

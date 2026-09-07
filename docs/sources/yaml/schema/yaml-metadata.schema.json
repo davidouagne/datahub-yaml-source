@@ -7946,9 +7946,176 @@
       "title": "SchemaFieldSpecDoc",
       "type": "object"
     },
+    "SemanticFieldSpecDoc": {
+      "description": "One field of a SEMANTIC_MODEL logical dataset (see `SemanticModelDatasetDoc`).\n\nMaps to the SDK's `SemanticFieldInput`; emits a `semanticFieldAnnotation` aspect on\nthe field. Unlike `SchemaFieldDoc` (a physical column) this carries semantic-layer\nintent: whether the field is a dimension, a measure, a filter, or plain metadata.",
+      "properties": {
+        "fieldPath": {
+          "title": "Fieldpath",
+          "type": "string"
+        },
+        "type": {
+          "default": "string",
+          "description": "Native type name, e.g. 'VARCHAR(255)', 'BIGINT'.",
+          "title": "Type",
+          "type": "string"
+        },
+        "semanticType": {
+          "default": "OTHER",
+          "description": "The field's role in the semantic model.",
+          "enum": [
+            "DIMENSION",
+            "MEASURE",
+            "FILTER",
+            "OTHER"
+          ],
+          "title": "Semantictype",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "nullable": {
+          "default": true,
+          "title": "Nullable",
+          "type": "boolean"
+        },
+        "partOfKey": {
+          "default": false,
+          "title": "Partofkey",
+          "type": "boolean"
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SQL expression for a derived field or measure.",
+          "title": "Expression"
+        },
+        "aggregationFunction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "e.g. 'sum', 'count_distinct'. Only meaningful for a MEASURE.",
+          "title": "Aggregationfunction"
+        },
+        "isTimeDimension": {
+          "default": false,
+          "title": "Istimedimension",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "fieldPath"
+      ],
+      "title": "SemanticFieldSpecDoc",
+      "type": "object"
+    },
+    "SemanticModelDatasetDoc": {
+      "additionalProperties": true,
+      "description": "A *logical* dataset a SEMANTIC_MODEL exposes: an aliased, schema-bearing view,\ndistinct from any physical source table.\n\nEmits onto its own dataset URN -- platform = the model's platform, name defaults to\n``<model path>/<model id>.<alias>`` -- so it never collides with a physical DATASET\ndocument. `sourceDatasets` records the physical lineage. See _PLANNING.md, Phase 5B.",
+      "properties": {
+        "alias": {
+          "description": "Alias used to reference this dataset in metric expressions.",
+          "title": "Alias",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Logical dataset name; defaults to '<model path>/<model id>.<alias>'.",
+          "title": "Name"
+        },
+        "env": {
+          "default": "PROD",
+          "title": "Env",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "viewDefinition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The view's native SQL/definition.",
+          "title": "Viewdefinition"
+        },
+        "schema": {
+          "items": {
+            "$ref": "#/$defs/SemanticFieldSpecDoc"
+          },
+          "title": "Schema",
+          "type": "array"
+        },
+        "sourceDatasets": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/DatasetRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Physical dataset(s) this logical dataset is derived from.",
+          "title": "Sourcedatasets"
+        }
+      },
+      "required": [
+        "alias"
+      ],
+      "title": "SemanticModelDatasetDoc",
+      "type": "object"
+    },
     "SemanticModelDoc": {
       "additionalProperties": true,
-      "description": "A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a\nMETRIC is defined against. `relationships` (aliased cross-dataset joins) and\n`semanticContent` (vector embeddings) are deliberately out of scope: the former needs\nan aliased-dataset sub-feature this connector doesn't model, the latter is\nsystem-computed. See _PLANNING.md, Phase 5B.",
+      "description": "A semantic-layer model (e.g. a dbt semantic model / Looker explore) -- the entity a\nMETRIC is defined against.\n\n`datasets` are the model's *logical* datasets (aliased, schema-bearing views), authored\ninline via `SemanticModelDatasetDoc` -- the SDK stopped accepting bare dataset URNs for\nmembership in acryl-datahub 1.7.0.5 (see _PLANNING.md, Phase 5B). `relationships`\n(aliased cross-dataset joins) and `semanticContent` (vector embeddings) remain out of\nscope: the latter is system-computed, the former is a follow-up on top of the aliased\ndatasets now modelled here.",
       "properties": {
         "subTypes": {
           "anyOf": [
@@ -8170,7 +8337,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/$defs/DatasetRef"
+                "$ref": "#/$defs/SemanticModelDatasetDoc"
               },
               "type": "array"
             },
@@ -8179,7 +8346,7 @@
             }
           ],
           "default": null,
-          "description": "Datasets this semantic model is built from.",
+          "description": "Logical datasets this semantic model exposes (aliased, schema-bearing).",
           "title": "Datasets"
         },
         "aiContext": {

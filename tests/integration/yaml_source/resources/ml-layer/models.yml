@@ -111,9 +111,27 @@ description: Active patient cohort semantic model
 nativeDefinition: |-
   select * from {{ ref('ehr_public_patient') }} where actif
 datasets:
-  - platform: postgres
-    name: ehr_public_patient
-    env: PROD
+  - alias: patients
+    description: Active-patient view exposed by the semantic model
+    schema:
+      - fieldPath: patient_id
+        type: BIGSERIAL
+        semanticType: OTHER
+        partOfKey: true
+      - fieldPath: nom
+        type: VARCHAR(255)
+        semanticType: DIMENSION
+      - fieldPath: date_naissance
+        type: DATE
+        semanticType: DIMENSION
+        isTimeDimension: true
+      - fieldPath: actif
+        type: BOOLEAN
+        semanticType: FILTER
+    sourceDatasets:
+      - platform: postgres
+        name: ehr_public_patient
+        env: PROD
 aiContext:
   synonyms:
     - active cohort

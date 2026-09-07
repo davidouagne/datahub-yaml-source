@@ -27,7 +27,18 @@ def test_build_semantic_model_emits_info_and_ai_context():
             "displayName": "Patients actifs",
             "description": "Active patient cohort",
             "nativeDefinition": "select * from ehr_public_patient where actif",
-            "datasets": [{"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}],
+            "datasets": [
+                {
+                    "alias": "patients",
+                    "schema": [
+                        {"fieldPath": "patient_id", "type": "BIGSERIAL", "partOfKey": True},
+                        {"fieldPath": "nom", "type": "VARCHAR(255)", "semanticType": "DIMENSION"},
+                    ],
+                    "sourceDatasets": [
+                        {"platform": "postgres", "name": "ehr_public_patient", "env": "PROD"}
+                    ],
+                }
+            ],
             "aiContext": {"synonyms": ["active cohort"], "instructions": "Use for headcount"},
             "externalUrl": "https://dbt.example.org/marts/patients_actifs",
             "tags": ["pii"],
@@ -48,9 +59,6 @@ def test_build_semantic_model_emits_info_and_ai_context():
     )
     assert info.name == "Patients actifs"
     assert info.externalUrl == "https://dbt.example.org/marts/patients_actifs"
-    assert info.datasets == [
-        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
-    ]
 
     ai_context = next(
         wu.metadata.aspect
@@ -60,6 +68,41 @@ def test_build_semantic_model_emits_info_and_ai_context():
     assert ai_context.synonyms == ["active cohort"]
 
     assert any(wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass" for wu in wus)
+
+    # The logical dataset lands on its own `dbt`-platform URN (never the physical table),
+    # carries the membership back-reference, and re-exposes its schema + lineage.
+    member_urn = (
+        "urn:li:dataset:(urn:li:dataPlatform:dbt,models/marts/patients_actifs.patients,PROD)"
+    )
+    member_wus = [wu for wu in wus if wu.metadata.entityUrn == member_urn]
+    assert member_wus, "expected a logical-dataset entity for the semantic model member"
+
+    props = next(
+        wu.metadata.aspect
+        for wu in member_wus
+        if wu.metadata.aspect.__class__.__name__ == "SemanticModelPropertiesClass"
+    )
+    assert props.alias == "patients"
+    assert (
+        props.semanticModel
+        == "urn:li:semanticModel:(urn:li:dataPlatform:dbt,models/marts,patients_actifs)"
+    )
+
+    schema = next(
+        wu.metadata.aspect
+        for wu in member_wus
+        if wu.metadata.aspect.__class__.__name__ == "SchemaMetadataClass"
+    )
+    assert [f.fieldPath for f in schema.fields] == ["patient_id", "nom"]
+
+    upstream = next(
+        wu.metadata.aspect
+        for wu in member_wus
+        if wu.metadata.aspect.__class__.__name__ == "UpstreamLineageClass"
+    )
+    assert [u.dataset for u in upstream.upstreams] == [
+        "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
+    ]
 
 
 def test_build_metric_requires_semantic_model_and_emits_upstreams_and_relationships():

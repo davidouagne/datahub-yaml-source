@@ -93,7 +93,7 @@ def _resolve_aws_connection(aws_connection_config: dict[str, Any] | None) -> Any
 
 @platform_name("YAML Metadata")
 @config_class(YamlSourceConfig)
-@support_status(SupportStatus.INCUBATING)
+@support_status(SupportStatus.ALPHA)
 @capability(SourceCapability.SCHEMA_METADATA, "Enabled by default via DATASET documents")
 @capability(SourceCapability.CONTAINERS, "Enabled by default via CONTAINER documents")
 @capability(SourceCapability.LINEAGE_COARSE, "Fully declared in YAML, no SQL parsing involved")

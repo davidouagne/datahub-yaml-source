@@ -30,6 +30,16 @@ and commit the regenerated files alongside the model change.
 `test_markdown_docs_generation.py` fail on drift, so treat a failure there
 as "you forgot to regenerate," not as a bug to work around.
 
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `davidouagne/datahub-yaml-source`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout (root `CONTEXT.md` + `docs/adr/`, created lazily as needed). See `docs/agents/domain.md`.
+
 ## Before trusting a secondhand algorithm description
 
 If asked to reproduce an external/legacy system's ID or hashing scheme (e.g.

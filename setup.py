@@ -61,7 +61,7 @@ setup(
         # 1.7.0.4 is the last release the suite passes on. Lifting this cap
         # means migrating both call sites (and regenerating the golden) --
         # tracked as its own task, not folded in here.
-        "acryl-datahub>=1.7.0,<1.7.0.5",
+        "acryl-datahub>=1.7.0,<1.7.0.10",
         "pyyaml>=6.0",
         # models.py/loader.py/yaml_source_config.py import pydantic directly
         # for the config schema and validation. Only ever a transitive dep

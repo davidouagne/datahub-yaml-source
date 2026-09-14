@@ -36,6 +36,10 @@ as "you forgot to regenerate," not as a bug to work around.
 
 Issues live in GitHub Issues on `davidouagne/datahub-yaml-source`. See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Default canonical label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), all matching their tracker labels 1:1. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context layout (root `CONTEXT.md` + `docs/adr/`, created lazily as needed). See `docs/agents/domain.md`.

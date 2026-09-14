@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Release (PyPI Trusted Publishing + GitHub Release)
-version: 1.0
+version: 1.1
 date_created: 2026-09-05
-last_updated: 2026-09-05
+last_updated: 2026-09-14
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, release, pypi, oidc, trusted-publishing]
 ---
@@ -43,7 +43,7 @@ graph TD
 
 | Job Name | Purpose | Gate | Dependencies | Permissions |
 |----------|---------|------|--------------|-------------|
-| `build` | Checkout with full history/tags; install `.[dev]` + `build`/`twine`; run the unit + integration suite against the tagged commit; `python -m build`; assert the built sdist filename matches the tag; `twine check --strict`; upload `dist/` as a workflow artifact. | None | None | `contents: read` |
+| `build` | Checkout with full history/tags; install the `dev` group + `git`/`s3` extras via `uv sync --frozen`; run the unit + integration suite against the tagged commit; `uv build`; assert the built sdist filename matches the tag; `uvx twine check --strict`; upload `dist/` as a workflow artifact. | None | None | `contents: read` |
 | `pypi-publish` | Download the `dist/` artifact and upload it to PyPI with `pypa/gh-action-pypi-publish` (OIDC, no secret). | GitHub Environment `pypi` — required-reviewer approval before the job starts. | `build` | `id-token: write` only |
 | `github-release` | Download the same `dist/` artifact; `gh release create <tag> --generate-notes --latest` with the artifacts attached. | None (but downstream of the gated publish, so it only runs after a successful upload). | `pypi-publish` | `contents: write` only |
 
@@ -58,7 +58,7 @@ Top-level `permissions:` is empty (`{}`); each job opts in to exactly what it ne
 | REQ-001 | Release only from a version tag. | High | Workflow triggers solely on `push` of a tag matching `v[0-9]+.[0-9]+.[0-9]+`; no `workflow_dispatch`, no branch trigger. |
 | REQ-002 | Re-verify the tagged commit. | High | `build` runs `pytest tests/unit tests/integration` before any artifact is produced; a failure stops the release. Rationale: `ci.yml` never runs on tags, so this SHA is otherwise untested. |
 | REQ-003 | Build both distribution formats. | High | `python -m build` produces `datahub_yaml_source-<X.Y.Z>.tar.gz` and `...-py3-none-any.whl`. |
-| REQ-004 | The build must match the tag exactly. | High | `build` fails if `dist/datahub_yaml_source-${GITHUB_REF_NAME#v}.tar.gz` is absent — i.e. setuptools-scm produced a dev/local version from a dirty tree or a tag off a non-clean commit. |
+| REQ-004 | The build must match the tag exactly. | High | `build` fails if `dist/datahub_yaml_source-${GITHUB_REF_NAME#v}.tar.gz` is absent — i.e. hatch-vcs produced a dev/local version from a dirty tree or a tag off a non-clean commit. |
 | REQ-005 | Metadata is valid for PyPI. | High | `twine check --strict dist/*` passes (renderable long description, valid metadata). |
 | REQ-006 | Publish to PyPI without a stored secret. | High | `pypi-publish` uses `pypa/gh-action-pypi-publish` with `id-token: write` and no `password`/token input; PyPI side is a Trusted Publisher (see `spec` cross-ref and issue #8). |
 | REQ-007 | A human approves before the irreversible step. | High | `pypi-publish` targets the `pypi` Environment, which has a required-reviewer protection rule; the job is queued until the maintainer approves. |
@@ -113,7 +113,7 @@ github_release: release       # a GitHub Release for the tag, notes auto-generat
 - **Concurrency**: one in-flight run per tag ref; never cancelled (`cancel-in-progress: false`).
 - **Runner**: standard hosted Linux runner, single Python (3.12) — the wheel is pure-Python and
   `py3-none-any`, so a matrix would add nothing.
-- **Checkout depth**: `fetch-depth: 0` on every checkout — setuptools-scm needs the tag and history to
+- **Checkout depth**: `fetch-depth: 0` on every checkout — hatch-vcs needs the tag and history to
   derive the version; a shallow clone would build `0.0.0`.
 - **Environment deployment policy**: the `pypi` Environment restricts deployments to a single ref
   pattern — `v*`, type **tag** (not branch). This matches the workflow trigger; `main` and every other
@@ -127,7 +127,7 @@ github_release: release       # a GitHub Release for the tag, notes auto-generat
 |------------|----------|------------------|
 | Test failure on the tagged commit | `build` fails; nothing is built or published | Fix on `main`, delete and re-push the tag from a green commit |
 | Version/tag mismatch (REQ-004) | `build` fails at the check step | Ensure the tag is on a clean commit with no uncommitted changes; re-tag |
-| `twine check` failure | `build` fails | Fix packaging metadata (`setup.py` / `MANIFEST.in`), re-tag |
+| `twine check` failure | `build` fails | Fix packaging metadata in `pyproject.toml` (`[project]` / `[tool.hatch.build]`), re-tag |
 | Maintainer rejects the Environment approval | `pypi-publish` is cancelled; no upload, no GitHub Release | None needed — the tag can be re-run or deleted |
 | PyPI rejects the upload (e.g. version already exists) | `pypi-publish` fails; no GitHub Release | Bump to a new version; PyPI versions are immutable and cannot be re-uploaded |
 | `pypi-publish` succeeds but `github-release` fails | PyPI has the release; GitHub does not | Re-run the `github-release` job, or `gh release create` the tag by hand — the artifact is still on the run |
@@ -165,7 +165,7 @@ github_release: release       # a GitHub Release for the tag, notes auto-generat
 | Tag pushed to a commit not on `main` | Workflow still runs (GitHub can't scope a tag trigger to a branch). REQ-002's test run is the safety net; the maintainer approval is the final check. |
 | Pre-release tag (`v1.2.3rc1`, `v1.2.3.dev1`) | Does **not** match the trigger pattern — ignored. Adding a pre-release lane is future work, not in this version. |
 | Re-pushing an already-released tag | `build`/tests may pass, but PyPI rejects the duplicate version at `pypi-publish`; no GitHub Release. Cut a new version instead. |
-| sdist contents | Curated by `MANIFEST.in` (`prune tests docs spec scripts .github`, exclude repo-meta files); without it, setuptools-scm's file finder would ship the whole tree. |
+| sdist contents | Curated by `pyproject.toml`'s `[tool.hatch.build.targets.sdist]` `exclude` list (`tests`, `docs`, `spec`, `scripts`, `.github`, repo-meta files); without it, hatchling's default sdist would ship the whole tree. |
 | README relative links on PyPI | `long_description` is `README.md` verbatim; its `docs/...` / `_PLANNING.md` links are repo-relative and do not resolve on the PyPI page. Cosmetic, accepted for now. |
 
 ## Validation Criteria
@@ -196,6 +196,7 @@ github_release: release       # a GitHub Release for the tag, notes auto-generat
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-09-05 | Initial specification. `release.yml` (build+verify → gated `pypi-publish` via OIDC → `github-release`) and `.github/release.yml` note categorisation added. PyPI packaging metadata fleshed out in `setup.py`; `MANIFEST.in` added to curate the sdist. TestPyPI lane and pre-release tags deliberately deferred. | David Ouagne |
+| 1.1 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): `build` installs via `uv sync --frozen --group dev --extra git --extra s3`, runs tests and builds via `uv run pytest` / `uv build`, and checks metadata via `uvx twine check --strict` (ephemeral tool env, no persistent `twine` dependency). `setup.py` and `MANIFEST.in` are gone; PyPI packaging metadata and the sdist exclude list both now live in `pyproject.toml`. Version derivation moved from `setuptools-scm` to `hatch-vcs` (same scheme options). No change to triggers, gates, the Environment approval, or OIDC publishing. | David Ouagne |
 
 ## Related Specifications
 

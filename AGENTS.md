@@ -21,8 +21,8 @@ repo in a broken state that only shows up in CI, not locally at a glance:
 After any model change, always run:
 
 ```bash
-python scripts/generate_json_schema.py
-python scripts/generate_markdown_docs.py
+uv run python scripts/generate_json_schema.py
+uv run python scripts/generate_markdown_docs.py
 ```
 
 and commit the regenerated files alongside the model change.
@@ -35,6 +35,10 @@ as "you forgot to regenerate," not as a bug to work around.
 ### Issue tracker
 
 Issues live in GitHub Issues on `davidouagne/datahub-yaml-source`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), all matching their tracker labels 1:1. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 

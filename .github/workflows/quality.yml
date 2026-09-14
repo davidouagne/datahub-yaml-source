@@ -27,29 +27,30 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-        # Full history + tags so setuptools-scm derives the real version
-        # (pyproject.toml [tool.setuptools_scm]); a shallow clone would
+        # Full history + tags so hatch-vcs derives the real version
+        # (pyproject.toml [tool.hatch.version]); a shallow clone would
         # leave every install at the 0.0.0 fallback.
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
+          enable-cache: true
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: setup.py
 
-      # ruff + mypy are declared in setup.py's `dev` extra, so the tool
-      # versions CI uses are the same ones `pip install -e ".[dev]"` gives
-      # a contributor locally -- no separate tool-install step, no drift.
-      - name: Install (dev extras)
-        run: pip install -e ".[dev]"
+      # ruff + mypy are declared in pyproject.toml's `dev` dependency
+      # group, so the tool versions CI uses are the same ones `uv sync`
+      # gives a contributor locally -- no separate tool-install step, no
+      # drift.
+      - name: Install (dev group)
+        run: uv sync --frozen --group dev
 
       - name: ruff check
-        run: ruff check --output-format=github .
+        run: uv run ruff check --output-format=github .
 
       - name: ruff format --check
-        run: ruff format --check --diff .
+        run: uv run ruff format --check --diff .
 
   mypy:
     # Blocking (issue #13). The mypy baseline was driven to zero, so a new
@@ -60,20 +61,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-        # Full history + tags so setuptools-scm derives the real version
-        # (pyproject.toml [tool.setuptools_scm]); a shallow clone would
+        # Full history + tags so hatch-vcs derives the real version
+        # (pyproject.toml [tool.hatch.version]); a shallow clone would
         # leave every install at the 0.0.0 fallback.
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
+          enable-cache: true
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: setup.py
 
-      - name: Install (dev extras)
-        run: pip install -e ".[dev]"
+      - name: Install (dev group)
+        run: uv sync --frozen --group dev
 
       - name: mypy
-        run: mypy
+        run: uv run mypy

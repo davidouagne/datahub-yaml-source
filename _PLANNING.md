@@ -166,7 +166,7 @@ emit workunits → support stateful stale-entity removal) is identical to an API
 
 ```
 datahub-yaml-source/
-├── setup.py                                  # own entry point + deps (pyyaml, acryl-datahub>=1.7.0.9,<1.8)
+├── pyproject.toml                            # own entry point + deps (pyyaml, acryl-datahub>=1.7.0.9,<1.8)
 ├── src/
 │   └── datahub_yaml_source/
 │       ├── __init__.py                       # exports YamlSource

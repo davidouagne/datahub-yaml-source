@@ -75,7 +75,7 @@ jobs:
       # Contract: spec/spec-process-cicd-codecov.md
       - name: Upload coverage to Codecov
         if: ${{ always() }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           use_oidc: true
           flags: py${{ matrix.python-version }}

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Code Quality (Ruff + mypy)
-version: 1.3
+version: 1.4
 date_created: 2026-09-05
-last_updated: 2026-09-07
+last_updated: 2026-09-14
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, lint, format, typing, ruff, mypy]
 ---
@@ -50,7 +50,7 @@ graph TD
 | REQ-001 | Lint all first-party Python with Ruff. | High | `ruff check .` exits 0; any violation fails the `ruff` job. |
 | REQ-002 | Enforce a single auto-format. | High | `ruff format --check .` reports no file would be reformatted. |
 | REQ-003 | Lint/format config is version-controlled and single-source. | High | `[tool.ruff]` lives in `pyproject.toml`; no competing `ruff.toml`/`setup.cfg` lint config exists. |
-| REQ-004 | Tool versions match between CI and a local `pip install -e ".[dev]"`. | Medium | `ruff` and `mypy` are pinned in `setup.py`'s `dev` extra; the workflow installs only that extra, no ad-hoc tool install. |
+| REQ-004 | Tool versions match between CI and a local `uv sync --group dev`. | Medium | `ruff` and `mypy` are pinned in `pyproject.toml`'s `dev` dependency group; the workflow installs only that group, no ad-hoc tool install. |
 | REQ-005 | Type-check the package source with mypy. | High | `mypy` runs against `files = ["src"]` with the `[tool.mypy]` config; a clean tree exits 0. |
 | REQ-006 | A new type error blocks merge. | High | The `mypy` job has no `continue-on-error`; a non-zero mypy exit fails the workflow and the required check. The baseline is zero (issue #13). |
 | REQ-007 | Each blocking check has one stable name for branch protection. | High | The blocking jobs are named exactly `ruff` and `mypy`; renaming either is a breaking change requiring a branch-protection update (see `spec/spec-process-cicd-ci.md` "Branch protection on `main`"). |
@@ -68,7 +68,7 @@ graph TD
 |----|-------|--------|---------------------|
 | PERF-001 | Wall-clock for the `ruff` job | Under 3 minutes | Checkout to job completion, excluding queue wait. |
 | PERF-002 | Superseded runs on the same ref are cancelled | Redundant runs cancelled | `concurrency` group with `cancel-in-progress: true`. |
-| PERF-003 | Dependency install reuses cached wheels when `setup.py` is unchanged | Cache hit reported | `actions/setup-python` pip cache keyed on `setup.py`. |
+| PERF-003 | Dependency install reuses cached wheels when `uv.lock` is unchanged | Cache hit reported | `astral-sh/setup-uv`'s `enable-cache: true`, keyed on `uv.lock`. |
 
 ## Input/Output Contracts
 
@@ -97,8 +97,8 @@ mypy_result: status   # advisory; surfaced in logs, not consumed as a gate
 - **Network**: Outbound to the Python package index only, for dependency installation.
 - **Permissions**: Read-only `contents` (SEC-001).
 - **Checkout depth**: Both `actions/checkout` steps use `fetch-depth: 0` (full history + tags), so
-  `setuptools-scm` (`pyproject.toml` `[tool.setuptools_scm]`) can derive the package version during
-  `pip install -e ".[dev]"`; a shallow clone would resolve every install to the `0.0.0` fallback.
+  `hatch-vcs` (`pyproject.toml` `[tool.hatch.version]`) can derive the package version during
+  `uv sync --group dev`; a shallow clone would resolve every install to the `0.0.0` fallback.
 
 ## Tooling Configuration (authoritative pointers)
 
@@ -109,7 +109,7 @@ The exact configuration lives in `pyproject.toml`; this section records the deci
 | Setting | Value | Rationale |
 |---------|-------|-----------|
 | `line-length` | `100` | A deliberate loosening from the 88 default; the pre-existing code sat well above 88 and 100 keeps the one-off reformat from rewrapping nearly every signature. |
-| `target-version` | `py310` | Matches `setup.py`'s `python_requires` floor (driven by `acryl-datahub>=1.7.0`). |
+| `target-version` | `py310` | Matches `pyproject.toml`'s `requires-python` floor (driven by `acryl-datahub>=1.7.0`). |
 | `lint.select` | `E`, `F`, `I`, `UP`, `B`, `C4`, `SIM`, `RUF` | pycodestyle/pyflakes errors, import sorting, pyupgrade, bugbear, comprehensions, simplify, Ruff-native. Deliberately excludes `ANN` (annotation completeness — that is mypy's job, advisory) and `PL` (too opinionated for a solo maintainer). |
 | `lint.per-file-ignores` | `__init__.py` → `F401`; `tests/**` → `E501` | Re-export modules use unused imports on purpose; test fixtures embed full DataHub URNs and JSON blobs as string literals that are not meaningfully breakable. The formatter still enforces 100 cols on everything it can reflow. |
 | `lint.isort.known-first-party` | `["datahub_yaml_source"]` | Correct first/third-party split in a `src/` layout. |
@@ -160,7 +160,7 @@ suppression can't silently rot.
 | Lint violation | Fail the `ruff` job | Run `ruff check --fix .` locally; hand-fix what `--fix` won't. |
 | Formatting difference | Fail the `ruff` job | Run `ruff format .` locally and commit. |
 | mypy error(s) | Fail the `mypy` job | Fix the annotation/guard, or (last resort, with a justifying comment) `# type: ignore[<code>]`. |
-| Dependency install failure | Fail the affected job | Investigate resolution against `setup.py`. |
+| Dependency install failure | Fail the affected job | Investigate resolution against `pyproject.toml`/`uv.lock`. |
 
 ## Quality Gates
 
@@ -186,7 +186,7 @@ suppression can't silently rot.
 - **VLD-003**: On a branch that adds a new mypy error, the `mypy` job fails and the workflow
   concludes unsuccessfully.
 - **VLD-004**: No job in this workflow references a secret.
-- **VLD-005**: `pip install -e ".[dev]"` on a clean checkout provides `ruff` and `mypy` at the
+- **VLD-005**: `uv sync --frozen --group dev` on a clean checkout provides `ruff` and `mypy` at the
   versions the workflow runs.
 
 ## Change Management
@@ -195,8 +195,7 @@ suppression can't silently rot.
 
 1. **Specification Update**: Modify this document first.
 2. **Review & Approval**: Standard pull-request review.
-3. **Implementation**: Apply changes to `.github/workflows/quality.yml` and/or `pyproject.toml` /
-   `setup.py`.
+3. **Implementation**: Apply changes to `.github/workflows/quality.yml` and/or `pyproject.toml`.
 4. **Testing**: Confirm the Validation Criteria on a trial PR.
 5. **Deployment**: Merge once the trial run conforms.
 
@@ -211,6 +210,7 @@ for `main` (its required status checks match job names verbatim).
 | 1.1 | 2026-09-05 | Added `fetch-depth: 0` to both `actions/checkout` steps: `pyproject.toml` gained a `[build-system]` + `[tool.setuptools_scm]` (issue #3), so the editable install now needs full history + tags to resolve a real version. | David Ouagne |
 | 1.2 | 2026-09-07 | **mypy promoted to blocking** (issue #13). Baseline driven 31 → 0 with real fixes (no `# type: ignore`, no baseline file); one genuine bug fixed on the way (CUSTOM assertion `field=`). Job renamed `mypy (advisory)` → `mypy`, `continue-on-error` removed. `types-PyYAML` added to the `dev` extra. `mypy` added to `main`'s required status checks alongside `ruff`. | David Ouagne |
 | 1.3 | 2026-09-07 | Ruff dev-dependency range widened to `>=0.12,<0.17` (Dependabot #21). Added `extend-exclude = ["*.md"]` to `[tool.ruff]`: 0.16's `ruff format` reformats Python blocks inside Markdown, which would rewrite `_PLANNING.md`'s hand-shaped snippets. No `.py` file changed under 0.16. | David Ouagne |
+| 1.4 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): both jobs install via `uv sync --frozen --group dev` and run tools via `uv run`; `ruff`/`mypy` now live in `pyproject.toml`'s `dev` dependency group instead of `setup.py`'s `dev` extra. Version derivation moved from `setuptools-scm` to `hatch-vcs`. `astral-sh/setup-uv`'s cache (keyed on `uv.lock`) replaces the pip cache keyed on `setup.py`. No change to rule sets, mypy config, or blocking status. | David Ouagne |
 
 ## Related Specifications
 

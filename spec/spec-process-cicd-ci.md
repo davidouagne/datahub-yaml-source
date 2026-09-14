@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.8
+version: 1.9
 date_created: 2026-08-16
-last_updated: 2026-09-07
+last_updated: 2026-09-14
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -70,7 +70,7 @@ graph TD
 |----|-------|--------|---------------------|
 | PERF-001 | Wall-clock time for the `test` job (single matrix leg) | Under 5 minutes | Time from checkout to job completion, excluding queue wait |
 | PERF-002 | Superseded runs on the same ref are not left running | Redundant runs cancelled | New push to the same PR/branch cancels the previous in-flight run for that ref |
-| PERF-003 | Dependency installation reuses cached wheels between runs when the dependency set is unchanged | Cache hit on unchanged `setup.py` | Install step reports a cache hit when `setup.py` is unchanged since the last run |
+| PERF-003 | Dependency installation reuses cached wheels between runs when the dependency set is unchanged | Cache hit on unchanged `uv.lock` | `astral-sh/setup-uv`'s `enable-cache: true` reports a cache hit when `uv.lock` is unchanged since the last run |
 
 ## Input/Output Contracts
 
@@ -117,10 +117,10 @@ coverage_xml: artifact          # Description: coverage.xml from each `test` leg
   consuming runner time indefinitely.
 - **Concurrency**: One in-flight run per ref; a new push cancels the previous run for the same ref (PERF-002).
 - **Resource Limits**: Standard hosted Linux runner; no elevated compute required (no compilation of native
-  extensions beyond what `pip install` resolves from wheels).
+  extensions beyond what `uv sync` resolves from wheels).
 - **Checkout depth**: Every `actions/checkout` step uses `fetch-depth: 0` (full history + tags). The
-  package version is derived from Git tags by `setuptools-scm` (`pyproject.toml` `[tool.setuptools_scm]`);
-  under the default shallow clone `setuptools-scm` sees no tags and every install resolves to the
+  package version is derived from Git tags by `hatch-vcs` (`pyproject.toml` `[tool.hatch.version]`);
+  under the default shallow clone `hatch-vcs` sees no tags and every install resolves to the
   `0.0.0` fallback. This is a build-input requirement, not a behavioural one — the test suite itself
   still contacts no network service.
 
@@ -137,7 +137,7 @@ coverage_xml: artifact          # Description: coverage.xml from each `test` leg
 
 | Error Type | Response | Recovery Action |
 |------------|----------|------------------|
-| Dependency install failure | Fail the affected job immediately | Investigate dependency resolution (e.g. an incompatible `acryl-datahub` release); pin or adjust `setup.py` |
+| Dependency install failure | Fail the affected job immediately | Investigate dependency resolution (e.g. an incompatible `acryl-datahub` release); pin or adjust `pyproject.toml`, then run `uv lock` and commit the updated `uv.lock` |
 | Unit/integration test failure | Fail the `test` job for that matrix leg | Fix the failing code or test; re-run |
 | Generated-artifact drift (docs/schema out of sync with models) | Fail via the dedicated drift-detection tests inside the `test` job | Regenerate `docs/sources/yaml/reference.md` and `docs/sources/yaml/schema/yaml-metadata.schema.json` from the current models and commit them alongside the model change |
 | Golden-file mismatch | Fail via the golden-file comparison test | Review whether the output change is intentional; if so, regenerate the golden file locally and review the diff by hand before committing — never regenerate inside CI |
@@ -251,9 +251,11 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 
 ### Workflow Validation
 
-- **VLD-001**: `test` job passes on all matrix legs (Python 3.10, 3.11, 3.12) using `pip install -e ".[dev]"`.
-- **VLD-002**: `minimal-install-check` passes using a base install (`pip install .`, no extras) and confirms
-  the `yaml` source is listed among registered ingestion source plugins.
+- **VLD-001**: `test` job passes on all matrix legs (Python 3.10, 3.11, 3.12) using
+  `uv sync --frozen --group dev --extra git --extra s3`.
+- **VLD-002**: `minimal-install-check` passes using a base install (a built wheel installed into a fresh
+  venv via `uv build --wheel` + `uv pip install`, no extras, no dev group) and confirms the `yaml` source
+  is listed among registered ingestion source plugins.
 - **VLD-003**: `ci-status` reports failure if either `test` or `minimal-install-check` fails, and success
   only when both succeed.
 - **VLD-004**: No job in this workflow invokes any golden-file *update* mode.
@@ -288,6 +290,7 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | 1.6 | 2026-09-07 | Added `mypy` to `main`'s required status checks (issue #13 promoted it to blocking). No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
 | 1.7 | 2026-09-07 | The `test` job will also emit `coverage.xml` (`--cov-report=xml`) and upload it to Codecov via `codecov/codecov-action` using GitHub OIDC (`id-token: write` on `test`; no stored token). Reporting only — no new required check, `--cov-fail-under=80` unchanged. Contract in the new `spec/spec-process-cicd-codecov.md`; the `ci.yml` change itself is deferred to wayfinder map issue #40's wiring ticket. This revision records the Secrets/Outputs/Security-Controls/Edge-Case impact and refreshes the stale "None yet" Related Specifications stub. | David Ouagne |
 | 1.8 | 2026-09-07 | Workflow-file change: the `test` job now runs `pytest ... --cov-report=xml`, sets job-level `permissions: {contents: read, id-token: write}`, and has a `codecov/codecov-action@v5` upload step (`use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, `if: always()`). Implements what 1.7 specified; `spec/spec-process-cicd-codecov.md` → 1.1 in the same change. `CI status` still aggregates only `test` + `minimal-install-check`; the Codecov step cannot fail the job. | David Ouagne |
+| 1.9 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): `test` installs via `uv sync --frozen --group dev --extra git --extra s3` and runs tests via `uv run pytest`; `minimal-install-check` now builds the wheel with `uv build --wheel` and installs it into a fresh venv (`uv venv` + `uv pip install`) instead of `pip install .`, closer proof of what an actual consumer of the published package gets. Version derivation moved from `setuptools-scm` to `hatch-vcs` (same underlying scheme options), so every reference to the former is now the latter. `astral-sh/setup-uv`'s own cache (keyed on `uv.lock`) replaces `actions/setup-python`'s pip cache (keyed on `setup.py`). No change to jobs, gates, matrix, or `CI status`'s aggregation. | David Ouagne |
 
 ## Related Specifications
 

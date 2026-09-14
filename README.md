@@ -28,8 +28,8 @@ Both `reference.md` and the JSON Schema are generated from
 `src/datahub_yaml_source/models.py`; regenerate them after changing a model:
 
 ```bash
-python scripts/generate_json_schema.py
-python scripts/generate_markdown_docs.py
+uv run python scripts/generate_json_schema.py
+uv run python scripts/generate_markdown_docs.py
 ```
 
 ## Installation
@@ -53,15 +53,17 @@ datahub ingest -c docs/sources/yaml/yaml_recipe.yml
 
 ## Development
 
+Managed with [uv](https://docs.astral.sh/uv/):
+
 ```bash
-pip install -e ".[dev]"
-pytest tests/unit                 # unit tests
-pytest tests/integration          # integration test against a curated fixture,
+uv sync --group dev --extra git --extra s3
+uv run pytest tests/unit          # unit tests
+uv run pytest tests/integration   # integration test against a curated fixture,
                                    # golden-file checked
 ```
 
 To regenerate the integration golden file after an intentional output change:
 
 ```bash
-pytest tests/integration/yaml_source/test_yaml_source_golden.py --update-golden-files
+uv run pytest tests/integration/yaml_source/test_yaml_source_golden.py --update-golden-files
 ```

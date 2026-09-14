@@ -4,27 +4,32 @@ Thanks for considering a contribution to `datahub-yaml-source`.
 
 ## Development setup
 
-Supported Python versions: 3.10, 3.11, 3.12 (the floor tracked in `setup.py`'s
-`python_requires`, matching `acryl-datahub`'s own Python >=3.10 requirement).
-CI (`.github/workflows/ci.yml`) runs the test suite on all three.
+Supported Python versions: 3.10, 3.11, 3.12 (the floor tracked in
+`pyproject.toml`'s `requires-python`, matching `acryl-datahub`'s own Python
+>=3.10 requirement). CI (`.github/workflows/ci.yml`) runs the test suite on
+all three.
+
+This project is managed with [uv](https://docs.astral.sh/uv/). Install it
+once, then:
 
 ```bash
-pip install -e ".[dev]"
+uv sync --group dev --extra git --extra s3
 ```
 
-This installs the connector in editable mode and registers the `yaml` source
+This creates/updates `.venv`, installs the connector in editable mode with
+the dev tooling and both optional extras, and registers the `yaml` source
 type with `acryl-datahub` via a `datahub.ingestion.source.plugins` entry
 point. Verify it's picked up with:
 
 ```bash
-datahub check plugins
+uv run datahub check plugins
 ```
 
 ## Running the tests
 
 ```bash
-pytest tests/unit                 # unit tests
-pytest tests/integration          # integration test against a curated fixture,
+uv run pytest tests/unit          # unit tests
+uv run pytest tests/integration   # integration test against a curated fixture,
                                    # golden-file checked
 ```
 
@@ -32,7 +37,7 @@ If you intentionally change the connector's output, refresh the integration
 golden file and review the diff by hand before committing it:
 
 ```bash
-pytest tests/integration/yaml_source/test_yaml_source_golden.py --update-golden-files
+uv run pytest tests/integration/yaml_source/test_yaml_source_golden.py --update-golden-files
 ```
 
 ## Regenerating derived docs
@@ -43,8 +48,8 @@ Pydantic models in `src/datahub_yaml_source/models.py`. Any change to those
 models must be followed by:
 
 ```bash
-python scripts/generate_json_schema.py
-python scripts/generate_markdown_docs.py
+uv run python scripts/generate_json_schema.py
+uv run python scripts/generate_markdown_docs.py
 ```
 
 `tests/unit/test_json_schema_generation.py` and
@@ -78,14 +83,14 @@ kind, emission ordering, reference-resolution strategy).
 
 ### Lint, format, and types
 
-Ruff and mypy are installed by the `dev` extra. Before pushing, run the same
-checks CI runs (`.github/workflows/quality.yml`, contract in
+Ruff and mypy are installed by the `dev` dependency group. Before pushing,
+run the same checks CI runs (`.github/workflows/quality.yml`, contract in
 `spec/spec-process-cicd-quality.md`):
 
 ```bash
-ruff check .            # lint (blocking in CI)
-ruff format --check .   # formatting (blocking in CI); drop --check to apply
-mypy                    # type check over src/ (blocking in CI)
+uv run ruff check .            # lint (blocking in CI)
+uv run ruff format --check .   # formatting (blocking in CI); drop --check to apply
+uv run mypy                    # type check over src/ (blocking in CI)
 ```
 
 `ruff check --fix .` auto-fixes most lint findings. `ruff` config
@@ -100,7 +105,7 @@ needs a one-line reason.
 1. Open an issue or discussion first for anything beyond a small fix, so the
    approach can be agreed before you invest time in it.
 2. Keep pull requests focused — one logical change per PR.
-3. Make sure `pytest tests/unit tests/integration` passes and that generated
+3. Make sure `uv run pytest tests/unit tests/integration` passes and that generated
    docs/schema are committed alongside any model change.
 4. Describe *why* the change is needed, not just what it does — the commit
    message and PR description should stand on their own.

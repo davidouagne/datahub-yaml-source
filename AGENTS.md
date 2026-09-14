@@ -21,8 +21,8 @@ repo in a broken state that only shows up in CI, not locally at a glance:
 After any model change, always run:
 
 ```bash
-python scripts/generate_json_schema.py
-python scripts/generate_markdown_docs.py
+uv run python scripts/generate_json_schema.py
+uv run python scripts/generate_markdown_docs.py
 ```
 
 and commit the regenerated files alongside the model change.

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Process Specification - Dependency Updates (Dependabot)
-version: 1.0
+version: 1.1
 date_created: 2026-09-07
-last_updated: 2026-09-07
+last_updated: 2026-09-14
 owner: David Ouagne
 tags: [process, cicd, github, automation, dependencies, dependabot, supply-chain]
 ---
@@ -28,7 +28,7 @@ directly (same arrangement as `spec/spec-process-cicd-codeql.md`).
 ```mermaid
 graph TD
     A[Dependabot weekly scan - Monday] --> B{Updates available?}
-    B -->|minor / patch| C[One grouped PR per ecosystem<br/>pip-minor-patch / actions-minor-patch]
+    B -->|minor / patch| C[One grouped PR per ecosystem<br/>uv-minor-patch / actions-minor-patch]
     B -->|major| D[One individual PR per dependency]
     C --> E[ci.yml + quality.yml run on the PR]
     D --> E
@@ -45,21 +45,21 @@ This section records the decisions and their rationale; the file is the source o
 | Setting | Value | Rationale |
 |---------|-------|-----------|
 | `version` | `2` | Current Dependabot config schema. |
-| Ecosystems | `pip` (`/`) and `github-actions` (`/`) | `pip` covers `setup.py` + `pyproject.toml` at the repo root (`install_requires` + all extras, including `dev`). `github-actions` covers the `uses:` pins in `.github/workflows/*.yml`. |
+| Ecosystems | `uv` (`/`) and `github-actions` (`/`) | `uv` covers `pyproject.toml` + `uv.lock` at the repo root (project dependencies, optional-dependencies, and the `dev` dependency group). `github-actions` covers the `uses:` pins in `.github/workflows/*.yml`. |
 | `schedule.interval` | `weekly` | One batch a week is enough churn for a solo maintainer; `daily` would just lengthen the manual queue. |
 | `schedule.day` | `monday` | Predictable — the maintainer knows when to expect the PRs. |
-| `groups` (per ecosystem) | `pip-minor-patch`, `actions-minor-patch`: `patterns: ["*"]`, `update-types: ["minor", "patch"]` | Collapse all non-breaking bumps into **one PR per ecosystem** to keep the manual merge queue short. Major updates are deliberately left **out** of the groups, so each breaking bump lands as its own PR and is reviewed in isolation. |
+| `groups` (per ecosystem) | `uv-minor-patch`, `actions-minor-patch`: `patterns: ["*"]`, `update-types: ["minor", "patch"]` | Collapse all non-breaking bumps into **one PR per ecosystem** to keep the manual merge queue short. Major updates are deliberately left **out** of the groups, so each breaking bump lands as its own PR and is reviewed in isolation. |
 | `open-pull-requests-limit` | `5` per ecosystem | With grouping, steady state is ~1 grouped PR + a few majors; 5 is headroom without letting the queue balloon. |
 | `labels` | `["dependencies"]` | Feeds the `⬆️ Dependencies` category in `.github/release.yml` (auto-generated release notes). The `dependencies` label is created in the repo (colour `#0366d6`), not left to Dependabot's implicit creation. |
-| `commit-message.prefix` | `build` (pip), `ci` (github-actions); `include: scope` on pip | Matches the repo's conventional-commit history (`build:` for packaging/deps, `ci:` for workflow/tooling). |
+| `commit-message.prefix` | `build` (uv), `ci` (github-actions); `include: scope` on uv | Matches the repo's conventional-commit history (`build:` for packaging/deps, `ci:` for workflow/tooling). |
 | `ignore` | **none** | See below. |
 | Auto-merge | **not configured** — deliberate | Recorded on wayfinder map issue #1: every dependency PR, patch and minor included, is merged by hand. No `dependabot`/automerge Action, no branch rule granting it. |
 
 ### No `ignore` for `acryl-datahub` majors
 
-`setup.py` pins `acryl-datahub>=1.7.0,<1.7.0.5` on purpose — the `1.7.0.x` series takes undeprecated
+`pyproject.toml` pins `acryl-datahub>=1.7.0.9,<1.8` on purpose — the `1.7.0.x` series takes undeprecated
 breaks in the experimental `datahub.sdk.*` surface this connector builds on (documented inline in
-`setup.py`). Dependabot will open a PR proposing to lift that ceiling. That PR is **wanted**: the
+`pyproject.toml`). Dependabot will open a PR proposing to lift that ceiling. That PR is **wanted**: the
 by-hand review it gets (like every dependency PR) is the gate, and lifting the cap is tracked as its
 own migration task elsewhere. An `ignore` rule would only suppress a signal the maintainer wants
 queued.
@@ -76,7 +76,7 @@ hand (it is the action's publisher-recommended moving pointer).
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
-| REQ-001 | Python deps are monitored. | High | A `pip` update block with `directory: "/"` exists; Dependabot's "Last checked" for pip is current on the repo's Insights > Dependency graph > Dependabot tab. |
+| REQ-001 | Python deps are monitored. | High | A `uv` update block with `directory: "/"` exists; Dependabot's "Last checked" for uv is current on the repo's Insights > Dependency graph > Dependabot tab. |
 | REQ-002 | Workflow action pins are monitored. | High | A `github-actions` update block with `directory: "/"` exists and is shown as active. |
 | REQ-003 | Non-breaking bumps do not flood the queue. | High | Minor/patch updates for an ecosystem arrive as a single grouped PR, not one per package. |
 | REQ-004 | Breaking bumps are individually reviewable. | Medium | A major-version update appears as its own PR, outside the group. |
@@ -117,7 +117,7 @@ hand (it is the action's publisher-recommended moving pointer).
 ## Validation Criteria
 
 - **VLD-001**: `.github/dependabot.yml` parses (no error banner on the repo's Dependabot tab) and lists
-  both a `pip` and a `github-actions` update block, each `directory: "/"`, `interval: weekly`.
+  both a `uv` and a `github-actions` update block, each `directory: "/"`, `interval: weekly`.
 - **VLD-002**: The first weekly run (or a manual "Check for updates") produces at most one grouped PR
   per ecosystem for outstanding minor/patch bumps.
 - **VLD-003**: Every Dependabot PR carries the `dependencies` label and runs `CI status` + `ruff`.
@@ -144,6 +144,7 @@ protection and the decision on map issue #1.
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. `.github/dependabot.yml` added: `pip` + `github-actions`, weekly (Monday), minor/patch grouped one-PR-per-ecosystem, majors individual, limit 5, `dependencies` label, `build`/`ci` commit prefixes. No `ignore` (acryl-datahub cap left visible), no auto-merge. `dependencies` label created (`#0366d6`). Pointer added to `spec/spec-process-cicd-ci.md` Dependent Workflows. | David Ouagne |
+| 1.1 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): the Python ecosystem block's `package-ecosystem` changed from `pip` to `uv` (now tracks `pyproject.toml` + `uv.lock`), and its group renamed `pip-minor-patch` → `uv-minor-patch`. Corrected a stale reference in the "No `ignore`" note: the actual `acryl-datahub` cap is `<1.8`, not the `<1.7.0.5` this document had drifted to. No change to schedule, grouping philosophy, labels, or the no-auto-merge decision. | David Ouagne |
 
 ## Related Specifications
 

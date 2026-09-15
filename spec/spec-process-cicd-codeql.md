@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Code Scanning (CodeQL, default setup)
-version: 1.0
+version: 1.1
 date_created: 2026-09-07
-last_updated: 2026-09-07
+last_updated: 2026-09-15
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, security, sast, codeql, code-scanning]
 ---
@@ -53,7 +53,7 @@ gh api repos/davidouagne/datahub-yaml-source/code-scanning/default-setup
 | Setting | Value | Rationale |
 |---------|-------|-----------|
 | `state` | `configured` | Default setup enabled. |
-| `languages` | `python`, `actions` | `python` is the package source. `actions` is included on purpose: this repo's active work is hardening its own GitHub Actions workflows (`ci.yml`, `quality.yml`, `release.yml`), and CodeQL's Actions pack catches workflow script injection, over-broad `permissions`, and unpinned actions at zero extra cost. GitHub auto-detected both. |
+| `languages` | `actions`, `javascript`, `javascript-typescript`, `python`, `typescript` (live-verified 2026-09-15; was `python`, `actions` only at v1.0) | `python` is the package source. `actions` is included on purpose: this repo's active work is hardening its own GitHub Actions workflows (`ci.yml`, `release.yml`, `dependency-review.yml`, `audit.yml`, `commit-policy.yml`), and CodeQL's Actions pack catches workflow script injection, over-broad `permissions`, and unpinned actions at zero extra cost. GitHub auto-detected both originally. The `javascript`/`javascript-typescript`/`typescript` entries are **not** new JS/TS source in this repo — confirmed via `git ls-files` matching zero `*.js`/`*.ts`/`*.jsx`/`*.tsx` files — this is GitHub's own default-setup language auto-detection/analyzer bundling for repos with GitHub Actions workflows, observed drifting in independently of any repo change (first documented in `docs/standards/ci-cd-security-quality.md` §3.3, issue #59). |
 | `query_suite` | `default` | Not `extended`. The `default` suite is the high-signal / low-noise set; `extended` adds many lower-severity/experimental queries that are noise for a solo maintainer. Revisit only if the threat model changes. |
 | `threat_model` | `remote` | GitHub default — treat only remote (network) input as tainted, not local files/env. Appropriate for a library that parses user-supplied YAML paths but is not a network service. |
 | `schedule` | `weekly` | Set by default setup; picks up newly-published CodeQL queries without a code change. |
@@ -69,7 +69,11 @@ gh api --method PATCH repos/davidouagne/datahub-yaml-source/code-scanning/defaul
 
 Requires repo **admin** and a token with the `repo` scope. The PATCH returns a `run_id` for the
 initial "CodeQL Setup" run; enablement is complete when that run concludes `success` and
-`gh api .../code-scanning/analyses` lists a CodeQL analysis for each language.
+`gh api .../code-scanning/analyses` lists a CodeQL analysis for each language. This command is the
+historical record of the *original* enablement (`languages: python, actions` only) — it was never
+re-run to add `javascript`/`javascript-typescript`/`typescript`; those appeared on their own per the
+`languages` row's note above. Re-running this exact command would revert to the two-language set; not
+done, since the current five-language set is accurate to what GitHub's default setup already runs.
 
 ## Requirements Matrix
 
@@ -105,11 +109,12 @@ reported **0**.
 
 | Alert | Rule | Severity | Location | Assessment |
 |-------|------|----------|----------|------------|
-| #1, #2 | `py/incomplete-url-substring-sanitization` | `warning` (security-severity: high) | `src/datahub_yaml_source/yaml_source_config.py:31` | `_https_clone_url` guards with `repo.startswith("github.com/")` / `repo.startswith("gitlab.com/")` on an already `strip()`/`rstrip("/")`-normalised string. `startswith` is an anchored prefix check, not the unanchored `in` / substring pattern this rule targets — these read as **false positives**. Left **open** and untriaged in the Security tab at this spec version; dismissing or fixing them is out of scope for the ticket that enabled CodeQL (wayfinder map issue #5) and is not tracked as required work. |
+| #1, #2 | `py/incomplete-url-substring-sanitization` | `warning` (security-severity: high) | `src/datahub_yaml_source/yaml_source_config.py:32` (line number as of `docs/standards/ci-cd-security-quality.md`'s 2026-09-15 live check; was `:31` at v1.0, shifted by unrelated edits since) | `_https_clone_url` guards with `repo.startswith("github.com/")` / `repo.startswith("gitlab.com/")` on an already `strip()`/`rstrip("/")`-normalised string. `startswith` is an anchored prefix check, not the unanchored `in` / substring pattern this rule targets — these read as **false positives**. Left **open** and untriaged in the Security tab at this spec version; dismissing or fixing them is out of scope for the ticket that enabled CodeQL (wayfinder map issue #5) and is not tracked as required work. |
 
 This baseline is recorded, not suppressed — consistent with how the mypy baseline is handled in
-`spec/spec-process-cicd-quality.md`. There is no CodeQL config to add `paths-ignore` or query filters
-(default setup does not support it); narrowing would require switching to advanced setup.
+`spec/spec-process-cicd-ci.md`'s "Lint & Type-Check Configuration" section (formerly
+`spec/spec-process-cicd-quality.md`, retired). There is no CodeQL config to add `paths-ignore` or query
+filters (default setup does not support it); narrowing would require switching to advanced setup.
 
 ## Error Handling Strategy
 
@@ -131,13 +136,16 @@ This baseline is recorded, not suppressed — consistent with how the mypy basel
 
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
-| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). The branch-protection ticket (map issue #9) requires only `CI status` and `ruff`. | n/a |
-| `spec/spec-process-cicd-ci.md` (CI), `spec/spec-process-cicd-quality.md` (Quality) | Siblings; disjoint responsibility. CI owns test/coverage, Quality owns lint/format/types, this owns SAST. Only CI and Quality gate `main`. | Same trigger events (push/PR to `main`) |
+| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). `main`'s required checks are `["CI status", "dependency-review"]` (`spec/spec-process-cicd-ci.md`, `spec/spec-process-cicd-dependency-review.md`). | n/a |
+| `spec/spec-process-cicd-ci.md` (CI) | Sibling; disjoint responsibility. CI owns test/coverage/lint/format/types (the latter two folded in from the now-retired `spec/spec-process-cicd-quality.md` as of `ci.md` v1.12), this owns SAST. CI gates `main`; this is advisory. | Same trigger events (push/PR to `main`) |
+| `spec/spec-process-cicd-dependency-review.md` | Also gates `main` (required as of v1.2); disjoint responsibility (SCA license/vuln gate, not SAST). | Same trigger events (PR to `main`) |
 
 ## Validation Criteria
 
 - **VLD-001**: `gh api repos/davidouagne/datahub-yaml-source/code-scanning/default-setup` returns
-  `state: configured`, `query_suite: default`, `languages` containing `python` and `actions`.
+  `state: configured`, `query_suite: default`, `languages` containing `python` and `actions` (at least
+  these two; live-verified 2026-09-15 it also includes `javascript`/`javascript-typescript`/`typescript`
+  — see the `languages` configuration row above for why that's not a concern).
 - **VLD-002**: `gh api repos/davidouagne/datahub-yaml-source/code-scanning/analyses` lists a CodeQL
   analysis for both `/language:python` and `/language:actions`.
 - **VLD-003**: The repo's **Security > Code scanning** page shows CodeQL as an active tool.
@@ -165,10 +173,12 @@ protection.
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. CodeQL enabled via **default setup** (`state=configured`, `query_suite=default`, `languages=python,actions`, `threat_model=remote`, weekly schedule). No workflow file committed. Advisory only — not a required check on `main`. Recorded baseline: 2 open `py/incomplete-url-substring-sanitization` alerts (both likely false positives on `startswith` prefix guards in `yaml_source_config.py`), 0 from Actions analysis. | David Ouagne |
+| 1.1 | 2026-09-15 | Live-state refresh (no config change): `languages` now returns `actions, javascript, javascript-typescript, python, typescript` (was `python, actions`) — GitHub's own default-setup auto-detection, not new JS/TS source in this repo (confirmed via `git ls-files`, first caught in `docs/standards/ci-cd-security-quality.md` §3.3, issue #59). Also: the open-alert location's line number corrected `:31` → `:32` (unrelated edits shifted it); every `spec/spec-process-cicd-quality.md` reference replaced following that spec's retirement into `spec/spec-process-cicd-ci.md` v1.12; `main`'s required-checks references corrected from the stale `["CI status", "ruff"]` to the current `["CI status", "dependency-review"]`. | David Ouagne |
 
 ## Related Specifications
 
-- `spec/spec-process-cicd-ci.md` — CI (install, test, coverage); a required check on `main`.
-- `spec/spec-process-cicd-quality.md` — Ruff (blocking) + mypy (advisory); the `ruff` job is a
-  required check on `main`. This spec is their SAST sibling; unlike them it gates nothing yet.
+- `spec/spec-process-cicd-ci.md` — CI (install, test, coverage, lint, typecheck since v1.12); a required
+  check on `main`.
+- `spec/spec-process-cicd-dependency-review.md` — also a required check on `main` as of v1.2. This spec
+  is their SAST sibling; unlike them it gates nothing yet.
 - `spec/spec-process-cicd-release.md` — Release pipeline; unrelated trigger surface.

@@ -10,9 +10,14 @@ from datahub.metadata.schema_classes import (
     DataProcessInstanceRunEventClass,
 )
 
-from datahub_yaml_source.builders.common import DEFAULT_ACTOR_URN, mcp_workunit, owner_urn
+from datahub_yaml_source.builders.common import DEFAULT_ACTOR_URN, mcp_workunit
 from datahub_yaml_source.models import DataProcessInstanceDoc
-from datahub_yaml_source.urns import data_job_urn, data_process_instance_urn, dataset_urn
+from datahub_yaml_source.urns import (
+    data_job_urn,
+    data_process_instance_urn,
+    dataset_urn,
+    owner_urn,
+)
 
 
 def build_data_process_instance(

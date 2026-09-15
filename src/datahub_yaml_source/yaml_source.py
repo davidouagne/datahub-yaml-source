@@ -1,10 +1,11 @@
 import logging
 import tempfile
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
+import requests
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.decorators import (
     SupportStatus,
@@ -68,10 +69,16 @@ from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_config import YamlSourceConfig
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
+if TYPE_CHECKING:
+    # Only imported for type-checking -- see the lazy runtime import below.
+    from datahub.ingestion.source.aws.aws_common import AwsConnectionConfig
+
 logger = logging.getLogger(__name__)
 
 
-def _resolve_aws_connection(aws_connection_config: dict[str, Any] | None) -> Any | None:
+def _resolve_aws_connection(
+    aws_connection_config: dict[str, Any] | None,
+) -> "AwsConnectionConfig | None":
     """Lazily build an `AwsConnectionConfig` from the config dict, if set.
 
     `AwsConnectionConfig` (datahub.ingestion.source.aws.aws_common) hard-imports
@@ -83,7 +90,9 @@ def _resolve_aws_connection(aws_connection_config: dict[str, Any] | None) -> Any
     if aws_connection_config is None:
         return None
     try:
-        from datahub.ingestion.source.aws.aws_common import AwsConnectionConfig
+        from datahub.ingestion.source.aws.aws_common import (  # noqa: PLC0415
+            AwsConnectionConfig,
+        )
     except ImportError as e:
         raise ImportError(
             "Reading s3:// paths requires the 's3' extra: pip install datahub-yaml-source[s3]"
@@ -139,13 +148,20 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     config: YamlSourceConfig
     report: YamlSourceReport
 
-    def __init__(self, config: YamlSourceConfig, ctx: PipelineContext):
-        super().__init__(config, ctx)
+    def __init__(self, config: YamlSourceConfig, ctx: PipelineContext) -> None:
+        # StatefulIngestionSourceBase.__init__ is hardcoded to
+        # StatefulIngestionConfigBase[StatefulIngestionConfig] rather than
+        # being itself generic; YamlSourceConfig's narrower
+        # StatefulIngestionConfigBase[StatefulStaleMetadataRemovalConfig] is
+        # a real subtype (StatefulStaleMetadataRemovalConfig subclasses
+        # StatefulIngestionConfig) but Python's invariant Generic can't
+        # express that across the call boundary.
+        super().__init__(config, ctx)  # type: ignore[arg-type]
         self.config = config
         self.report = YamlSourceReport()
 
     @classmethod
-    def create(cls, config_dict: dict, ctx: PipelineContext) -> "YamlSource":
+    def create(cls, config_dict: dict[str, Any], ctx: PipelineContext) -> "YamlSource":
         config = YamlSourceConfig.model_validate(config_dict)
         return cls(config, ctx)
 
@@ -224,7 +240,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         def on_file_scanned(path: str) -> None:
             self.report.files_scanned += 1
 
-        def on_unknown_fields(path: str, kind: str, field_names: list) -> None:
+        def on_unknown_fields(path: str, kind: str, field_names: list[str]) -> None:
             message = f"{path}: kind={kind} unexpected field(s): {sorted(field_names)}"
             if self.config.fail_on_unresolved_reference:
                 raise ValueError(message)
@@ -282,6 +298,15 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             return
         index = ReferenceIndex(repository)
 
+        yield from self._catalog_workunits(repository, index)
+        yield from self._data_asset_workunits(repository, index)
+        yield from self._ml_workunits(repository, index)
+        yield from self._software_ops_workunits(repository, index)
+
+    def _catalog_workunits(
+        self, repository: ParsedRepository, index: ReferenceIndex
+    ) -> Iterable[MetadataWorkUnit]:
+        """Platform/glossary/governance kinds, in `get_workunits_internal`'s order."""
         for platform_doc in repository.platforms:
             self.report.platforms_scanned += 1
             yield from self._safe_build(
@@ -327,6 +352,10 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
                 self.report,
             )
 
+    def _data_asset_workunits(
+        self, repository: ParsedRepository, index: ReferenceIndex
+    ) -> Iterable[MetadataWorkUnit]:
+        """Container/dataset/BI/document kinds, in `get_workunits_internal`'s order."""
         for container_doc in topological_sort_containers(repository.containers):
             self.report.containers_scanned += 1
             yield from self._safe_build(
@@ -369,8 +398,14 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
                 "DOCUMENT", document_doc.id, build_document, document_doc, index, self.report
             )
 
-        # MLFEATURE/MLPRIMARY_KEY before MLFEATURE_TABLE (which references them);
-        # MLMODEL_GROUP before MLMODEL (which references its group).
+    def _ml_workunits(
+        self, repository: ParsedRepository, index: ReferenceIndex
+    ) -> Iterable[MetadataWorkUnit]:
+        """ML/semantic-layer kinds, in `get_workunits_internal`'s order.
+
+        MLFEATURE/MLPRIMARY_KEY before MLFEATURE_TABLE (which references them);
+        MLMODEL_GROUP before MLMODEL (which references its group).
+        """
         for feature_doc in repository.ml_features:
             self.report.ml_features_scanned += 1
             yield from self._safe_build(
@@ -439,8 +474,15 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
                 "METRIC", metric_doc.id, build_metric, metric_doc, index, self.report
             )
 
-        # Parents before children: REPOSITORY/API/AGENT_SKILL before AI_AGENT/SERVICE,
-        # which may reference them.
+    def _software_ops_workunits(
+        self, repository: ParsedRepository, index: ReferenceIndex
+    ) -> Iterable[MetadataWorkUnit]:
+        """Software-catalog/AI-agent/pipeline-ops kinds, in `get_workunits_internal`'s
+        order.
+
+        Parents before children: REPOSITORY/API/AGENT_SKILL before AI_AGENT/SERVICE,
+        which may reference them.
+        """
         for repository_doc in repository.repositories:
             self.report.repositories_scanned += 1
             yield from self._safe_build(
@@ -513,7 +555,13 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             self.report.raw_aspects_scanned += 1
             yield from self._safe_build("RAW_ASPECT", raw_doc.aspectName, build_raw_aspect, raw_doc)
 
-    def _safe_build(self, kind: str, identifier: str, builder, *args) -> Iterable[MetadataWorkUnit]:
+    def _safe_build(
+        self,
+        kind: str,
+        identifier: str,
+        builder: Callable[..., Iterable[MetadataWorkUnit]],
+        *args: object,
+    ) -> Iterable[MetadataWorkUnit]:
         """Run a builder, converting any failure into a reported warning instead
         of aborting the whole ingestion (one bad document shouldn't take down
         everything else)."""
@@ -528,7 +576,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
             )
 
     @staticmethod
-    def test_connection(config_dict: dict) -> TestConnectionReport:
+    def test_connection(config_dict: dict[str, Any]) -> TestConnectionReport:
         test_report = TestConnectionReport()
         try:
             config = YamlSourceConfig.model_validate(config_dict)
@@ -593,8 +641,6 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
     def _check_http_connectivity(uri: str, config: "YamlSourceConfig") -> list[str]:
         if has_glob_characters(uri):
             return [f"Glob patterns are not supported for http(s):// URIs: {uri}"]
-
-        import requests
 
         kwargs = config.http_connection.to_request_kwargs() if config.http_connection else {}
         try:

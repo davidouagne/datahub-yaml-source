@@ -94,11 +94,12 @@ uv run mypy                    # type check over src/ (blocking in CI)
 ```
 
 `ruff check --fix .` auto-fixes most lint findings. `ruff` config
-(`[tool.ruff]`, line length 100, target `py310`) and `mypy` config
-(`[tool.mypy]`, `src/` only, non-strict) both live in `pyproject.toml`. The mypy
+(`[tool.ruff]`, line length 100, target `py310`, `select` includes `ANN`/`PL`
+scoped to `src/` via `per-file-ignores`) and `mypy` config (`[tool.mypy]`,
+`src/` only, `strict = true`) both live in `pyproject.toml`. The mypy
 baseline is zero — `mypy` must exit clean before a PR can merge. Fix a new error
-with a real annotation/guard; a `# type: ignore[<code>]` is a last resort and
-needs a one-line reason.
+with a real annotation/guard; a `# type: ignore[<code>]` (mypy) or
+`# noqa: <code>` (ruff) is a last resort and needs a one-line reason.
 
 ## Submitting changes
 

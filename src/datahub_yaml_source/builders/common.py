@@ -1,7 +1,7 @@
 """Shared helpers used across builders/*.py."""
 
 from collections.abc import Iterable
-from typing import Any
+from typing import Any, NamedTuple
 
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
@@ -35,6 +35,7 @@ from datahub.metadata.schema_classes import (
     SubTypesClass,
     TagAssociationClass,
     TimeTypeClass,
+    _Aspect,
 )
 
 from datahub_yaml_source.models import (
@@ -55,6 +56,7 @@ from datahub_yaml_source.models import (
     normalize_sub_types,
 )
 from datahub_yaml_source.urns import (
+    ReferenceIndex,
     application_urn,
     data_platform_instance_urn,
     data_platform_urn,
@@ -65,6 +67,7 @@ from datahub_yaml_source.urns import (
     structured_property_urn,
     tag_urn,
 )
+from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 DEFAULT_ACTOR_URN = "urn:li:corpuser:datahub"
 ZERO_AUDIT_STAMP = AuditStampClass(time=0, actor=DEFAULT_ACTOR_URN)
@@ -135,7 +138,7 @@ def build_domains_aspect(domain_id: str | None) -> DomainsClass | None:
     return DomainsClass(domains=[domain_urn(domain_id)])
 
 
-def stringify_custom_properties(properties: dict | None) -> dict | None:
+def stringify_custom_properties(properties: dict[str, Any] | None) -> dict[str, str] | None:
     """customProperties aspects require Dict[str, str]; coerce non-str values."""
     if not properties:
         return None
@@ -168,7 +171,7 @@ def build_fine_grained_lineage_list(
     ]
 
 
-def mcp_workunit(entity_urn: str, aspect) -> MetadataWorkUnit:
+def mcp_workunit(entity_urn: str, aspect: _Aspect) -> MetadataWorkUnit:
     return MetadataChangeProposalWrapper(entityUrn=entity_urn, aspect=aspect).as_workunit()
 
 
@@ -221,15 +224,18 @@ def build_links_aspect(links: list[LinkDoc] | None) -> InstitutionalMemoryClass 
     return InstitutionalMemoryClass(elements=associations)
 
 
-def _normalize_structured_property_values(value: Any) -> list[str | float]:
+def _normalize_structured_property_values(value: Any) -> list[str | float]:  # noqa: ANN401
+    # `value` is one raw YAML structuredProperties value -- genuinely
+    # heterogeneous (a scalar or a list of scalars of unknown type),
+    # normalized below via isinstance checks.
     values = value if isinstance(value, list) else [value]
     return [v if isinstance(v, int | float) else str(v) for v in values]
 
 
 def build_structured_properties_aspect(
     properties: dict[str, Any] | None,
-    index,
-    report,
+    index: ReferenceIndex,
+    report: YamlSourceReport,
     context: str,
 ) -> StructuredPropertiesClass | None:
     """Always built directly (never via the SDK's `structured_properties=` kwarg,
@@ -256,7 +262,10 @@ def build_structured_properties_aspect(
 
 
 def build_applications_aspect(
-    app_ids: list[str] | None, index, report, context: str
+    app_ids: list[str] | None,
+    index: ReferenceIndex,
+    report: YamlSourceReport,
+    context: str,
 ) -> ApplicationsClass | None:
     if not app_ids:
         return None
@@ -300,8 +309,166 @@ FULL_NATIVE_KWARGS: frozenset[str] = frozenset(
 )
 
 
+class _RefContext(NamedTuple):
+    """Bundles the (index, report, context) triple threaded through the
+    per-mixin helpers below, so each helper stays within ruff's PLR0913
+    argument-count threshold without changing `common_sdk_kwargs`'/
+    `common_aspect_mcps`'s own public signatures. The index field is named
+    `ref_index`, not `index`: a NamedTuple field named `index` shadows the
+    inherited `tuple.index()` method, which mypy --strict flags.
+    """
+
+    ref_index: ReferenceIndex
+    report: YamlSourceReport
+    context: str
+
+
+def _add_owners_kwarg(
+    doc: object, native: frozenset[str], kwargs: dict[str, Any], extra_aspects: list[Any]
+) -> None:
+    if not isinstance(doc, HasOwners):
+        return
+    owners = owners_to_sdk_input(normalize_owners(doc.owners)) or None
+    if "owners" in native:
+        kwargs["owners"] = owners
+    elif owners:
+        extra_aspects.append(build_ownership_aspect(normalize_owners(doc.owners)))
+
+
+def _add_tags_kwarg(
+    doc: object,
+    ref: _RefContext,
+    native: frozenset[str],
+    kwargs: dict[str, Any],
+    extra_aspects: list[Any],
+) -> None:
+    if not isinstance(doc, HasTags):
+        return
+    tags = []
+    for tag_name in doc.tags or []:
+        if not ref.ref_index.has_tag(tag_name):
+            ref.report.report_dangling_reference(
+                f"{ref.context} references undeclared tag '{tag_name}'"
+            )
+        tags.append(tag_urn(tag_name))
+    if "tags" in native:
+        kwargs["tags"] = tags or None
+    elif tags:
+        extra_aspects.append(GlobalTagsClass(tags=[TagAssociationClass(tag=t) for t in tags]))
+
+
+def _add_terms_kwarg(
+    doc: object,
+    ref: _RefContext,
+    native: frozenset[str],
+    kwargs: dict[str, Any],
+    extra_aspects: list[Any],
+) -> None:
+    if not isinstance(doc, HasTerms):
+        return
+    terms = []
+    for term_id in doc.glossaryTerms or []:
+        if not ref.ref_index.has_glossary_term(term_id):
+            ref.report.report_dangling_reference(
+                f"{ref.context} references undeclared glossaryTerm '{term_id}'"
+            )
+        terms.append(glossary_term_urn(term_id))
+    if "terms" in native:
+        kwargs["terms"] = terms or None
+    elif terms:
+        extra_aspects.append(
+            GlossaryTermsClass(
+                terms=[GlossaryTermAssociationClass(urn=t) for t in terms],
+                auditStamp=ZERO_AUDIT_STAMP,
+            )
+        )
+
+
+def _add_domain_kwarg(
+    doc: object,
+    ref: _RefContext,
+    native: frozenset[str],
+    kwargs: dict[str, Any],
+    extra_aspects: list[Any],
+) -> None:
+    if not isinstance(doc, HasDomain):
+        return
+    domain = None
+    if doc.domains:
+        if not ref.ref_index.has_domain(doc.domains):
+            ref.report.report_dangling_reference(
+                f"{ref.context} references undeclared domain '{doc.domains}'"
+            )
+        domain = domain_urn(doc.domains)
+    if "domain" in native:
+        kwargs["domain"] = domain
+    elif domain:
+        extra_aspects.append(DomainsClass(domains=[domain]))
+
+
+def _add_links_kwarg(
+    doc: object, native: frozenset[str], kwargs: dict[str, Any], extra_aspects: list[Any]
+) -> None:
+    if not isinstance(doc, HasLinks):
+        return
+    links = build_link_associations(doc.links)
+    if "links" in native:
+        kwargs["links"] = links
+    elif links:
+        extra_aspects.append(InstitutionalMemoryClass(elements=links))
+
+
+def _add_subtype_kwarg(
+    doc: object, native: frozenset[str], kwargs: dict[str, Any], extra_aspects: list[Any]
+) -> None:
+    if not isinstance(doc, HasSubTypes):
+        return
+    sub_types = normalize_sub_types(doc.subTypes)
+    if "subtype" in native and len(sub_types) <= 1:
+        kwargs["subtype"] = sub_types[0] if sub_types else None
+    elif sub_types:
+        # Either the target class has no `subtype=` kwarg at all, or
+        # there's more than one subtype -- SDK V2's `subtype=` kwarg only
+        # stores a single typeName, and subtypes are additive, so
+        # dropping all but the first would be a silent bug.
+        extra_aspects.append(build_subtypes_aspect(sub_types))
+
+
+def _add_applications_extra(doc: object, ref: _RefContext, extra_aspects: list[Any]) -> None:
+    if not isinstance(doc, HasApplications):
+        return
+    apps_aspect = build_applications_aspect(
+        doc.applications, ref.ref_index, ref.report, ref.context
+    )
+    if apps_aspect:
+        extra_aspects.append(apps_aspect)
+
+
+def _add_deprecation_extra(doc: object, extra_aspects: list[Any]) -> None:
+    if not isinstance(doc, HasDeprecation):
+        return
+    dep_aspect = build_deprecation_aspect(doc.deprecation)
+    if dep_aspect:
+        extra_aspects.append(dep_aspect)
+
+
+def _add_structured_props_extra(doc: object, ref: _RefContext, extra_aspects: list[Any]) -> None:
+    if not isinstance(doc, HasStructuredProps):
+        return
+    sp_aspect = build_structured_properties_aspect(
+        doc.structuredProperties, ref.ref_index, ref.report, ref.context
+    )
+    if sp_aspect:
+        extra_aspects.append(sp_aspect)
+
+
 def common_sdk_kwargs(
-    doc, index, report, context: str, *, native: frozenset[str] = FULL_NATIVE_KWARGS
+    doc: object,
+    index: ReferenceIndex,
+    report: YamlSourceReport,
+    context: str,
+    *,
+    native: frozenset[str] = FULL_NATIVE_KWARGS,
 ) -> dict[str, Any]:
     """Cross-cutting aspect kwargs for an SDK V2-backed kind.
 
@@ -324,102 +491,126 @@ def common_sdk_kwargs(
     """
     kwargs: dict[str, Any] = {}
     extra_aspects: list[Any] = []
+    ref = _RefContext(index, report, context)
 
-    if isinstance(doc, HasOwners):
-        owners = owners_to_sdk_input(normalize_owners(doc.owners)) or None
-        if "owners" in native:
-            kwargs["owners"] = owners
-        elif owners:
-            extra_aspects.append(build_ownership_aspect(normalize_owners(doc.owners)))
-
-    if isinstance(doc, HasTags):
-        tags = []
-        for tag_name in doc.tags or []:
-            if not index.has_tag(tag_name):
-                report.report_dangling_reference(
-                    f"{context} references undeclared tag '{tag_name}'"
-                )
-            tags.append(tag_urn(tag_name))
-        if "tags" in native:
-            kwargs["tags"] = tags or None
-        elif tags:
-            extra_aspects.append(GlobalTagsClass(tags=[TagAssociationClass(tag=t) for t in tags]))
-
-    if isinstance(doc, HasTerms):
-        terms = []
-        for term_id in doc.glossaryTerms or []:
-            if not index.has_glossary_term(term_id):
-                report.report_dangling_reference(
-                    f"{context} references undeclared glossaryTerm '{term_id}'"
-                )
-            terms.append(glossary_term_urn(term_id))
-        if "terms" in native:
-            kwargs["terms"] = terms or None
-        elif terms:
-            extra_aspects.append(
-                GlossaryTermsClass(
-                    terms=[GlossaryTermAssociationClass(urn=t) for t in terms],
-                    auditStamp=ZERO_AUDIT_STAMP,
-                )
-            )
-
-    if isinstance(doc, HasDomain):
-        domain = None
-        if doc.domains:
-            if not index.has_domain(doc.domains):
-                report.report_dangling_reference(
-                    f"{context} references undeclared domain '{doc.domains}'"
-                )
-            domain = domain_urn(doc.domains)
-        if "domain" in native:
-            kwargs["domain"] = domain
-        elif domain:
-            extra_aspects.append(DomainsClass(domains=[domain]))
-
-    if isinstance(doc, HasLinks):
-        links = build_link_associations(doc.links)
-        if "links" in native:
-            kwargs["links"] = links
-        elif links:
-            extra_aspects.append(InstitutionalMemoryClass(elements=links))
-
-    if isinstance(doc, HasSubTypes):
-        sub_types = normalize_sub_types(doc.subTypes)
-        if "subtype" in native and len(sub_types) <= 1:
-            kwargs["subtype"] = sub_types[0] if sub_types else None
-        elif sub_types:
-            # Either the target class has no `subtype=` kwarg at all, or
-            # there's more than one subtype -- SDK V2's `subtype=` kwarg only
-            # stores a single typeName, and subtypes are additive, so
-            # dropping all but the first would be a silent bug.
-            extra_aspects.append(build_subtypes_aspect(sub_types))
-
-    if isinstance(doc, HasApplications):
-        apps_aspect = build_applications_aspect(doc.applications, index, report, context)
-        if apps_aspect:
-            extra_aspects.append(apps_aspect)
-
-    if isinstance(doc, HasDeprecation):
-        dep_aspect = build_deprecation_aspect(doc.deprecation)
-        if dep_aspect:
-            extra_aspects.append(dep_aspect)
-
-    if isinstance(doc, HasStructuredProps):
-        sp_aspect = build_structured_properties_aspect(
-            doc.structuredProperties, index, report, context
-        )
-        if sp_aspect:
-            extra_aspects.append(sp_aspect)
+    _add_owners_kwarg(doc, native, kwargs, extra_aspects)
+    _add_tags_kwarg(doc, ref, native, kwargs, extra_aspects)
+    _add_terms_kwarg(doc, ref, native, kwargs, extra_aspects)
+    _add_domain_kwarg(doc, ref, native, kwargs, extra_aspects)
+    _add_links_kwarg(doc, native, kwargs, extra_aspects)
+    _add_subtype_kwarg(doc, native, kwargs, extra_aspects)
+    _add_applications_extra(doc, ref, extra_aspects)
+    _add_deprecation_extra(doc, extra_aspects)
+    _add_structured_props_extra(doc, ref, extra_aspects)
 
     kwargs["extra_aspects"] = extra_aspects or None
     return kwargs
 
 
-def common_aspect_mcps(
+def _owners_mcps(entity_urn: str, doc: object) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasOwners):
+        return
+    ownership = build_ownership_aspect(normalize_owners(doc.owners))
+    if ownership:
+        yield mcp_workunit(entity_urn, ownership)
+
+
+def _tags_mcps(entity_urn: str, doc: object, ref: _RefContext) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasTags):
+        return
+    for tag_name in doc.tags or []:
+        if not ref.ref_index.has_tag(tag_name):
+            ref.report.report_dangling_reference(
+                f"{ref.context} references undeclared tag '{tag_name}'"
+            )
+    tags_aspect = build_global_tags_aspect(doc.tags)
+    if tags_aspect:
+        yield mcp_workunit(entity_urn, tags_aspect)
+
+
+def _terms_mcps(entity_urn: str, doc: object, ref: _RefContext) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasTerms):
+        return
+    for term_id in doc.glossaryTerms or []:
+        if not ref.ref_index.has_glossary_term(term_id):
+            ref.report.report_dangling_reference(
+                f"{ref.context} references undeclared glossaryTerm '{term_id}'"
+            )
+    terms_aspect = build_glossary_terms_aspect(doc.glossaryTerms)
+    if terms_aspect:
+        yield mcp_workunit(entity_urn, terms_aspect)
+
+
+def _domain_mcps(entity_urn: str, doc: object, ref: _RefContext) -> Iterable[MetadataWorkUnit]:
+    if not (isinstance(doc, HasDomain) and doc.domains):
+        return
+    if not ref.ref_index.has_domain(doc.domains):
+        ref.report.report_dangling_reference(
+            f"{ref.context} references undeclared domain '{doc.domains}'"
+        )
+    domains_aspect = build_domains_aspect(doc.domains)
+    if domains_aspect is None:
+        # Guaranteed unreachable: build_domains_aspect() only returns None
+        # for a falsy domain_id, and doc.domains is already known-truthy
+        # above. A plain `if`/`raise`, not `assert`, so this narrowing isn't
+        # silently compiled away under `python -O`.
+        raise AssertionError("build_domains_aspect() returned None for a truthy domain_id")
+    yield mcp_workunit(entity_urn, domains_aspect)
+
+
+def _applications_mcps(
+    entity_urn: str, doc: object, ref: _RefContext
+) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasApplications):
+        return
+    apps_aspect = build_applications_aspect(
+        doc.applications, ref.ref_index, ref.report, ref.context
+    )
+    if apps_aspect:
+        yield mcp_workunit(entity_urn, apps_aspect)
+
+
+def _links_mcps(entity_urn: str, doc: object) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasLinks):
+        return
+    links_aspect = build_links_aspect(doc.links)
+    if links_aspect:
+        yield mcp_workunit(entity_urn, links_aspect)
+
+
+def _deprecation_mcps(entity_urn: str, doc: object) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasDeprecation):
+        return
+    dep_aspect = build_deprecation_aspect(doc.deprecation)
+    if dep_aspect:
+        yield mcp_workunit(entity_urn, dep_aspect)
+
+
+def _structured_props_mcps(
+    entity_urn: str, doc: object, ref: _RefContext
+) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasStructuredProps):
+        return
+    sp_aspect = build_structured_properties_aspect(
+        doc.structuredProperties, ref.ref_index, ref.report, ref.context
+    )
+    if sp_aspect:
+        yield mcp_workunit(entity_urn, sp_aspect)
+
+
+def _subtypes_mcps(entity_urn: str, doc: object) -> Iterable[MetadataWorkUnit]:
+    if not isinstance(doc, HasSubTypes):
+        return
+    subtypes_aspect = build_subtypes_aspect(normalize_sub_types(doc.subTypes))
+    if subtypes_aspect:
+        yield mcp_workunit(entity_urn, subtypes_aspect)
+
+
+def common_aspect_mcps(  # noqa: PLR0913
     entity_urn: str,
-    doc,
-    index,
-    report,
+    doc: object,
+    index: ReferenceIndex,
+    report: YamlSourceReport,
     context: str,
     *,
     skip: frozenset[str] = frozenset(),
@@ -428,62 +619,28 @@ def common_aspect_mcps(
     (DOMAIN, APPLICATION, DATA_PRODUCT, ASSERTION) and for CONTAINER, which
     gets some of these natively from `gen_containers()` and needs the rest
     (`skip=` names which ones `gen_containers()` already handled) emitted here.
+
+    `entity_urn, doc, index, report, context` is this connector's standard
+    cross-cutting-aspect argument bundle (see every `builders/*.py` build_*
+    function) plus the `skip=` this specific cross-cutting helper needs --
+    the argument list *is* the interface here, not accidental complexity.
     """
-    if "owners" not in skip and isinstance(doc, HasOwners):
-        ownership = build_ownership_aspect(normalize_owners(doc.owners))
-        if ownership:
-            yield mcp_workunit(entity_urn, ownership)
-
-    if "tags" not in skip and isinstance(doc, HasTags):
-        for tag_name in doc.tags or []:
-            if not index.has_tag(tag_name):
-                report.report_dangling_reference(
-                    f"{context} references undeclared tag '{tag_name}'"
-                )
-        tags_aspect = build_global_tags_aspect(doc.tags)
-        if tags_aspect:
-            yield mcp_workunit(entity_urn, tags_aspect)
-
-    if "terms" not in skip and isinstance(doc, HasTerms):
-        for term_id in doc.glossaryTerms or []:
-            if not index.has_glossary_term(term_id):
-                report.report_dangling_reference(
-                    f"{context} references undeclared glossaryTerm '{term_id}'"
-                )
-        terms_aspect = build_glossary_terms_aspect(doc.glossaryTerms)
-        if terms_aspect:
-            yield mcp_workunit(entity_urn, terms_aspect)
-
-    if "domain" not in skip and isinstance(doc, HasDomain) and doc.domains:
-        if not index.has_domain(doc.domains):
-            report.report_dangling_reference(
-                f"{context} references undeclared domain '{doc.domains}'"
-            )
-        yield mcp_workunit(entity_urn, build_domains_aspect(doc.domains))
-
-    if "applications" not in skip and isinstance(doc, HasApplications):
-        apps_aspect = build_applications_aspect(doc.applications, index, report, context)
-        if apps_aspect:
-            yield mcp_workunit(entity_urn, apps_aspect)
-
-    if "links" not in skip and isinstance(doc, HasLinks):
-        links_aspect = build_links_aspect(doc.links)
-        if links_aspect:
-            yield mcp_workunit(entity_urn, links_aspect)
-
-    if "deprecation" not in skip and isinstance(doc, HasDeprecation):
-        dep_aspect = build_deprecation_aspect(doc.deprecation)
-        if dep_aspect:
-            yield mcp_workunit(entity_urn, dep_aspect)
-
-    if "structuredProperties" not in skip and isinstance(doc, HasStructuredProps):
-        sp_aspect = build_structured_properties_aspect(
-            doc.structuredProperties, index, report, context
-        )
-        if sp_aspect:
-            yield mcp_workunit(entity_urn, sp_aspect)
-
-    if "subTypes" not in skip and isinstance(doc, HasSubTypes):
-        subtypes_aspect = build_subtypes_aspect(normalize_sub_types(doc.subTypes))
-        if subtypes_aspect:
-            yield mcp_workunit(entity_urn, subtypes_aspect)
+    ref = _RefContext(index, report, context)
+    if "owners" not in skip:
+        yield from _owners_mcps(entity_urn, doc)
+    if "tags" not in skip:
+        yield from _tags_mcps(entity_urn, doc, ref)
+    if "terms" not in skip:
+        yield from _terms_mcps(entity_urn, doc, ref)
+    if "domain" not in skip:
+        yield from _domain_mcps(entity_urn, doc, ref)
+    if "applications" not in skip:
+        yield from _applications_mcps(entity_urn, doc, ref)
+    if "links" not in skip:
+        yield from _links_mcps(entity_urn, doc)
+    if "deprecation" not in skip:
+        yield from _deprecation_mcps(entity_urn, doc)
+    if "structuredProperties" not in skip:
+        yield from _structured_props_mcps(entity_urn, doc, ref)
+    if "subTypes" not in skip:
+        yield from _subtypes_mcps(entity_urn, doc)

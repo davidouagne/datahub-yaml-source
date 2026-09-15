@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Code Quality (Ruff + mypy)
-version: 1.4
+version: 1.5
 date_created: 2026-09-05
-last_updated: 2026-09-14
+last_updated: 2026-09-15
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, lint, format, typing, ruff, mypy]
 ---
@@ -54,6 +54,8 @@ graph TD
 | REQ-005 | Type-check the package source with mypy. | High | `mypy` runs against `files = ["src"]` with the `[tool.mypy]` config; a clean tree exits 0. |
 | REQ-006 | A new type error blocks merge. | High | The `mypy` job has no `continue-on-error`; a non-zero mypy exit fails the workflow and the required check. The baseline is zero (issue #13). |
 | REQ-007 | Each blocking check has one stable name for branch protection. | High | The blocking jobs are named exactly `ruff` and `mypy`; renaming either is a breaking change requiring a branch-protection update (see `spec/spec-process-cicd-ci.md` "Branch protection on `main`"). |
+| REQ-008 | Ruff also lints for missing annotations and pylint-style issues, scoped to `src/`. | High | `[tool.ruff.lint] select` includes `ANN`/`PL`; `tests/**`/`scripts/**` are exempted from both via `per-file-ignores` (issue #55). |
+| REQ-009 | mypy runs in strict mode. | High | `[tool.mypy] strict = true`, scoped to `files = ["src"]`; a clean tree exits 0 (issue #55). |
 
 ### Security Requirements
 
@@ -85,7 +87,7 @@ branches: [main]     # push trigger scope
 
 ```yaml
 ruff_result: status   # pass/fail of lint + format-check; consumed by branch protection
-mypy_result: status   # advisory; surfaced in logs, not consumed as a gate
+mypy_result: status   # pass/fail; consumed by branch protection (blocking since issue #13)
 ```
 
 ## Execution Constraints
@@ -110,8 +112,8 @@ The exact configuration lives in `pyproject.toml`; this section records the deci
 |---------|-------|-----------|
 | `line-length` | `100` | A deliberate loosening from the 88 default; the pre-existing code sat well above 88 and 100 keeps the one-off reformat from rewrapping nearly every signature. |
 | `target-version` | `py310` | Matches `pyproject.toml`'s `requires-python` floor (driven by `acryl-datahub>=1.7.0`). |
-| `lint.select` | `E`, `F`, `I`, `UP`, `B`, `C4`, `SIM`, `RUF` | pycodestyle/pyflakes errors, import sorting, pyupgrade, bugbear, comprehensions, simplify, Ruff-native. Deliberately excludes `ANN` (annotation completeness — that is mypy's job, advisory) and `PL` (too opinionated for a solo maintainer). |
-| `lint.per-file-ignores` | `__init__.py` → `F401`; `tests/**` → `E501` | Re-export modules use unused imports on purpose; test fixtures embed full DataHub URNs and JSON blobs as string literals that are not meaningfully breakable. The formatter still enforces 100 cols on everything it can reflow. |
+| `lint.select` | `E`, `F`, `I`, `UP`, `B`, `C4`, `SIM`, `RUF`, `ANN`, `PL` | pycodestyle/pyflakes errors, import sorting, pyupgrade, bugbear, comprehensions, simplify, Ruff-native, plus annotation-completeness (`ANN`) and pylint (`PL`) — added by issue #55 to match the sibling repo's posture. `ANN`/`PL` are scoped to `src/` only via `lint.per-file-ignores` below, not narrowed at the `select` level, so a future `src/` file can't accidentally land unchecked. |
+| `lint.per-file-ignores` | `__init__.py` → `F401`; `tests/**` → `E501`, `ANN`, `PL`; `scripts/**` → `ANN`, `PL` | Re-export modules use unused imports on purpose; test fixtures embed full DataHub URNs and JSON blobs as string literals that are not meaningfully breakable (the formatter still enforces 100 cols on everything it can reflow). `ANN`/`PL` are held to `src/` only (issue #55), mirroring `[tool.mypy] files = ["src"]` — annotating every test function/script would be a much larger, separate undertaking (387 violations outside `src/` vs. the 48 inside it that issue #55 actually fixed) with no matching safety payoff, since mypy never checks `tests/`/`scripts/` either. |
 | `lint.isort.known-first-party` | `["datahub_yaml_source"]` | Correct first/third-party split in a `src/` layout. |
 | `extend-exclude` | `["*.md"]` | Ruff's scope is first-party Python. Ruff 0.16 `ruff format` also reformats ` ```python ` blocks inside Markdown; the illustrative snippets in `_PLANNING.md` are hand-shaped, so prose docs are excluded from both `check` and `format`. |
 
@@ -131,12 +133,11 @@ schema + docs (per `AGENTS.md`) and confirming no drift.
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
-| `files` | `["src"]` | Package source only. `tests/` and `scripts/` are out of scope until the `src/` signal is clean. |
+| `files` | `["src"]` | Package source only. `tests/` and `scripts/` are out of scope. |
 | `python_version` | `"3.10"` | Assume the semantics of the supported floor. |
-| `check_untyped_defs` | `true` | Type-check bodies of unannotated functions — most of the value on a codebase with sparse annotations. |
-| `warn_unused_ignores`, `warn_redundant_casts` | `true` | Low-noise staleness detectors. |
+| `strict` | `true` | Issue #55: promoted from the non-strict baseline (`check_untyped_defs`/`warn_unused_ignores`/`warn_redundant_casts`, individually set) to `strict = true`, matching the sibling repo. `strict` is a superset that subsumes all three of those flags plus `disallow_untyped_defs`, `disallow_any_generics`, `warn_return_any`, `disallow_subclassing_any`, `no_implicit_reexport`, and more — they're no longer listed individually. |
 | overrides: `datahub.*`, `deepdiff.*` | `ignore_missing_imports = true` | `acryl-datahub` ships partial/absent type information; without this the log is dominated by import errors rather than findings about our code. |
-| `strict` | *not set* | A strict baseline would be noise on a codebase with sparse annotations. Tightening toward strict, once the SDK's own types improve, is a possible future step. |
+| overrides: `tests.*` | `disallow_untyped_defs = false` | Issue #55, mirroring the sibling repo. Currently a no-op in practice — `files = ["src"]` already keeps mypy off `tests/` entirely — kept so `files` can later be widened without silently demanding full annotation coverage in test code too. |
 
 ### mypy baseline: zero (issue #13)
 
@@ -153,11 +154,83 @@ string. No `mypy` baseline/ignore file, and **no `# type: ignore` comments** —
 resolved by a real annotation, guard, `cast`, or fix. `warn_unused_ignores` stays on so any future
 suppression can't silently rot.
 
+### ruff `ANN`/`PL` + mypy `strict = true` (issue #55)
+
+A dry run against the pre-#55 codebase found 48 `ruff check src --select PL,ANN` violations and 18
+`mypy --strict` errors (scoped to `src/`; `tests/`/`scripts/` were separately found to carry 387
+`ANN`/`PL` violations, deliberately left out of scope — see the `lint.per-file-ignores` rationale
+above). All 66 were fixed directly in the source; none were baselined or blanket-ignored, matching
+the same discipline the mypy-baseline-zero effort (issue #13) established. Notable fixes, by shape:
+
+- **Missing argument/return annotations** (the bulk of the `ANN` count): added directly, following
+  this codebase's existing conventions where one already existed for the same shape — e.g.
+  `index: ReferenceIndex, report: YamlSourceReport` (used throughout `builders/*.py` but missing on
+  a few `builders/common.py` helpers), or a structural `Protocol` in `urns.py` for a `ref` parameter
+  documented as "accepts anything with these fields."
+- **`ANN401` (bare `Any` in a signature)**: fixed by narrowing to a real type wherever one existed
+  (e.g. `dict | None` → `dict[str, str] | None` on `stringify_custom_properties`); kept as `Any` with
+  a scoped `# noqa: ANN401` + one-line reason only for the small set of genuinely dynamic cases — a
+  pydantic `mode="before"` validator's raw pre-validation input (`models.py`'s `_coerce_to_list`,
+  `yaml_source_config.py`'s `_apply_clone_defaults`/`_https_clone_url`), and one structured-property
+  value normalizer that's genuinely a heterogeneous scalar-or-list from freeform YAML.
+- **`PLC0415` (import not at top-level)**: two of the three found are this connector's core
+  lazy-import architecture (`yaml_source.py`'s `AwsConnectionConfig` import, gated behind the `s3`
+  extra so a local-only recipe never needs `boto3` — see the module docstrings in `loader.py`/
+  `yaml_source.py`, and `ci.yml`'s `minimal-install-check` job, which would fail if this were
+  "fixed" by moving the import to module level); kept with a scoped `# noqa: PLC0415` + reason. The
+  third (`import requests` inside a function, in both `loader.py` and `yaml_source.py`) was a **real
+  fix**, not a suppression: `requests` is an unconditional base dependency (not extra-gated), so it
+  was moved to a normal top-level import.
+- **`PLR0912`/`PLR0915` (too many branches/statements)**: fixed by extraction, not suppression, in
+  every case — `builders/common.py`'s `common_sdk_kwargs`/`common_aspect_mcps` (one helper function
+  per `Has*` mixin they dispatch across); `loader.py`'s `ParsedRepository.add()` (one dispatcher
+  method per doc-kind family, matching `yaml_source.py`'s own grouping, verified doc types don't
+  subclass each other so exact-isinstance dispatch stays equivalent); `loader.py`'s `load_repository`
+  (its read-one-URI and parse-one-URI's-documents halves extracted into their own functions);
+  `yaml_source.py`'s `get_workunits_internal` (32 near-identical `for X_doc in repository.X: ...`
+  blocks split into four `_<group>_workunits` methods by doc-kind family, order preserved exactly).
+  Every extraction was verified to change zero behavior via the full 211-test suite, including the
+  golden-file integration test, both before and after.
+- **`PLR0913`/`PLR0917` (too many arguments)**: the two functions flagged (`common_aspect_mcps`,
+  `load_repository`) were *not* refactored to bundle their arguments — each is already this
+  connector's standard cross-cutting-aspect bundle (`entity_urn, doc, index, report, context`) or a
+  public entry point exercised directly by ~25 test cases with independently-varying subsets of its
+  7 knobs; a bundle object would add indirection with no matching real-world grouping. Kept with a
+  scoped `# noqa: PLR0913[, PLR0917]` + reason on each, the same judgment call the sibling repo's own
+  `ruff.lint.ignore` makes for this shape (there: a blanket ignore; here: two scoped ones, since only
+  two functions in `src/` actually need it).
+- **mypy strict-only findings**: mostly `[type-arg]` (bare `dict`/`set`/`tuple`/`deque` needing type
+  parameters) and `[no-any-return]` (an untyped third-party `.read()` call flowing into a `bytes`
+  return), fixed with real type parameters/annotations. Three `[arg-type]` findings were an
+  `Optional`-returning aspect builder (e.g. `build_domains_aspect`) passed to `mcp_workunit`, which
+  requires a non-`None` `_Aspect`: two (`builders/common.py`'s `_domain_mcps`,
+  `builders/container.py`'s multi-owner fallback) are guaranteed non-`None` by a preceding check with
+  no gap (`if x is None: raise AssertionError(...)`, not a bare `assert`, so the narrowing survives
+  `python -O`, with a one-line reason each); the third
+  (`builders/container.py`'s `dataPlatformInstance` follow-up) is **not** provably non-`None` —
+  `ContainerRef.platform` is a required field but an empty string is still a valid `str`, so an
+  `assert` there would (only for that degenerate input) newly crash instead of matching this
+  connector's actual originally-latent behavior — fixed with `if dpi is not None:` instead, verified
+  in code review. One `[arg-type]` false positive survived:
+  `StatefulIngestionSourceBase.__init__` is hardcoded to
+  `StatefulIngestionConfigBase[StatefulIngestionConfig]` rather than being itself generic, so
+  `YamlSourceConfig`'s real (verified) subtype relationship (`StatefulStaleMetadataRemovalConfig`
+  subclasses `StatefulIngestionConfig`) can't be expressed across the call boundary under Python's
+  invariant `Generic` — the sole `# type: ignore[arg-type]` in this codebase, with a one-line reason
+  at the call site. A NamedTuple field literally named `index` was renamed to `ref_index`
+  (`builders/common.py`'s internal `_RefContext`) after mypy flagged it shadowing the inherited
+  `tuple.index()` method.
+
+Neither `ruff`'s new `ANN`/`PL` families nor mypy's `strict = true` were added to `main`'s required
+status checks as a separate step — both ride the existing `ruff`/`mypy` required-check names (REQ-007),
+so this change is enforced the moment it merges, with no separate promotion step (unlike mypy's own
+advisory→blocking history in issue #13).
+
 ## Error Handling Strategy
 
 | Error Type | Response | Recovery Action |
 |------------|----------|------------------|
-| Lint violation | Fail the `ruff` job | Run `ruff check --fix .` locally; hand-fix what `--fix` won't. |
+| Lint violation | Fail the `ruff` job | Run `ruff check --fix .` locally; hand-fix what `--fix` won't. For `ANN`/`PL` specifically (issue #55): fix with a real annotation/refactor first; a `# noqa: <code>` is a last resort and needs a one-line reason, same bar as mypy's `# type: ignore` below. |
 | Formatting difference | Fail the `ruff` job | Run `ruff format .` locally and commit. |
 | mypy error(s) | Fail the `mypy` job | Fix the annotation/guard, or (last resort, with a justifying comment) `# type: ignore[<code>]`. |
 | Dependency install failure | Fail the affected job | Investigate resolution against `pyproject.toml`/`uv.lock`. |
@@ -188,6 +261,10 @@ suppression can't silently rot.
 - **VLD-004**: No job in this workflow references a secret.
 - **VLD-005**: `uv sync --frozen --group dev` on a clean checkout provides `ruff` and `mypy` at the
   versions the workflow runs.
+- **VLD-006**: `uv run ruff check src --select PL,ANN` and `uv run mypy` both exit 0 against `src/`
+  with no baseline file and no blanket per-file ignore for `ANN`/`PL`/strict findings (issue #55) —
+  only scoped, single-line-justified `# noqa`/`# type: ignore` comments, individually reviewable in
+  this spec's "ruff `ANN`/`PL` + mypy `strict = true`" section above.
 
 ## Change Management
 
@@ -211,7 +288,8 @@ for `main` (its required status checks match job names verbatim).
 | 1.2 | 2026-09-07 | **mypy promoted to blocking** (issue #13). Baseline driven 31 → 0 with real fixes (no `# type: ignore`, no baseline file); one genuine bug fixed on the way (CUSTOM assertion `field=`). Job renamed `mypy (advisory)` → `mypy`, `continue-on-error` removed. `types-PyYAML` added to the `dev` extra. `mypy` added to `main`'s required status checks alongside `ruff`. | David Ouagne |
 | 1.3 | 2026-09-07 | Ruff dev-dependency range widened to `>=0.12,<0.17` (Dependabot #21). Added `extend-exclude = ["*.md"]` to `[tool.ruff]`: 0.16's `ruff format` reformats Python blocks inside Markdown, which would rewrite `_PLANNING.md`'s hand-shaped snippets. No `.py` file changed under 0.16. | David Ouagne |
 | 1.4 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): both jobs install via `uv sync --frozen --group dev` and run tools via `uv run`; `ruff`/`mypy` now live in `pyproject.toml`'s `dev` dependency group instead of `setup.py`'s `dev` extra. Version derivation moved from `setuptools-scm` to `hatch-vcs`. `astral-sh/setup-uv`'s cache (keyed on `uv.lock`) replaces the pip cache keyed on `setup.py`. No change to rule sets, mypy config, or blocking status. | David Ouagne |
+| 1.5 | 2026-09-15 | Issue #55: `[tool.ruff.lint] select` gained `ANN`/`PL` (scoped to `src/` via `per-file-ignores` on `tests/**`/`scripts/**`); `[tool.mypy]` switched from an individually-set non-strict baseline to `strict = true` (still `files = ["src"]`), plus a `tests.*` override (currently a no-op — `files` already excludes `tests/`) mirroring the sibling repo. All 48 `ruff` + 18 `mypy` violations this surfaced were fixed directly in `src/` — real annotations/refactors in every case except a handful of individually-justified `# noqa`/`# type: ignore` comments for genuinely dynamic values, this connector's existing lazy-import architecture, and one third-party invariant-`Generic` false positive; see the new "ruff `ANN`/`PL` + mypy `strict = true` (issue #55)" section above for the full breakdown. Neither addition changed required-check names (REQ-007) or job structure. REQ-008/REQ-009/VLD-006 added. Also corrected two stale leftovers from before issue #13/v1.2 promoted mypy to blocking: the `mypy_result: status # advisory` comment in the Outputs contract, and the Related Specifications note claiming `mypy` wasn't a required check on `main`. A code-review pass (still pre-merge) caught two more issues: `pyproject.toml`'s `requests` dependency comment still claimed a lazy import this same change removed (corrected); and a `builders/container.py` `assert dpi is not None` relied on `ContainerRef.platform` being non-empty, which pydantic's plain `str` doesn't actually enforce — replaced with `if dpi is not None:` (matches `build_data_platform_instance_aspect()`'s own "falsy platform means nothing to emit" contract instead of asserting an unenforced invariant). A second code-review pass caught that `mcp_workunit`'s new `_Aspect` type hint (`builders/common.py`) was imported from the private `datahub._codegen.aspect` module instead of the public `datahub.metadata.schema_classes` re-export every other DataHub-facing import in this codebase uses for the same symbol (confirmed identical object, `A1 is A2 -> True`) — switched to the public path. A third code-review pass flagged the two remaining `assert ... is not None` narrowings (`builders/common.py`'s `_domain_mcps`, `builders/container.py`'s multi-owner fallback) as silently compiled away under `python -O`: both converted to the `if x is None: raise AssertionError(...)` form described above. | David Ouagne |
 
 ## Related Specifications
 
-- `spec/spec-process-cicd-ci.md` — CI (install, test, coverage). This workflow is its style/typing sibling; both are required checks on `main` (the `mypy` job excepted).
+- `spec/spec-process-cicd-ci.md` — CI (install, test, coverage). This workflow is its style/typing sibling; `CI status`, `ruff`, and `mypy` are all required checks on `main`.

@@ -18,12 +18,13 @@ from datahub_yaml_source.loader import is_http_uri
 logger = logging.getLogger(__name__)
 
 
-def _https_clone_url(repo: Any) -> str | None:
+def _https_clone_url(repo: Any) -> str | None:  # noqa: ANN401
     """Anonymous HTTPS clone URL derived from `repo`, or None if it can't be.
 
     Mirrors the 'org/repo' shorthand from `GitReference.simplify_repo_url`,
     since this runs on the raw value before the 'repo' field itself is
-    validated.
+    validated -- `repo` is genuinely Any (raw pre-validation dict value),
+    narrowed by the isinstance check below.
     """
     if not isinstance(repo, str):
         return None
@@ -51,7 +52,10 @@ class YamlGitInfo(GitInfo):
 
     @model_validator(mode="before")
     @classmethod
-    def _apply_clone_defaults(cls, values: Any) -> Any:
+    def _apply_clone_defaults(cls, values: Any) -> Any:  # noqa: ANN401
+        # A pydantic `mode="before"` validator genuinely receives/returns
+        # Any -- the raw pre-validation input, narrowed by the isinstance
+        # check below.
         if not isinstance(values, dict):
             return values
         values = dict(values)  # don't mutate the caller's dict
@@ -88,7 +92,7 @@ class YamlGitInfo(GitInfo):
         return values
 
 
-class YamlSourceConfig(StatefulIngestionConfigBase):
+class YamlSourceConfig(StatefulIngestionConfigBase[StatefulStaleMetadataRemovalConfig]):
     """Source configuration for the YAML metadata-as-code connector.
 
     This source has no connection of its own -- every platform, environment,

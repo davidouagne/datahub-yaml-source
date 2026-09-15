@@ -50,8 +50,10 @@ dependencies = [
     # silently dependent on that staying true. Same range as upstream's
     # own floor, to avoid a resolver conflict.
     "pydantic>=2.4.0,<3.0.0",
-    # loader.py/yaml_source.py lazily import requests for the http(s)://
-    # 'path' code path. Only ever a *two-hop* transitive dep today
+    # loader.py/yaml_source.py import requests for the http(s):// 'path'
+    # code path (a normal top-level import -- unlike boto3/GitPython,
+    # requests needs no optional extra, so there's no lazy-import reason
+    # to defer it). Only ever a *two-hop* transitive dep today
     # (acryl-datahub unconditionally requires requests_file, which in
     # turn requires requests>=1.0.0 -- an essentially unconstrained
     # floor); declared explicitly with a floor actually exercised by
@@ -162,34 +164,44 @@ src = ["src", "tests", "scripts"]
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
-# Pragmatic set for a solo-maintained translation layer: pyflakes/pycodestyle
-# errors (E, F), import sorting (I), pyupgrade (UP), flake8-bugbear (B),
-# flake8-comprehensions (C4), flake8-simplify (SIM) and Ruff's own rules
-# (RUF). Deliberately excludes annotation-completeness (ANN) and the
-# opinionated pylint (PL) families to keep the signal high.
-select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
+# pyflakes/pycodestyle errors (E, F), import sorting (I), pyupgrade (UP),
+# flake8-bugbear (B), flake8-comprehensions (C4), flake8-simplify (SIM),
+# Ruff's own rules (RUF), plus annotation-completeness (ANN) and pylint
+# (PL) -- matches the sibling repo's posture (issue #55).
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF", "ANN", "PL"]
 
 [tool.ruff.lint.per-file-ignores]
 # Re-export surfaces: an unused import is the point.
 "__init__.py" = ["F401"]
 # Test fixtures embed full DataHub URNs and JSON blobs as string literals;
 # these are legitimately long and not meaningfully breakable. The formatter
-# still enforces 100 cols on everything it can reflow.
-"tests/**" = ["E501"]
+# still enforces 100 cols on everything it can reflow. ANN/PL (issue #55)
+# are scoped to `src/` only, mirroring `[tool.mypy] files = ["src"]` below --
+# annotating every test function and script would be a much larger, separate
+# undertaking (387 violations outside src/ vs. the 48 issue #55 scoped and
+# fixed inside it) with no real safety payoff (mypy already checks src/ only).
+"tests/**" = ["E501", "ANN", "PL"]
+"scripts/**" = ["ANN", "PL"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["datahub_yaml_source"]
 
 [tool.mypy]
 # Blocking (issue #13) -- the quality workflow runs this job with no
-# continue-on-error. Scope is the package itself; tests/ and scripts/ are
-# left out until the src/ signal is clean. Non-strict baseline, with the
-# few low-noise warnings that catch real staleness.
+# continue-on-error. Scope is the package itself (issue #55: strict = true,
+# scoped to src/ only); tests/ and scripts/ are left out of `files`, so the
+# tests.* override below is currently a no-op in practice -- kept anyway
+# (mirroring the sibling repo) so `files` can later be widened to include
+# tests/ without silently demanding full annotation coverage there too.
 files = ["src"]
 python_version = "3.10"
-check_untyped_defs = true
-warn_unused_ignores = true
-warn_redundant_casts = true
+strict = true
+
+[[tool.mypy.overrides]]
+# Doubles/fixtures typed "well enough": a safety net without demanding
+# every test_* function be annotated. See the `files` note above.
+module = "tests.*"
+disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
 # acryl-datahub ships partial/absent type information; its generated

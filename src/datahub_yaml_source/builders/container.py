@@ -9,7 +9,6 @@ from datahub_yaml_source.builders.common import (
     build_ownership_aspect,
     common_aspect_mcps,
     mcp_workunit,
-    owner_urn,
     stringify_custom_properties,
 )
 from datahub_yaml_source.models import ContainerDoc, normalize_owners, normalize_sub_types
@@ -18,6 +17,7 @@ from datahub_yaml_source.urns import (
     container_key,
     container_natural_key,
     domain_urn,
+    owner_urn,
 )
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
@@ -45,7 +45,7 @@ def topological_sort_containers(containers: list[ContainerDoc]) -> list[Containe
                 children[parent_key].append(key)
                 indegree[key] += 1
 
-    queue: deque = deque(k for k, d in indegree.items() if d == 0)
+    queue: deque[NaturalKey] = deque(k for k, d in indegree.items() if d == 0)
     order: list[ContainerDoc] = []
     seen = set()
 
@@ -118,7 +118,14 @@ def build_container(
     # gen_containers() only supports a single owner; emit the full ownership
     # aspect afterward (overwriting the single-owner one) when there's more than one.
     if len(owners) > 1:
-        yield mcp_workunit(key.as_urn(), build_ownership_aspect(owners))
+        ownership_aspect = build_ownership_aspect(owners)
+        if ownership_aspect is None:
+            # Guaranteed unreachable: build_ownership_aspect() only returns
+            # None for an empty owners list, and len(owners) > 1 already
+            # rules that out. A plain `if`/`raise`, not `assert`, so this
+            # narrowing isn't silently compiled away under `python -O`.
+            raise AssertionError("build_ownership_aspect() returned None for a non-empty list")
+        yield mcp_workunit(key.as_urn(), ownership_aspect)
 
     # `instance` never affects the container's URN (see `container_key()`, which
     # deliberately omits it from the ContainerKey so the GUID stays stable). That
@@ -129,7 +136,13 @@ def build_container(
     # fallback above.
     if doc.instance:
         dpi = build_data_platform_instance_aspect(doc.platform, doc.instance)
-        yield mcp_workunit(key.as_urn(), dpi)
+        # Unlike the multi-owner fallback above, `platform` isn't guaranteed
+        # non-empty by a preceding check here -- ContainerRef.platform is a
+        # required field but pydantic's `str` doesn't reject "". Skip rather
+        # than assert: build_data_platform_instance_aspect() already treats
+        # a falsy platform as "nothing to emit."
+        if dpi is not None:
+            yield mcp_workunit(key.as_urn(), dpi)
 
     # terms/applications/links/deprecation/structuredProperties have no
     # gen_containers() kwarg at all; owners/tags/subTypes/domain were just

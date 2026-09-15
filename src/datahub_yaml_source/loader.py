@@ -20,12 +20,20 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+import requests
 import yaml
 from datahub.ingestion.source.aws.s3_util import is_s3_uri
+from datahub.ingestion.source.common.http_connection_config import HTTPConnectionConfig
 from pydantic import ValidationError
+
+if TYPE_CHECKING:
+    # Only imported for type-checking: eagerly importing this at runtime
+    # would hard-import boto3 (see module docstring), forcing it on every
+    # user of this source.
+    from datahub.ingestion.source.aws.aws_common import AwsConnectionConfig
 
 from datahub_yaml_source.models import (
     AgentSkillDoc,
@@ -132,7 +140,8 @@ class ParsedRepository:
     assertions: list[AssertionDoc] = field(default_factory=list)
     raw_aspects: list[RawAspectDoc] = field(default_factory=list)
 
-    def add(self, doc: object) -> None:
+    def _add_catalog_doc(self, doc: object) -> bool:
+        """Platform/glossary/governance kinds. Returns whether `doc` matched."""
         if isinstance(doc, DataPlatformDoc):
             self.platforms.append(doc)
         elif isinstance(doc, TagDoc):
@@ -147,7 +156,13 @@ class ParsedRepository:
             self.domains.append(doc)
         elif isinstance(doc, ApplicationDoc):
             self.applications.append(doc)
-        elif isinstance(doc, ContainerDoc):
+        else:
+            return False
+        return True
+
+    def _add_data_asset_doc(self, doc: object) -> bool:
+        """Container/dataset/BI/document kinds. Returns whether `doc` matched."""
+        if isinstance(doc, ContainerDoc):
             self.containers.append(doc)
         elif isinstance(doc, DatasetDoc):
             self.datasets.append(doc)
@@ -161,7 +176,13 @@ class ParsedRepository:
             self.incidents.append(doc)
         elif isinstance(doc, DocumentDoc):
             self.documents.append(doc)
-        elif isinstance(doc, MLFeatureTableDoc):
+        else:
+            return False
+        return True
+
+    def _add_ml_doc(self, doc: object) -> bool:
+        """ML/semantic-layer kinds. Returns whether `doc` matched."""
+        if isinstance(doc, MLFeatureTableDoc):
             self.ml_feature_tables.append(doc)
         elif isinstance(doc, MLFeatureDoc):
             self.ml_features.append(doc)
@@ -175,7 +196,13 @@ class ParsedRepository:
             self.semantic_models.append(doc)
         elif isinstance(doc, MetricDoc):
             self.metrics.append(doc)
-        elif isinstance(doc, RepositoryDoc):
+        else:
+            return False
+        return True
+
+    def _add_software_ops_doc(self, doc: object) -> bool:
+        """Software-catalog/AI-agent/pipeline-ops kinds. Returns whether `doc` matched."""
+        if isinstance(doc, RepositoryDoc):
             self.repositories.append(doc)
         elif isinstance(doc, ApiDoc):
             self.apis.append(doc)
@@ -197,11 +224,23 @@ class ParsedRepository:
             self.assertions.append(doc)
         elif isinstance(doc, RawAspectDoc):
             self.raw_aspects.append(doc)
-        else:  # pragma: no cover - guarded by parse_document's return type
-            raise TypeError(f"Unrecognized parsed document type: {type(doc)}")
+        else:
+            return False
+        return True
+
+    def add(self, doc: object) -> None:
+        for dispatch in (
+            self._add_catalog_doc,
+            self._add_data_asset_doc,
+            self._add_ml_doc,
+            self._add_software_ops_doc,
+        ):
+            if dispatch(doc):
+                return
+        raise TypeError(f"Unrecognized parsed document type: {type(doc)}")  # pragma: no cover
 
 
-def _discover_s3_files(prefix: str, aws_connection: Any | None) -> list[str]:
+def _discover_s3_files(prefix: str, aws_connection: "AwsConnectionConfig | None") -> list[str]:
     """List every '*.yml' / '*.yaml' object under an s3:// prefix.
 
     Lists by prefix (paginated `list_objects_v2`) rather than using DataHub's
@@ -230,7 +269,9 @@ def _discover_s3_files(prefix: str, aws_connection: Any | None) -> list[str]:
     return sorted(f"s3://{bucket}/{key}" for key in keys)
 
 
-def _read_s3_bytes(uri: str, aws_connection: Any | None, max_bytes: int | None) -> bytes:
+def _read_s3_bytes(
+    uri: str, aws_connection: "AwsConnectionConfig | None", max_bytes: int | None
+) -> bytes:
     if aws_connection is None:
         raise ValueError(f"'aws_connection' is required to read S3 path: {uri}")
 
@@ -246,10 +287,11 @@ def _read_s3_bytes(uri: str, aws_connection: Any | None, max_bytes: int | None) 
             f"max_input_file_bytes limit of {max_bytes}"
         )
     if max_bytes is None:
-        return body.read()
+        content: bytes = body.read()
+        return content
     # Read at most max_bytes+1 so an oversized object trips the cap without
     # pulling the whole body into memory (a lying/absent ContentLength above).
-    data = body.read(max_bytes + 1)
+    data: bytes = body.read(max_bytes + 1)
     if len(data) > max_bytes:
         raise FileSizeExceededError(
             f"{uri} exceeds the configured max_input_file_bytes limit of {max_bytes}"
@@ -257,9 +299,9 @@ def _read_s3_bytes(uri: str, aws_connection: Any | None, max_bytes: int | None) 
     return data
 
 
-def _read_http_bytes(uri: str, http_connection: Any | None, max_bytes: int | None) -> bytes:
-    import requests
-
+def _read_http_bytes(
+    uri: str, http_connection: HTTPConnectionConfig | None, max_bytes: int | None
+) -> bytes:
     kwargs = http_connection.to_request_kwargs() if http_connection else {}
     with requests.get(uri, timeout=_HTTP_TIMEOUT_SECONDS, stream=True, **kwargs) as resp:
         resp.raise_for_status()
@@ -284,7 +326,9 @@ def _read_http_bytes(uri: str, http_connection: Any | None, max_bytes: int | Non
         return bytes(buffer)
 
 
-def discover_yaml_files(root: str | Path, aws_connection: Any | None = None) -> list[str]:
+def discover_yaml_files(
+    root: str | Path, aws_connection: "AwsConnectionConfig | None" = None
+) -> list[str]:
     """Resolve one configured 'path' entry into the file URIs to read from it.
 
     - A local directory is scanned recursively for '*.yml' / '*.yaml' files
@@ -315,13 +359,80 @@ def discover_yaml_files(root: str | Path, aws_connection: Any | None = None) -> 
     return sorted({str(p) for p in files})
 
 
-def load_repository(
+def _read_uri_text(
+    uri: str,
+    on_error: OnErrorCallback,
+    aws_connection: "AwsConnectionConfig | None",
+    http_connection: HTTPConnectionConfig | None,
+    max_input_file_bytes: int | None,
+) -> str | None:
+    """Read and UTF-8-decode one discovered URI. Returns None (after
+    reporting via `on_error`) on any read or size-cap failure."""
+    try:
+        if is_http_uri(uri):
+            return _read_http_bytes(uri, http_connection, max_input_file_bytes).decode("utf-8")
+        if is_s3_uri(uri):
+            return _read_s3_bytes(uri, aws_connection, max_input_file_bytes).decode("utf-8")
+        file_path = Path(uri)
+        if max_input_file_bytes is not None:
+            size = file_path.stat().st_size
+            if size > max_input_file_bytes:
+                raise FileSizeExceededError(
+                    f"{uri} is {size} bytes, over the configured "
+                    f"max_input_file_bytes limit of {max_input_file_bytes}"
+                )
+        return file_path.read_text(encoding="utf-8")
+    except FileSizeExceededError as e:
+        on_error(uri, str(e))
+        return None
+    except Exception as e:
+        on_error(uri, f"Failed to read file: {e}")
+        return None
+
+
+def _parse_uri_documents(
+    uri: str,
+    text: str,
+    on_error: OnErrorCallback,
+    on_unknown_fields: OnUnknownFieldsCallback | None,
+    repository: ParsedRepository,
+) -> None:
+    """Parse one URI's multi-document YAML text and add every document to
+    `repository`, reporting per-document/per-file problems via `on_error`/
+    `on_unknown_fields` rather than raising."""
+    try:
+        raw_docs = list(yaml.safe_load_all(text))
+    except yaml.YAMLError as e:
+        on_error(uri, f"Failed to parse YAML: {e}")
+        return
+
+    for raw_doc in raw_docs:
+        if raw_doc is None:
+            # Empty document between two `---` separators.
+            continue
+        try:
+            parsed = parse_document(raw_doc)
+        except (DocumentParseError, ValidationError) as e:
+            on_error(uri, f"Invalid document: {e}")
+            continue
+
+        if (
+            on_unknown_fields is not None
+            and not isinstance(parsed, RawAspectDoc)
+            and parsed.model_extra
+        ):
+            on_unknown_fields(uri, raw_doc.get("kind", "?"), sorted(parsed.model_extra))
+
+        repository.add(parsed)
+
+
+def load_repository(  # noqa: PLR0913, PLR0917
     roots: str | Path | Sequence[str | Path],
     on_error: OnErrorCallback,
     on_file_scanned: OnFileScannedCallback | None = None,
     on_unknown_fields: OnUnknownFieldsCallback | None = None,
-    aws_connection: Any | None = None,
-    http_connection: Any | None = None,
+    aws_connection: "AwsConnectionConfig | None" = None,
+    http_connection: HTTPConnectionConfig | None = None,
     max_input_file_bytes: int | None = None,
 ) -> ParsedRepository:
     """Resolve every entry in `roots` to file URIs and parse every document in
@@ -332,11 +443,17 @@ def load_repository(
     but carries a field its `kind` doesn't recognize (typo, or a common
     aspect the entity registry doesn't permit on that kind) is reported via
     `on_unknown_fields` and still processed, ignoring only that field.
+
+    Every parameter here is an independent, orthogonal knob (this repo's
+    public loading entry point, exercised directly by ~25 test cases with
+    varying subsets of them) -- the argument list is the interface, not
+    accidental complexity, so grouping them into a bundle object would only
+    add an indirection with no matching real-world grouping.
     """
     repository = ParsedRepository()
     root_list = [roots] if isinstance(roots, str | Path) else list(roots)
 
-    seen_uris: set = set()
+    seen_uris: set[str] = set()
     for root in root_list:
         try:
             uris = discover_yaml_files(root, aws_connection=aws_connection)
@@ -352,53 +469,12 @@ def load_repository(
             if on_file_scanned is not None:
                 on_file_scanned(uri)
 
-            try:
-                if is_http_uri(uri):
-                    text = _read_http_bytes(uri, http_connection, max_input_file_bytes).decode(
-                        "utf-8"
-                    )
-                elif is_s3_uri(uri):
-                    text = _read_s3_bytes(uri, aws_connection, max_input_file_bytes).decode("utf-8")
-                else:
-                    file_path = Path(uri)
-                    if max_input_file_bytes is not None:
-                        size = file_path.stat().st_size
-                        if size > max_input_file_bytes:
-                            raise FileSizeExceededError(
-                                f"{uri} is {size} bytes, over the configured "
-                                f"max_input_file_bytes limit of {max_input_file_bytes}"
-                            )
-                    text = file_path.read_text(encoding="utf-8")
-            except FileSizeExceededError as e:
-                on_error(uri, str(e))
-                continue
-            except Exception as e:
-                on_error(uri, f"Failed to read file: {e}")
+            text = _read_uri_text(
+                uri, on_error, aws_connection, http_connection, max_input_file_bytes
+            )
+            if text is None:
                 continue
 
-            try:
-                raw_docs = list(yaml.safe_load_all(text))
-            except yaml.YAMLError as e:
-                on_error(uri, f"Failed to parse YAML: {e}")
-                continue
-
-            for raw_doc in raw_docs:
-                if raw_doc is None:
-                    # Empty document between two `---` separators.
-                    continue
-                try:
-                    parsed = parse_document(raw_doc)
-                except (DocumentParseError, ValidationError) as e:
-                    on_error(uri, f"Invalid document: {e}")
-                    continue
-
-                if (
-                    on_unknown_fields is not None
-                    and not isinstance(parsed, RawAspectDoc)
-                    and parsed.model_extra
-                ):
-                    on_unknown_fields(uri, raw_doc.get("kind", "?"), sorted(parsed.model_extra))
-
-                repository.add(parsed)
+            _parse_uri_documents(uri, text, on_error, on_unknown_fields, repository)
 
     return repository

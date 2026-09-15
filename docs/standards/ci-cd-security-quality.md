@@ -16,8 +16,9 @@ spec-process-cicd-*.md` and `docs/adr/*.md` links inline -- this document is the
 territory.
 
 **Verified against live state on**: 2026-09-15, against `davidouagne/datahub-yaml-source` at commit
-`f09383e` (main); §2.4/§3.4 amended the same day after re-verification triggered by a direct
-repo-to-repo comparison (`dependency-review` promoted to required, see those sections). **Originating
+`f09383e` (main); §1/§2.1/§2.3/§2.4/§3.4 amended the same day, twice, after re-verification triggered by
+direct repo-to-repo comparisons (`dependency-review` promoted to required; `ruff`/`mypy` merged into `CI
+status` as `lint`/`typecheck`; `dco` added — see those sections). **Originating
 epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately written last
 so it describes the finished state rather than a moving target.
 
@@ -31,76 +32,86 @@ so it describes the finished state rather than a moving target.
 - **`enforce_admins` is `false`.** The maintainer keeps a direct-push escape hatch on `main` to avoid
   locking themselves out. Required status checks (below) still apply to any PR; this only affects
   whether the maintainer personally can bypass them via direct push.
-- **DCO sign-off is intentionally absent.** No `Signed-off-by` / DCO check exists anywhere in this
-  repo's CI (confirmed: no reference to it outside a `.github/workflows/commit-policy.yml` comment
-  stating so explicitly). This mirrors the sibling repo's own scoping decision from issue #48 -- DCO
-  enforcement was evaluated and deliberately not added here, and is unchanged on the sibling either.
-  Conventional Commit enforcement (below) is a separate, unrelated mechanism and *is* enforced.
+- **DCO sign-off is checked, advisory-only.** A `dco` job (`commit-policy.yml`) verifies every
+  non-merge PR commit carries a `Signed-off-by` trailer, matching the sibling repo's own `dco` job
+  (`ADR-0002`-driven there). **Reversed from this document's original text**, which recorded DCO as
+  "intentionally absent" per issue #48's scoping -- the maintainer revisited that decision after
+  comparing this repo's checks against the sibling directly and asked for parity; see
+  `spec/spec-process-cicd-commit-policy.md` v1.1 for the full reasoning. Not a required status check
+  (Dependabot's own commits never carry the trailer and would always fail it). Conventional Commit
+  enforcement (below) is a separate mechanism and *is* enforced (also advisory, not yet required).
 - **`allow_auto_merge`** is `true` at the repo-settings level (required for Dependabot auto-merge,
   below, to function at all -- see `spec/spec-process-cicd-dependabot-auto-merge.md`).
 
 ## 2. CI/CD
 
-### 2.1 Continuous Integration (`ci.yml`)
+### 2.1 Continuous Integration + Quality (`ci.yml`)
 
-Triggers on push/PR to `main` and `workflow_dispatch`. Installs via `uv sync --frozen`, runs the full
-unit + integration test suite across Python 3.10-3.12, enforces a coverage floor
-(`--cov-fail-under=80`), and separately verifies a base-only (no optional-extras) install still
-registers the `yaml` DataHub ingestion source plugin (`minimal-install-check`). An aggregate job named
-exactly `CI status` (the branch-protection context string) requires both to succeed.
+Triggers on push/PR to `main` and `workflow_dispatch`. One workflow file, four jobs feeding a single
+aggregate gate named exactly `CI status` (the branch-protection context string):
 
-Full contract: `spec/spec-process-cicd-ci.md`.
-
-### 2.2 Quality (`quality.yml`)
-
-Two independent, individually-required jobs, both blocking:
-
-- **`ruff`**: `ruff check` + `ruff format --check`. Lint rule set: `E, F, I, UP, B, C4, SIM, RUF, ANN,
+- **`lint`**: `ruff check` + `ruff format --check`. Lint rule set: `E, F, I, UP, B, C4, SIM, RUF, ANN,
   PL` (`pyproject.toml` `[tool.ruff.lint] select`) -- `ANN`/`PL` scoped to `src/` only via
   `per-file-ignores` (tests/scripts are exempt from annotation-completeness and pylint-style rules;
   adopted issue #55).
-- **`mypy`**: `strict = true`, scoped to `src/` only (`pyproject.toml` `[tool.mypy] files = ["src"]`).
-  The baseline was driven to **zero** when strict mode was adopted (issue #55) -- there is no
+- **`typecheck`**: `mypy`, `strict = true`, scoped to `src/` only (`pyproject.toml` `[tool.mypy] files =
+  ["src"]`). The baseline was driven to **zero** when strict mode was adopted (issue #55) -- there is no
   grandfathered ignore list; every new type error fails the build.
+- **`test`**: full unit + integration test suite across Python 3.10-3.12, enforces a coverage floor
+  (`--cov-fail-under=80`).
+- **`build`**: verifies a base-only (no optional-extras) install still registers the `yaml` DataHub
+  ingestion source plugin.
 
-Full contract: `spec/spec-process-cicd-quality.md`.
+**`lint`/`typecheck` used to be `ruff`/`mypy` in a separate `quality.yml` workflow, each individually
+required on `main`.** Merged into this file and renamed to match the sibling repo's own job names, and
+folded into the `CI status` aggregate instead of being separately required -- the maintainer asked for
+this after comparing the two repos' required-check lists directly and finding they diverged for no
+principled reason. Functionally identical: nothing that used to block merge stops blocking, since
+`ci-status` still fails if either fails. `spec/spec-process-cicd-quality.md` is now a retired redirect
+stub; its full tooling rationale lives in `spec/spec-process-cicd-ci.md`'s "Lint & Type-Check
+Configuration" section.
 
-### 2.3 Coverage reporting (Codecov)
+Full contract: `spec/spec-process-cicd-ci.md`.
+
+### 2.2 Coverage reporting (Codecov)
 
 Codecov uploads from every `test` matrix leg, but is **informational only** -- `codecov.yml` sets both
 `project` and `patch` statuses to `informational: true`. It never posts a blocking check; the actual
 coverage gate is `ci.yml`'s own `--cov-fail-under=80`. Full contract: `spec/spec-process-cicd-codecov.md`.
 
-### 2.4 Branch protection on `main` (live-verified)
+### 2.3 Branch protection on `main` (live-verified)
 
 ```
-required_status_checks.contexts = ["CI status", "ruff", "mypy", "dependency-review"]
+required_status_checks.contexts = ["CI status", "dependency-review"]
 required_status_checks.strict   = false
 required_pull_request_reviews   = (absent -- none configured)
 enforce_admins                  = false
 restrictions                    = (absent -- none configured)
 ```
 
-CodeQL (§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate
-choice recorded in its own spec, not an oversight. `dependency-review` (§3.4) *was* advisory-only when
-this document first published, on the premise it matched the sibling repo's own posture; that premise
-went stale once the sibling's own `main` was separately protected (its companion ticket, `#65`), and was
-promoted here to match once the maintainer caught the drift by comparing the two repos' live settings
-directly (`spec/spec-process-cicd-dependency-review.md` v1.2) -- a concrete instance of the discipline
-§3.3 and the closing section of this document both call for. `strict: false` means a PR does not need to
-be rebased onto the latest `main` before merging -- accepted friction trade-off for a solo maintainer
-(see `spec/spec-process-cicd-ci.md`'s Branch Protection section for the full rationale and
-residual-risk discussion).
+Two required checks, deliberately matching the sibling repo's own required-check list exactly. CodeQL
+(§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate choice
+recorded in its own spec, not an oversight. This list changed twice since this document first published:
+`dependency-review` was promoted from advisory (its original "matches the sibling's advisory posture"
+justification went stale once the sibling's own `main` was separately protected, its companion ticket
+`#65`); then `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`, `spec/
+spec-process-cicd-ci.md` v1.12) and dropped from this list individually -- both changes triggered by the
+maintainer comparing the two repos' live settings directly, a concrete instance of the discipline §3.3
+and the closing section of this document both call for. `strict: false` means a PR does not need to be
+rebased onto the latest `main` before merging -- accepted friction trade-off for a solo maintainer (see
+`spec/spec-process-cicd-ci.md`'s Branch Protection section for the full rationale and residual-risk
+discussion).
 
-### 2.5 Commit and PR-title discipline (`commit-policy.yml`)
+### 2.4 Commit and PR-title discipline (`commit-policy.yml`)
 
 `commitlint` (via `@commitlint/config-conventional`) checks every commit message on a PR is a valid
-Conventional Commit; `amannn/action-semantic-pull-request` checks the PR title itself is one too. Both
-blocking as of issue #52. This exists specifically because release-please (§2.6) parses commit messages
+Conventional Commit; `amannn/action-semantic-pull-request` checks the PR title itself is one too; `dco`
+(§1) checks every commit carries a `Signed-off-by` trailer. All three advisory, not required status
+checks. `commitlint`/`pr-title` exist specifically because release-please (§2.5) parses commit messages
 to compute version bumps and changelog entries -- a malformed commit message is no longer just a style
 nit, it would silently mis-compute a release. Full contract: `spec/spec-process-cicd-commit-policy.md`.
 
-### 2.6 Release automation (`release.yml` + `release-please`)
+### 2.5 Release automation (`release.yml` + `release-please`)
 
 Releases (version bump, changelog, PyPI publish) happen through a `release-please`-maintained release
 PR, never a manually pushed tag (ADR-0001, issue #58). Mono-workflow, triggered by `push: branches:
@@ -120,7 +131,7 @@ automated run failed after the tag was already created.
 
 Full contract: `spec/spec-process-cicd-release.md`.
 
-### 2.7 Dependency updates (`dependabot.yml` + `dependabot-auto-merge.yml`)
+### 2.6 Dependency updates (`dependabot.yml` + `dependabot-auto-merge.yml`)
 
 Dependabot watches two ecosystems (`uv`, `github-actions`), weekly (Monday), grouping all minor+patch
 bumps per ecosystem into one PR each; major bumps arrive individually. Patch-level bumps (any
@@ -144,7 +155,7 @@ Full contract: `spec/spec-process-cicd-dependabot.md` + `spec/spec-process-cicd-
 Dependabot **alerts** (visibility into known vulnerabilities in the Security tab) and Dependabot
 **security updates** (automatic on-demand PRs fixing them) are two independent GitHub settings --
 issue #53 enabled the former; the latter remains off, matching what was actually asked for and not
-conflating the two. Scheduled version updates (§2.7) and the weekly `pip-audit` scan (§3.2) already give
+conflating the two. Scheduled version updates (§2.6) and the weekly `pip-audit` scan (§3.2) already give
 this repo two independent vulnerability-discovery paths without also needing on-demand auto-PRs.
 
 ### 3.2 Scheduled SCA scan (`audit.yml`, `pip-audit`)
@@ -187,14 +198,14 @@ an already-normalised (`strip()`/`rstrip("/")`) string -- `startswith` is an anc
 the unanchored substring pattern this rule targets, so these read as false positives. Documented and
 left open rather than dismissed or fixed, per the original scoping decision (`spec/
 spec-process-cicd-codeql.md` v1.0's Known Baseline, reaffirmed unchanged by issue #48's own Out of
-Scope). CodeQL is advisory only (§2.4) -- these alerts do not block anything.
+Scope). CodeQL is advisory only (§2.3) -- these alerts do not block anything.
 
 ### 3.4 PR-time dependency review (`dependency-review.yml`)
 
 Runs on every PR to `main`: `actions/dependency-review-action@v5`, `fail-on-severity: high`, and a
 `deny-licenses` list covering `GPL-2.0`/`GPL-3.0`/`AGPL-3.0` (both `-only` and `-or-later` SPDX forms) --
 appropriate for this repo's own Apache-2.0 license. **A required `main` status check** (promoted from
-advisory shortly after this standard first published -- see §2.4 for why: the original "advisory,
+advisory shortly after this standard first published -- see §2.3 for why: the original "advisory,
 matching the sibling" framing went stale once the sibling's own branch protection changed independently,
 caught by direct repo-to-repo comparison rather than by re-reading this document).
 
@@ -219,14 +230,15 @@ published tag are supported.
   suite, the `models.py` → docs/schema regeneration trap (`AGENTS.md`'s "one rule that bites silently"),
   golden-file refresh when output intentionally changes, and lint/format/type cleanliness.
 - No required review, no `CODEOWNERS` (§1).
-- Every PR is gated by `CI status`, `ruff`, `mypy` (required) and, advisory only,
-  `dependency-review` and CodeQL (§2.4, §3.3, §3.4).
+- Every PR is gated by `CI status` (which since v1.12 includes `lint`/`typecheck`) and
+  `dependency-review` (both required), and, advisory only, CodeQL and `dco`/`commitlint`/`pr-title`
+  (§2.3, §2.4, §3.3).
 
 ## 5. Package publishing
 
 - **PyPI Trusted Publishing (OIDC)** -- no API token stored as a secret anywhere in this repo. Trusted
   Publisher registered against this exact repo, workflow filename (`release.yml`), and environment name
-  (`pypi`); unchanged by the release-please migration (§2.6) even though the workflow's *trigger* changed.
+  (`pypi`); unchanged by the release-please migration (§2.5) even though the workflow's *trigger* changed.
 - **Human gate**: the `pypi` Environment's required-reviewer rule (the maintainer approves their own
   publish) sits immediately before the one irreversible step.
 - **Build reproducibility**: `hatch-vcs` derives the published version purely from the git tag at build

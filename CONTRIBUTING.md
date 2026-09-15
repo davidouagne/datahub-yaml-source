@@ -84,8 +84,8 @@ kind, emission ordering, reference-resolution strategy).
 ### Lint, format, and types
 
 Ruff and mypy are installed by the `dev` dependency group. Before pushing,
-run the same checks CI runs (`.github/workflows/quality.yml`, contract in
-`spec/spec-process-cicd-quality.md`):
+run the same checks CI runs (the `lint`/`typecheck` jobs in
+`.github/workflows/ci.yml`, contract in `spec/spec-process-cicd-ci.md`):
 
 ```bash
 uv run ruff check .            # lint (blocking in CI)
@@ -118,6 +118,10 @@ with a real annotation/guard; a `# type: ignore[<code>]` (mypy) or
    configures the accepted types via `@commitlint/config-conventional`'s
    standard list (`build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
    `refactor`, `revert`, `style`, `test`).
+6. Sign off every commit (`git commit -s`, or `-S` combined with GPG
+   signing) with a `Signed-off-by:` trailer — the `dco` job checks for it
+   (advisory, not yet required). Uses your `git config user.name`/`user.email`
+   automatically.
 
 By contributing, you agree that your contributions will be licensed under the
 project's [Apache License 2.0](LICENSE).

@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Release (release-please + PyPI Trusted Publishing)
-version: 2.0
+version: 2.1
 date_created: 2026-09-05
 last_updated: 2026-09-15
 owner: David Ouagne
@@ -114,7 +114,7 @@ Top-level `permissions:` is empty (`{}`); each job opts in to exactly what it ne
 | SEC-001 | No long-lived publish credential. | OIDC Trusted Publishing only; the repository holds no PyPI API token as a secret. Unchanged from `v1.x`. |
 | SEC-002 | Least privilege per job. | Top-level `permissions: {}`. `id-token: write` only on `pypi-publish`; `contents: write` on `release-please` (tag/release/PR creation) and `build` (`gh release upload`); `smoke` gets none. |
 | SEC-003 | Human gate on the irreversible action. | The `pypi` Environment's required-reviewer rule blocks `pypi-publish` until the maintainer approves (REQ-007), unchanged. |
-| SEC-004 | Pinned third-party actions. | `googleapis/release-please-action@v5`, `pypa/gh-action-pypi-publish@release/v1` (the PyPA-maintained moving major), `actions/*` at their major tags -- consistent with `ci.yml` / `quality.yml`. The `github-actions` Dependabot ecosystem (issue #6) tracks bumps. |
+| SEC-004 | Pinned third-party actions. | `googleapis/release-please-action@v5`, `pypa/gh-action-pypi-publish@release/v1` (the PyPA-maintained moving major), `actions/*` at their major tags -- consistent with `ci.yml`. The `github-actions` Dependabot ecosystem (issue #6) tracks bumps. |
 | SEC-005 | The Environment's deployment policy matches the new trigger shape. | The `pypi` Environment's deployment-branch policy was changed from a tag pattern (`v*`, type tag) to a branch (`main`), because this workflow's trigger is now `push: branches: [main]` -- `github.ref` for the run is `refs/heads/main`, never a tag ref, even though `build`/`smoke` check out a tag internally. Applied via the same mechanism as the original policy (issue #8): `gh api --method PUT/DELETE .../environments/pypi/deployment-branch-policies/...`. Without this change `pypi-publish` would be rejected by the Environment's own policy on every run. |
 
 ### Performance Requirements
@@ -206,9 +206,8 @@ smoke_result: status            # pass/fail (advisory) of the post-publish insta
 
 | Workflow | Relationship | Mechanism |
 |----------|--------------|-----------|
-| `spec/spec-process-cicd-ci.md` (CI) | A release PR is an ordinary PR against `main` and is gated by `CI status`/`ruff`/`mypy`/`dependency-review` like any other before it can be merged; the resulting merge commit is *also* independently re-tested by `ci.yml`'s own `push: branches: [main]` trigger. Because of this double coverage, `build` in **this** workflow deliberately does **not** re-run the test suite (unlike the pre-release-please `v1.x` design, whose `build` job ran `pytest` because a tag push had no other gate at all). | Same `push: branches: [main]` event triggers both workflows independently |
-| `spec/spec-process-cicd-quality.md` (Quality) | Same as above -- release PR and post-merge commit both gated by `ruff`/`mypy` before this workflow's `build`/`publish` jobs ever run. | `pull_request` + `push` to `main` |
-| `spec/spec-process-cicd-dependency-review.md` | The release PR is itself an ordinary PR, so it also passes through `dependency-review` (advisory at this spec version) like any other PR. | Same `pull_request` trigger |
+| `spec/spec-process-cicd-ci.md` (CI) | A release PR is an ordinary PR against `main` and is gated by `CI status` (which as of v1.12 includes `lint`/`typecheck`, formerly separate `ruff`/`mypy` required checks) and `dependency-review` like any other before it can be merged; the resulting merge commit is *also* independently re-tested by `ci.yml`'s own `push: branches: [main]` trigger. Because of this double coverage, `build` in **this** workflow deliberately does **not** re-run the test suite (unlike the pre-release-please `v1.x` design, whose `build` job ran `pytest` because a tag push had no other gate at all). | Same `push: branches: [main]` event triggers both workflows independently |
+| `spec/spec-process-cicd-dependency-review.md` | The release PR is itself an ordinary PR, so it also passes through `dependency-review` (a required check as of that spec's v1.2) like any other PR. | Same `pull_request` trigger |
 | `docs/adr/0001-release-please-for-release-automation.md` | Records the decision this workflow implements. | Referenced in the workflow file's header comment |
 
 ## Edge Cases & Exceptions
@@ -273,12 +272,13 @@ noted here so it isn't mistaken for an oversight later.
 | 1.0 | 2026-09-05 | Initial specification. `release.yml` (build+verify → gated `pypi-publish` via OIDC → `github-release`) and `.github/release.yml` note categorisation added. PyPI packaging metadata fleshed out in `setup.py`; `MANIFEST.in` added to curate the sdist. TestPyPI lane and pre-release tags deliberately deferred. | David Ouagne |
 | 1.1 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (issue #49): `build` installs via `uv sync --frozen --group dev --extra git --extra s3`, runs tests and builds via `uv run pytest` / `uv build`, and checks metadata via `uvx twine check --strict`. Version derivation moved from `setuptools-scm` to `hatch-vcs`. No change to triggers, gates, the Environment approval, or OIDC publishing. | David Ouagne |
 | 2.0 | 2026-09-15 | **Replaced the manual-tag-triggered workflow with `release-please` (ADR-0001, issue #58).** Trigger changed from `push: tags: v*` to `push: branches: [main]` + `workflow_dispatch` (mono-workflow, see "Why a mono-workflow"). New `release-please` job (`googleapis/release-please-action@v5` + `release-please-config.json` + `.release-please-manifest.json`, `release-type: simple` -- see "Why `release-type: simple`" for why not `python`). `build` no longer re-runs the test suite (superseded rationale, see Dependent/Upstream Workflows) and now attaches `dist/*` to the release-please-created GitHub Release via `gh release upload` instead of a separate `github-release` job calling `gh release create --generate-notes`; `.github/release.yml` removed as dead config (REQ-010). New `smoke` job (advisory, `continue-on-error: true`) automates what was previously only a manual validation criterion (REQ-011). `pypi` Environment's deployment-branch policy changed from tag pattern `v*` to branch `main` (SEC-005) -- required for `pypi-publish` to run at all under the new trigger, applied as part of this same change. PyPI Trusted Publisher config itself (repo, workflow filename, environment name) is unchanged. Verified via `--dry-run` against the real commit history (0 pending PRs, correctly) and against a throwaway `fix:` commit (correctly computed a 0.1.0 → 0.1.1 patch bump with a changelog entry) -- see VLD-001. | David Ouagne |
+| 2.1 | 2026-09-15 | Cross-reference update, no workflow-file change: `spec/spec-process-cicd-quality.md` was retired and merged into `spec/spec-process-cicd-ci.md` v1.12 (`ruff`/`mypy` renamed `lint`/`typecheck`, folded into the `CI status` aggregate). Every reference to `quality.yml`/that spec here replaced with the current `ci.yml`/`spec/spec-process-cicd-ci.md` (`CI status` now covers lint/typecheck transitively) and `spec/spec-process-cicd-dependency-review.md` (now a required check, not advisory, since that spec's v1.2). | David Ouagne |
 
 ## Related Specifications
 
 - `spec/spec-process-cicd-ci.md` -- CI (install/test/coverage). The release PR and its merge commit are
   both gated by this before `release.yml`'s `build`/`publish` jobs matter.
-- `spec/spec-process-cicd-quality.md` -- Ruff/mypy, same PR/push gating as CI.
+- `spec/spec-process-cicd-dependency-review.md` -- required check as of v1.2, same PR gating as CI.
 - `spec/spec-process-cicd-dependency-review.md` -- gates the release PR like any other PR.
 - `docs/adr/0001-release-please-for-release-automation.md` -- the decision record this workflow
   implements.

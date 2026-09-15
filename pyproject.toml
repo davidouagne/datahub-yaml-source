@@ -90,8 +90,8 @@ dev = [
     "jsonschema>=4.0.0",
     "GitPython>=3.1.37,<4",
     "boto3>=1.35.0,<2",
-    # Lint/format and type-check, run by .github/workflows/quality.yml
-    # (see spec/spec-process-cicd-quality.md). Ruff's lint rules and
+    # Lint/format and type-check, run by the lint/typecheck jobs in
+    # .github/workflows/ci.yml (see spec/spec-process-cicd-ci.md). Ruff's lint rules and
     # formatter shift between minors, so it carries an upper bound;
     # local and CI must agree on the exact ruleset. 0.12..0.16 is a
     # clean range for this tree (0.16 added Markdown code-block
@@ -111,8 +111,7 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 # The package version is not written anywhere -- hatch-vcs (a thin wrapper
 # around setuptools-scm) derives it from Git tags at build time. See
-# spec/spec-process-cicd-quality.md / spec-process-cicd-ci.md for the CI
-# `fetch-depth: 0` this needs.
+# spec/spec-process-cicd-ci.md for the CI `fetch-depth: 0` this needs.
 source = "vcs"
 
 [tool.hatch.version.raw-options]

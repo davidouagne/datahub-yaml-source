@@ -8,9 +8,14 @@ name: Commit policy
 # non-merge commit in a PR must be a Conventional Commit
 # (commitlint.config.mjs, checked by wagoid/commitlint-github-action), and
 # the PR title itself must be a valid Conventional Commit / semantic PR
-# title (amannn/action-semantic-pull-request). DCO sign-off enforcement is
-# explicitly NOT part of this repo -- left absent, per #52's acceptance
-# criteria.
+# title (amannn/action-semantic-pull-request).
+#
+# DCO (dco job): every non-merge commit must carry a Signed-off-by
+# trailer. Originally out of scope by explicit decision (issue #52); added
+# later, matching the sibling repo's own dco job, after a direct
+# repo-to-repo comparison found the sibling enforces it (advisory there,
+# not required -- same posture here; see spec/spec-process-cicd-commit-policy.md's
+# version history for the full reasoning behind the reversal).
 #
 # Plain `pull_request` throughout, not `pull_request_target`: every PR in
 # this repo (maintainer's own, or Dependabot's) is a same-repo branch,
@@ -18,13 +23,13 @@ name: Commit policy
 # concern `pull_request_target` exists to manage (same posture as
 # spec/spec-process-cicd-dependabot-auto-merge.md's SEC-002).
 #
-# Both jobs run on every trigger type, including `edited` -- an earlier
-# draft skipped `commitlint` on `edited` to avoid re-linting unchanged
-# commits on a title-only tweak, but `edited` also fires on a PR base-branch
-# retarget (distinguishable only via `github.event.changes.base`, which
-# that guard didn't check), so it could skip commitlint exactly when a PR
-# first became subject to this workflow. Simpler and correct beats a
-# minor CI-minutes saving: always run both jobs.
+# All three jobs run on every trigger type, including `edited` -- an
+# earlier draft skipped `commitlint` on `edited` to avoid re-linting
+# unchanged commits on a title-only tweak, but `edited` also fires on a PR
+# base-branch retarget (distinguishable only via
+# `github.event.changes.base`, which that guard didn't check), so it could
+# skip commitlint exactly when a PR first became subject to this workflow.
+# Simpler and correct beats a minor CI-minutes saving: always run every job.
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -37,6 +42,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dco:
+    name: dco
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history so every commit between base and head can be
+          # walked, not just the checked-out tip.
+          fetch-depth: 0
+
+      - name: Verify every non-merge commit carries a Signed-off-by trailer
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          rc=0
+          for sha in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+            if ! git show -s --format=%B "$sha" | grep -qE '^Signed-off-by: .+ <.+>$'; then
+              echo "::error::$sha has no 'Signed-off-by:' trailer -- use git commit -s"
+              rc=1
+            fi
+          done
+          exit $rc
+
   commitlint:
     name: commitlint
     runs-on: ubuntu-latest

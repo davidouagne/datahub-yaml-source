@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Coverage Reporting (Codecov)
-version: 1.2
+version: 1.3
 date_created: 2026-09-07
 last_updated: 2026-09-07
 owner: David Ouagne
@@ -107,7 +107,7 @@ listed in `.gitignore`.
 | `fail_ci_if_error` | `false` | A Codecov outage, a rate-limit, a missing report, or a fork-PR run with no OIDC token must never fail the `test` job or `CI status`. This is what "reporting only" means in practice. |
 | `if` | `always()` | Upload even when a test leg fails, so the coverage of a red PR is still visible. |
 | `files` | implicit | `coverage.xml` at the repo root is auto-discovered by the action. |
-| job `permissions` | `contents: read` + `id-token: write`, on the `test` job only | Minimum for the OIDC exchange. `minimal-install-check` and `ci-status` are untouched and stay at the workflow default. |
+| job `permissions` | `contents: read` + `id-token: write`, on the `test` job only | Minimum for the OIDC exchange. `lint`, `typecheck`, `build`, and `ci-status` are untouched and stay at the workflow default. |
 
 ### `codecov.yml` contents (intended)
 
@@ -210,7 +210,7 @@ spec (drop `informational`) **and** a `main` branch-protection change
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
 | CI (`spec/spec-process-cicd-ci.md`) | **Host.** The upload is a step in CI's `test` job; this spec adds `--cov-report=xml`, an `id-token: write` job permission, and the upload step. CI owns the coverage *gate*; this spec owns the *reporting*. | Same `test` job run |
-| Quality (`spec/spec-process-cicd-quality.md`) | None — `ruff` / `mypy` produce no coverage. | n/a |
+| Lint/typecheck (`lint`/`typecheck` jobs, `spec/spec-process-cicd-ci.md`) | None — `ruff` / `mypy` produce no coverage. | n/a |
 | Branch protection on `main` | **Not coupled.** `codecov/*` statuses are `informational` and excluded from required checks — the same posture CodeQL has. | n/a |
 | Dependabot (`spec/spec-process-cicd-dependabot.md`) | Bumps `codecov/codecov-action` under the `github-actions` ecosystem. | Weekly |
 
@@ -248,11 +248,11 @@ branch-protection change:
 | 1.0 | 2026-09-07 | Initial specification. Codecov as **reporting-only** coverage publishing appended to CI's `test` job: `codecov/codecov-action@v5`, GitHub OIDC (`use_oidc: true`, `id-token: write` on `test`, no stored token), upload from all three Python matrix legs with `flags`, `fail_ci_if_error: false`. `codecov.yml` sets `project` / `patch` statuses `informational`, PR comment after 3 builds on change only, diff annotations off. `pytest --cov-fail-under=80` remains the coverage gate (`spec/spec-process-cicd-ci.md` REQ-004); no `codecov/*` check is required on `main`. Workflow, `codecov.yml`, and README changes land in a separate wiring ticket (wayfinder map issue #40). | David Ouagne |
 | 1.1 | 2026-09-07 | Implemented: the `codecov/codecov-action@v5` step and job-level `id-token: write` are in `ci.yml`'s `test` job, `--cov-report=xml` added to the pytest call, `codecov.yml` committed at the repo root, `coverage.xml` added to `.gitignore`. Status banner flipped from "not yet implemented" to "implemented"; future-tense wording in Configuration / VLD-001 made present-tense. README badge still pending (map issue #40). `ci.md` → 1.8 in the same change. | David Ouagne |
 | 1.2 | 2026-09-07 | README badge row now carries the Codecov badge (`branch/main/graph/badge.svg`); verified rendering ~97% off the first `main` upload. Status banner updated — the whole destination on wayfinder map issue #40 is now reached. | David Ouagne |
+| 1.3 | 2026-09-15 | Cross-reference update, no workflow-file change: `spec/spec-process-cicd-quality.md` was retired and merged into `spec/spec-process-cicd-ci.md` v1.12 (`ruff`/`mypy` renamed `lint`/`typecheck`). Updated the two mentions of it here to point at the current location. | David Ouagne |
 
 ## Related Specifications
 
-- `spec/spec-process-cicd-ci.md` — CI (install, test, **coverage gate**). Host workflow for the Codecov upload step; owns `--cov-fail-under=80`. Its aggregate check `CI status` is required on `main`.
-- `spec/spec-process-cicd-quality.md` — Ruff (blocking) + mypy. No coverage involvement.
+- `spec/spec-process-cicd-ci.md` — CI (install, test, **coverage gate**). Host workflow for the Codecov upload step; owns `--cov-fail-under=80`. Its aggregate check `CI status` is required on `main`, and (since v1.12) also covers `lint`/`typecheck` (formerly `spec/spec-process-cicd-quality.md`, retired) — neither produces coverage.
 - `spec/spec-process-cicd-codeql.md` — CodeQL SAST. Structural sibling: also advisory, also excluded from `main`'s required checks.
 - `spec/spec-process-cicd-dependabot.md` — bumps `codecov/codecov-action` under its `github-actions` ecosystem.
 - `spec/spec-process-cicd-release.md` — release pipeline; unrelated trigger surface.

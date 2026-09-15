@@ -1,0 +1,67 @@
+name: Dependabot auto-merge
+
+# Implements the contract documented in spec/spec-process-cicd-dependabot-auto-merge.md.
+# Keep the two in sync: any change to triggers, jobs, or gates here
+# should update that spec first, per its Change Management section.
+#
+# Policy (ADR-0003, issue #51): auto-merge patch-level bumps (any
+# dependency) and minor-level bumps to dev-only dependencies once required
+# checks are green. Majors, and minor bumps to production dependencies,
+# are left untouched for manual review. `gh pr merge --auto` only queues
+# the merge for when required status checks pass -- it does not bypass
+# branch protection.
+#
+# Requires the repo's "Allow auto-merge" setting (`allow_auto_merge`) to
+# be on -- without it `gh pr merge --auto` fails for every eligible PR.
+#
+# Evaluated per dependency, not off the action's aggregated `update-type`/
+# `dependency-type` outputs: those two are each computed independently
+# (highest semver level across the whole PR; highest-priority dependency
+# type across the whole PR), so a grouped PR (`.github/dependabot.yml`'s
+# `uv-minor-patch` / `actions-minor-patch`, which mixes direct and
+# indirect deps under one PR) can report a combination no single
+# dependency in it actually has -- e.g. an indirect minor bump alongside a
+# direct-dev patch bump would read as "minor" + "direct:development" and
+# wrongly qualify. `updated-dependencies-json` carries one entry per
+# updated dependency, so every dependency in the PR is checked on its own.
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  auto-merge:
+    name: auto-merge
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+
+      # jq reads the JSON from an env var, never interpolated directly
+      # into the script body, so a dependency/package name can't inject
+      # shell commands here.
+      - name: Check every updated dependency is low-risk
+        id: eligibility
+        continue-on-error: true
+        env:
+          DEPENDENCIES_JSON: ${{ steps.meta.outputs.updated-dependencies-json }}
+        run: |
+          echo "$DEPENDENCIES_JSON" | jq -e '
+            (. != []) and all(.[];
+              .updateType == "version-update:semver-patch" or
+              (.updateType == "version-update:semver-minor" and .dependencyType == "direct:development")
+            )
+          '
+
+      - name: Enable auto-merge for low-risk bumps
+        if: steps.eligibility.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --merge "$PR_URL"

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Process Specification - Dependency Updates (Dependabot)
-version: 1.1
+version: 1.2
 date_created: 2026-09-07
-last_updated: 2026-09-14
+last_updated: 2026-09-15
 owner: David Ouagne
 tags: [process, cicd, github, automation, dependencies, dependabot, supply-chain]
 ---
@@ -10,8 +10,10 @@ tags: [process, cicd, github, automation, dependencies, dependabot, supply-chain
 ## Process Overview
 
 **Purpose**: Keep the project's Python dependencies and GitHub Actions pins current with low manual
-overhead, without ever merging a dependency change unreviewed. Dependabot opens the PRs; a human
-reviews and merges every one.
+overhead. Dependabot opens the PRs; low-risk ones (patch-level, any dependency; minor-level, dev-only
+dependencies) auto-merge once required checks are green (`spec/spec-process-cicd-dependabot-auto-merge.md`,
+ADR-0003); everything else — majors, and minor bumps to production dependencies — still waits for a
+human to review and merge it by hand.
 
 **Trigger**: Dependabot's own weekly schedule (Mondays). Not a GitHub Actions workflow — this is the
 native Dependabot service, configured by `.github/dependabot.yml`. There is no file under
@@ -32,10 +34,13 @@ graph TD
     B -->|major| D[One individual PR per dependency]
     C --> E[ci.yml + quality.yml run on the PR]
     D --> E
-    E --> F[Maintainer reviews & merges by hand<br/>no auto-merge]
+    E --> G{dependabot-auto-merge.yml classifies the bump}
+    G -->|patch, any dependency<br/>or minor, dev-only dependency| H[gh pr merge --auto<br/>merges once required checks pass]
+    G -->|major<br/>or minor, production dependency| F[Maintainer reviews & merges by hand]
 
     style A fill:#e1f5fe
     style F fill:#fff3e0
+    style H fill:#e8f5e8
 ```
 
 ## Configuration (authoritative pointer: `.github/dependabot.yml`)
@@ -53,7 +58,7 @@ This section records the decisions and their rationale; the file is the source o
 | `labels` | `["dependencies"]` | Feeds the `⬆️ Dependencies` category in `.github/release.yml` (auto-generated release notes). The `dependencies` label is created in the repo (colour `#0366d6`), not left to Dependabot's implicit creation. |
 | `commit-message.prefix` | `build` (uv), `ci` (github-actions); `include: scope` on uv | Matches the repo's conventional-commit history (`build:` for packaging/deps, `ci:` for workflow/tooling). |
 | `ignore` | **none** | See below. |
-| Auto-merge | **not configured** — deliberate | Recorded on wayfinder map issue #1: every dependency PR, patch and minor included, is merged by hand. No `dependabot`/automerge Action, no branch rule granting it. |
+| Auto-merge | Patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies, via `.github/workflows/dependabot-auto-merge.yml` | ADR-0003 / issue #51, superseding the original no-auto-merge decision on wayfinder map issue #1. Majors and minor bumps to production dependencies still require manual review; see `spec/spec-process-cicd-dependabot-auto-merge.md` for the workflow's own contract. |
 
 ### No `ignore` for `acryl-datahub` majors
 
@@ -80,7 +85,7 @@ hand (it is the action's publisher-recommended moving pointer).
 | REQ-002 | Workflow action pins are monitored. | High | A `github-actions` update block with `directory: "/"` exists and is shown as active. |
 | REQ-003 | Non-breaking bumps do not flood the queue. | High | Minor/patch updates for an ecosystem arrive as a single grouped PR, not one per package. |
 | REQ-004 | Breaking bumps are individually reviewable. | Medium | A major-version update appears as its own PR, outside the group. |
-| REQ-005 | No dependency change merges unreviewed. | High | No auto-merge configuration exists anywhere in the repo; `main` has no rule that would auto-merge a Dependabot PR. |
+| REQ-005 | Only low-risk dependency changes merge unreviewed. | High | Patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies auto-merge once required checks pass (`spec/spec-process-cicd-dependabot-auto-merge.md`); majors and minor bumps to production dependencies still require a human to merge. |
 | REQ-006 | Dependabot PRs are categorised in release notes. | Low | Dependabot PRs carry the `dependencies` label; `.github/release.yml` routes it to `⬆️ Dependencies`. |
 
 ### Security Requirements
@@ -102,8 +107,8 @@ hand (it is the action's publisher-recommended moving pointer).
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|---------------------|
-| CI on Dependabot PRs | `ci.yml` (`CI status`) and `quality.yml` (`ruff`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main`. |
-| Human review | Every Dependabot PR is read and merged by a maintainer | None. Auto-merge is out of scope for this spec version (map issue #1). |
+| CI on Dependabot PRs | `ci.yml` (`CI status`) and `quality.yml` (`ruff`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main`, including the ones auto-merged; `gh pr merge --auto` queues the merge, it does not bypass branch protection. |
+| Human review | Every non-low-risk Dependabot PR is read and merged by a maintainer | Patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies skip this gate — see `spec/spec-process-cicd-dependabot-auto-merge.md` (ADR-0003 / issue #51). |
 
 ## Integration Points
 
@@ -113,6 +118,7 @@ hand (it is the action's publisher-recommended moving pointer).
 | `spec/spec-process-cicd-quality.md` (Quality) | Gates Dependabot PRs | `quality.yml` triggers on `pull_request` to `main` |
 | `.github/release.yml` | Consumes the `dependencies` label for note categorisation | `gh release create --generate-notes` in `release.yml` |
 | Repo "Dependabot security updates" setting | Complementary — this file governs scheduled *version* updates; the setting governs on-demand *security* updates | GitHub repo setting, not this file |
+| `spec/spec-process-cicd-dependabot-auto-merge.md` (`.github/workflows/dependabot-auto-merge.yml`) | Downstream — classifies each Dependabot PR opened under this config and auto-merges the low-risk ones | Triggers on `pull_request`, filtered to `github.actor == 'dependabot[bot]'` |
 
 ## Validation Criteria
 
@@ -121,8 +127,10 @@ hand (it is the action's publisher-recommended moving pointer).
 - **VLD-002**: The first weekly run (or a manual "Check for updates") produces at most one grouped PR
   per ecosystem for outstanding minor/patch bumps.
 - **VLD-003**: Every Dependabot PR carries the `dependencies` label and runs `CI status` + `ruff`.
-- **VLD-004**: No auto-merge mechanism exists (no workflow calling `gh pr merge` on Dependabot PRs,
-  no `dependabot` auto-merge Action, no branch rule enabling it).
+- **VLD-004**: The only auto-merge mechanism in the repo is `.github/workflows/dependabot-auto-merge.yml`,
+  and it enables auto-merge exclusively for patch-level bumps (any dependency) and minor-level bumps to
+  dev-only dependencies — see `spec/spec-process-cicd-dependabot-auto-merge.md` Validation Criteria for
+  the classification's own tests.
 - **VLD-005**: The `dependencies` label exists in the repo independently of Dependabot having run.
 
 ## Change Management
@@ -135,9 +143,10 @@ hand (it is the action's publisher-recommended moving pointer).
    force a run rather than waiting for Monday).
 4. **Deployment**: Merge; Dependabot picks up the new config on its next run.
 
-Introducing auto-merge (even patch-only), adding a private `registries` block, or adding an `ignore`
-rule are each material changes: update this spec, and for auto-merge also update `main` branch
-protection and the decision on map issue #1.
+Adding a private `registries` block or adding an `ignore` rule are each material changes: update this
+spec. Changing the auto-merge *policy* (which bump types qualify) is a material change too, but lives
+in `spec/spec-process-cicd-dependabot-auto-merge.md` — update that spec first, this one only if the
+Configuration table's summary of the policy goes stale.
 
 ### Version History
 
@@ -145,9 +154,12 @@ protection and the decision on map issue #1.
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. `.github/dependabot.yml` added: `pip` + `github-actions`, weekly (Monday), minor/patch grouped one-PR-per-ecosystem, majors individual, limit 5, `dependencies` label, `build`/`ci` commit prefixes. No `ignore` (acryl-datahub cap left visible), no auto-merge. `dependencies` label created (`#0366d6`). Pointer added to `spec/spec-process-cicd-ci.md` Dependent Workflows. | David Ouagne |
 | 1.1 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): the Python ecosystem block's `package-ecosystem` changed from `pip` to `uv` (now tracks `pyproject.toml` + `uv.lock`), and its group renamed `pip-minor-patch` → `uv-minor-patch`. Corrected a stale reference in the "No `ignore`" note: the actual `acryl-datahub` cap is `<1.8`, not the `<1.7.0.5` this document had drifted to. No change to schedule, grouping philosophy, labels, or the no-auto-merge decision. | David Ouagne |
+| 1.2 | 2026-09-15 | Superseded the map-issue-#1 no-auto-merge decision with ADR-0003 (issue #51, part of the `#48` standardization epic): added `.github/workflows/dependabot-auto-merge.yml`, which auto-merges patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies once required checks pass. Majors and minor bumps to production dependencies are unaffected — still manual. Its own contract now lives in the new `spec/spec-process-cicd-dependabot-auto-merge.md`; this document's Configuration/REQ-005/Quality-Gates/VLD-004 sections were updated to summarize rather than assert "no auto-merge". `.github/dependabot.yml`'s header comment updated to match. No change to schedule, grouping, ecosystems, or labels. | David Ouagne |
 
 ## Related Specifications
 
+- `spec/spec-process-cicd-dependabot-auto-merge.md` — the auto-merge workflow's own contract: bump
+  classification, `gh pr merge --auto`, ADR-0003.
 - `spec/spec-process-cicd-ci.md` — CI; gates every Dependabot PR (`CI status` required on `main`).
 - `spec/spec-process-cicd-quality.md` — Ruff/mypy; `ruff` required on `main`, also gates Dependabot PRs.
 - `spec/spec-process-cicd-release.md` — consumes the `dependencies` label via `.github/release.yml`.

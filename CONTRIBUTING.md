@@ -109,6 +109,14 @@ needs a one-line reason.
    docs/schema are committed alongside any model change.
 4. Describe *why* the change is needed, not just what it does — the commit
    message and PR description should stand on their own.
+5. Use a [Conventional Commit](https://www.conventionalcommits.org/) message
+   (`type: subject` or `type(scope): subject`, e.g. `fix: handle empty
+   containers`) for every commit, and give the PR itself a Conventional
+   Commit title. `commit-policy.yml` checks both in CI
+   (`spec/spec-process-cicd-commit-policy.md`); `commitlint.config.mjs`
+   configures the accepted types via `@commitlint/config-conventional`'s
+   standard list (`build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
+   `refactor`, `revert`, `style`, `test`).
 
 By contributing, you agree that your contributions will be licensed under the
 project's [Apache License 2.0](LICENSE).

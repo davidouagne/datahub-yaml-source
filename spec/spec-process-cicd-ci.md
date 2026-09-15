@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.10
+version: 1.11
 date_created: 2026-08-16
 last_updated: 2026-09-15
 owner: David Ouagne
@@ -198,16 +198,21 @@ maintainer with no second reviewer available:
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
-| Required status checks | exactly **`CI status`** (this workflow's aggregate gate), **`ruff`** and **`mypy`** (`spec/spec-process-cicd-quality.md`) | The three blocking gates. Names are the check-run `name:` values, matched verbatim. |
+| Required status checks | exactly **`CI status`** (this workflow's aggregate gate), **`ruff`** and **`mypy`** (`spec/spec-process-cicd-quality.md`), and **`dependency-review`** (`spec/spec-process-cicd-dependency-review.md`) | The four blocking gates. Names are the check-run `name:` values, matched verbatim. |
 | `strict` (require branch up to date before merge) | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
 | CodeQL / `Analyze (*)` | **not required** | Advisory only at this stage (map issue #1 Notes; `spec/spec-process-cicd-codeql.md`). |
 | `required_pull_request_reviews` | none | No second reviewer exists; a review requirement would be self-blocking. |
 | `enforce_admins` | `false` | The maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
 | `restrictions` | none | Single maintainer; no push allow-list needed. |
 
-Renaming the `CI status`, `ruff` or `mypy` check is a breaking change: update this list and re-apply
-the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`.
-`mypy` was added to the set when it was promoted to blocking (issue #13).
+Renaming the `CI status`, `ruff`, `mypy`, or `dependency-review` check is a breaking change: update this
+list and re-apply the protection. Applied via `PUT
+/repos/davidouagne/datahub-yaml-source/branches/main/protection`. `mypy` was added to the set when it
+was promoted to blocking (issue #13). `dependency-review` was added later (`spec/
+spec-process-cicd-dependency-review.md` v1.2) — added deliberately advisory-only when issue #57 first
+landed it, then promoted once the maintainer noticed, comparing live settings against the sibling repo
+`datahub-healthdcat-ap-exporter`, that the sibling's own `main` had since started requiring it too and
+this repo's spec's "matches the sibling" justification had gone stale.
 
 ## Compliance & Governance
 
@@ -293,6 +298,7 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | 1.8 | 2026-09-07 | Workflow-file change: the `test` job now runs `pytest ... --cov-report=xml`, sets job-level `permissions: {contents: read, id-token: write}`, and has a `codecov/codecov-action@v5` upload step (`use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, `if: always()`). Implements what 1.7 specified; `spec/spec-process-cicd-codecov.md` → 1.1 in the same change. `CI status` still aggregates only `test` + `minimal-install-check`; the Codecov step cannot fail the job. | David Ouagne |
 | 1.9 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): `test` installs via `uv sync --frozen --group dev --extra git --extra s3` and runs tests via `uv run pytest`; `minimal-install-check` now builds the wheel with `uv build --wheel` and installs it into a fresh venv (`uv venv` + `uv pip install`) instead of `pip install .`, closer proof of what an actual consumer of the published package gets. Version derivation moved from `setuptools-scm` to `hatch-vcs` (same underlying scheme options), so every reference to the former is now the latter. `astral-sh/setup-uv`'s own cache (keyed on `uv.lock`) replaces `actions/setup-python`'s pip cache (keyed on `setup.py`). No change to jobs, gates, matrix, or `CI status`'s aggregation. | David Ouagne |
 | 1.10 | 2026-09-15 | Dependent Workflows table: added Dependabot auto-merge (`.github/workflows/dependabot-auto-merge.yml`, issue #51) as a downstream consumer of this workflow's `CI status` gate. No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
+| 1.11 | 2026-09-15 | Branch protection on `main`: added `dependency-review` (`spec/spec-process-cicd-dependency-review.md` v1.2) to the required-status-checks list, promoting it from advisory. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`; see that spec's own version history for why (the maintainer caught, by comparing live settings against the sibling repo directly, that a "matches the sibling's advisory posture" justification had gone stale once the sibling's own branch protection changed independently). No workflow-file change in *this* spec's scope (`ci.yml` untouched — the required-checks list is a branch-protection setting, not part of this workflow file). | David Ouagne |
 
 ## Related Specifications
 
@@ -301,6 +307,8 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
   (`--cov-fail-under=80`, REQ-004); that one owns publishing the number.
 - `spec/spec-process-cicd-quality.md` — Ruff (blocking) + mypy; the style/type sibling. `ruff` and
   `mypy` both gate `main` alongside this workflow's `CI status`.
+- `spec/spec-process-cicd-dependency-review.md` — `dependency-review`; also blocking as of v1.2, gates
+  `main` alongside this workflow's `CI status`.
 - `spec/spec-process-cicd-codeql.md` — CodeQL SAST; advisory, gates nothing.
 - `spec/spec-process-cicd-dependabot.md` — upstream PR producer that this workflow gates.
 - `spec/spec-process-cicd-release.md` — release pipeline; its `build+verify` job re-runs this suite on

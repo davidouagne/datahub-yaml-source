@@ -16,8 +16,10 @@ spec-process-cicd-*.md` and `docs/adr/*.md` links inline -- this document is the
 territory.
 
 **Verified against live state on**: 2026-09-15, against `davidouagne/datahub-yaml-source` at commit
-`f09383e` (main). **Originating epic**: issue #48 (tickets #49-#58); this document is the final ticket,
-#59, deliberately written last so it describes the finished state rather than a moving target.
+`f09383e` (main); §2.4/§3.4 amended the same day after re-verification triggered by a direct
+repo-to-repo comparison (`dependency-review` promoted to required, see those sections). **Originating
+epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately written last
+so it describes the finished state rather than a moving target.
 
 ## 1. Governance
 
@@ -72,18 +74,23 @@ coverage gate is `ci.yml`'s own `--cov-fail-under=80`. Full contract: `spec/spec
 ### 2.4 Branch protection on `main` (live-verified)
 
 ```
-required_status_checks.contexts = ["CI status", "ruff", "mypy"]
+required_status_checks.contexts = ["CI status", "ruff", "mypy", "dependency-review"]
 required_status_checks.strict   = false
 required_pull_request_reviews   = (absent -- none configured)
 enforce_admins                  = false
 restrictions                    = (absent -- none configured)
 ```
 
-`dependency-review` (§3.4) and CodeQL (§3.3) are **not** in this list -- both are advisory at this
-standard's current version, by deliberate choice recorded in their own specs, not an oversight.
-`strict: false` means a PR does not need to be rebased onto the latest `main` before merging -- accepted
-friction trade-off for a solo maintainer (see `spec/spec-process-cicd-ci.md`'s Branch Protection
-section for the full rationale and residual-risk discussion).
+CodeQL (§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate
+choice recorded in its own spec, not an oversight. `dependency-review` (§3.4) *was* advisory-only when
+this document first published, on the premise it matched the sibling repo's own posture; that premise
+went stale once the sibling's own `main` was separately protected (its companion ticket, `#65`), and was
+promoted here to match once the maintainer caught the drift by comparing the two repos' live settings
+directly (`spec/spec-process-cicd-dependency-review.md` v1.2) -- a concrete instance of the discipline
+§3.3 and the closing section of this document both call for. `strict: false` means a PR does not need to
+be rebased onto the latest `main` before merging -- accepted friction trade-off for a solo maintainer
+(see `spec/spec-process-cicd-ci.md`'s Branch Protection section for the full rationale and
+residual-risk discussion).
 
 ### 2.5 Commit and PR-title discipline (`commit-policy.yml`)
 
@@ -186,9 +193,10 @@ Scope). CodeQL is advisory only (§2.4) -- these alerts do not block anything.
 
 Runs on every PR to `main`: `actions/dependency-review-action@v5`, `fail-on-severity: high`, and a
 `deny-licenses` list covering `GPL-2.0`/`GPL-3.0`/`AGPL-3.0` (both `-only` and `-or-later` SPDX forms) --
-appropriate for this repo's own Apache-2.0 license. **Advisory, not a required check** at this standard's
-current version (deliberate, matching the sibling repo's own posture for the same job -- promoting it
-to required is a recorded, deliberate follow-up, not an oversight).
+appropriate for this repo's own Apache-2.0 license. **A required `main` status check** (promoted from
+advisory shortly after this standard first published -- see §2.4 for why: the original "advisory,
+matching the sibling" framing went stale once the sibling's own branch protection changed independently,
+caught by direct repo-to-repo comparison rather than by re-reading this document).
 
 **Known, verified limitation**: `deny-licenses` reliably denies a dependency whose GitHub-reported
 license is a single SPDX identifier or an `OR`-expression containing one. It does **not** reliably deny

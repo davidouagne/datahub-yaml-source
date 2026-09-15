@@ -104,9 +104,9 @@ dev = [
     "pip-audit>=2.7",
     # THROWAWAY -- verification-only for spec/spec-process-cicd-dependency-review.md
     # VLD-002/VLD-003. Pillow 9.0.0 carries known high/critical-severity CVEs;
-    # pylint is GPL-2.0-licensed. Never merge this.
+    # chess (python-chess) is GPL-3.0-or-later-licensed. Never merge this.
     "Pillow==9.0.0",
-    "pylint>=2,<3",
+    "chess>=1.0,<2",
 ]
 
 [build-system]

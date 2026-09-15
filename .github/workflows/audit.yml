@@ -1,0 +1,127 @@
+name: Audit dependencies
+
+# Implements the contract documented in spec/spec-process-cicd-audit.md.
+# Keep the two in sync: any change to triggers, jobs, or gates here
+# should update that spec first, per its Change Management section.
+#
+# Background scan, complementary to the PR-time gate (ci.yml): replays
+# `pip-audit` weekly against the committed, locked dependency tree
+# (uv.lock), independent of Dependabot's own schedule. Mirrors
+# datahub-healthdcat-ap-exporter's workflow of the same name.
+#
+# Design: the `audit` job stays GREEN as long as `pip-audit` executes
+# successfully -- a known vulnerability is a finding, not a CI failure,
+# and is reported as a `dependencies`-labeled issue instead. The job only
+# turns red if `pip-audit` itself fails to run (network, resolution, an
+# unreadable report).
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Monday 06:00 UTC
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: audit-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      vulns: ${{ steps.audit.outputs.vulns }}
+      summary: ${{ steps.audit.outputs.summary }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install (dev group)
+        run: uv sync --frozen --group dev
+
+      - name: pip-audit
+        id: audit
+        run: |
+          set -euo pipefail
+
+          # pip-audit exits 1 both on "vulnerability found" and on a fatal
+          # error -- don't trust the exit code, trust the JSON report. No
+          # readable report => a real failure => job turns red.
+          set +e
+          uv run pip-audit --format json --output audit.json --progress-spinner off
+          rc=$?
+          set -e
+
+          if ! jq -e . audit.json > /dev/null 2>&1; then
+            echo "::error::pip-audit did not produce a usable JSON report (exit code $rc)."
+            exit 1
+          fi
+
+          vulns=$(jq '[.dependencies[]? | (.vulns // [])[]] | length' audit.json)
+          echo "vulns=$vulns" >> "$GITHUB_OUTPUT"
+
+          if [ "$vulns" -eq 0 ]; then
+            echo "No known vulnerabilities in the locked dependencies."
+            exit 0
+          fi
+
+          summary=$(jq -r '
+            [ .dependencies[]? as $d
+              | ($d.vulns // [])[]
+              | "\($d.name) \($d.version) -> \(.id) (fixed in \((.fix_versions // ["?"]) | join(", ")))"
+            ] | unique | join("; ")' audit.json)
+          echo "summary=$summary" >> "$GITHUB_OUTPUT"
+
+          echo "$vulns known vulnerabilit$([ "$vulns" -eq 1 ] && echo y || echo ies):"
+          jq -r '.dependencies[]? | select((.vulns // []) | length > 0)
+            | .name + " " + .version + ": " + ([.vulns[].id] | unique | join(", "))' audit.json
+
+  open-issue:
+    name: Open an issue on a finding
+    needs: audit
+    if: needs.audit.outputs.vulns != '' && needs.audit.outputs.vulns != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Create (or dedupe by title) the "dependencies" issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # gh otherwise infers the repo from the local `git remote`; this
+          # job has no checkout, hence GH_REPO.
+          GH_REPO: ${{ github.repository }}
+          TITLE: "pip-audit: known vulnerability in dependencies"
+          SUMMARY: ${{ needs.audit.outputs.summary }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          set -euo pipefail
+
+          existing=$(gh issue list \
+            --state open --label dependencies \
+            --search "\"$TITLE\" in:title" \
+            --json number --jq '.[0].number // empty')
+
+          if [ -n "$existing" ]; then
+            echo "Issue #$existing is already open -- nothing to do."
+            exit 0
+          fi
+
+          gh issue create \
+            --title "$TITLE" \
+            --label dependencies \
+            --body "\`pip-audit\` (\`audit.yml\`) found at least one known vulnerability in the locked dependencies.
+
+          $SUMMARY
+
+          Full detail in the run logs: $RUN_URL
+
+          This issue is deduped by title -- it won't be reopened while it stays open."

@@ -11,6 +11,7 @@ emit a warning about a dangling reference (e.g. a `tags: [nope]` pointing at
 a tag that was never declared as its own `TAG` document).
 """
 
+from collections.abc import Callable
 from typing import Protocol
 
 from datahub.emitter.mce_builder import (
@@ -61,7 +62,7 @@ from datahub_yaml_source.models import (
 )
 
 
-def _passthrough_if_urn(value: str, build) -> str:
+def _passthrough_if_urn(value: str, build: Callable[[str], str]) -> str:
     if value.startswith("urn:li:"):
         return value
     return build(value)
@@ -81,6 +82,23 @@ class _DatasetKeyLike(Protocol):
 class _MLFeatureKeyLike(Protocol):
     featureNamespace: str
     name: str
+
+
+class _PlatformNameLike(Protocol):
+    platform: str
+    name: str
+
+
+class _PlatformNameEnvLike(Protocol):
+    platform: str
+    name: str
+    env: str
+
+
+class _PlatformPathIdLike(Protocol):
+    platform: str
+    path: str
+    id: str
 
 
 def dataset_urn(ref: _DatasetKeyLike) -> str:
@@ -163,7 +181,7 @@ def document_urn(document_id: str) -> str:
     return _passthrough_if_urn(document_id, lambda v: DocumentUrn(v).urn())
 
 
-def ml_feature_table_urn(ref) -> str:
+def ml_feature_table_urn(ref: _PlatformNameLike) -> str:
     """Accepts anything with `platform`/`name` -- an `MLFeatureTableDoc` itself, or a
     future dedicated ref type, should one ever be needed."""
     return MlFeatureTableUrn(ref.platform, ref.name).urn()
@@ -181,19 +199,19 @@ def ml_model_group_urn(ref: MLModelGroupRef) -> str:
     return MlModelGroupUrn(ref.platform, ref.name, ref.env).urn()
 
 
-def ml_model_urn(ref) -> str:
+def ml_model_urn(ref: _PlatformNameEnvLike) -> str:
     """Accepts anything with `platform`/`name`/`env` -- an `MLModelDoc` itself, or a
     future dedicated ref type."""
     return MlModelUrn(ref.platform, ref.name, ref.env).urn()
 
 
-def semantic_model_urn(ref) -> str:
+def semantic_model_urn(ref: _PlatformPathIdLike) -> str:
     """Accepts anything with `platform`/`path`/`id` -- a `SemanticModelDoc` itself, or a
     `SemanticModelRef`."""
     return SemanticModelUrn(ref.platform, ref.path, ref.id).urn()
 
 
-def metric_urn(ref) -> str:
+def metric_urn(ref: _PlatformPathIdLike) -> str:
     """Accepts anything with `platform`/`path`/`id` -- a `MetricDoc` itself, or a
     `MetricRef`."""
     return MetricUrn(ref.platform, ref.path, ref.id).urn()
@@ -291,7 +309,9 @@ class ReferenceIndex:
         self._structured_property_names: set[str] = {
             p.qualifiedName for p in repository.structured_properties
         }
-        self._container_keys: set[tuple] = {container_natural_key(c) for c in repository.containers}
+        self._container_keys: set[tuple[str, str, str | None]] = {
+            container_natural_key(c) for c in repository.containers
+        }
 
     def has_tag(self, name: str) -> bool:
         return name in self._tag_names

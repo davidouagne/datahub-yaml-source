@@ -14,9 +14,13 @@ from typing import Annotated, Any, Literal, cast
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 
-def _coerce_to_list(value: Any) -> Any:
+def _coerce_to_list(value: Any) -> Any:  # noqa: ANN401
     """Some hand-authored YAML gives a single item where a list is expected
-    (e.g. `glossaryTerms: fhir:Condition` instead of `- fhir:Condition`)."""
+    (e.g. `glossaryTerms: fhir:Condition` instead of `- fhir:Condition`).
+
+    A pydantic `BeforeValidator` genuinely receives/returns Any -- the raw
+    pre-validation YAML-decoded value.
+    """
     if value is None or isinstance(value, list):
         return value
     return [value]

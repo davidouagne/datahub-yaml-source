@@ -14,10 +14,9 @@ from datahub_yaml_source.builders.common import (
     ZERO_AUDIT_STAMP,
     common_aspect_mcps,
     mcp_workunit,
-    owner_urn,
 )
 from datahub_yaml_source.models import IncidentDoc
-from datahub_yaml_source.urns import ReferenceIndex, incident_urn
+from datahub_yaml_source.urns import ReferenceIndex, incident_urn, owner_urn
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
 
 

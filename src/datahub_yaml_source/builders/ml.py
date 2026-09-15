@@ -7,6 +7,7 @@ primary keys, a model references its model group and its features.
 """
 
 from collections.abc import Iterable
+from typing import Any
 
 from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
@@ -42,6 +43,8 @@ from datahub_yaml_source.models import (
     MLFeatureTableDoc,
     MLModelDataDoc,
     MLModelDoc,
+    MLModelFactorDoc,
+    MLModelFactorPromptsDoc,
     MLModelGroupDoc,
     MLPrimaryKeyDoc,
     QuerySubjectRef,
@@ -163,6 +166,75 @@ def _base_data_list(entries: list[MLModelDataDoc]) -> list[BaseDataClass]:
     ]
 
 
+def _factors(f: MLModelFactorDoc) -> MLModelFactorsClass:
+    return MLModelFactorsClass(
+        groups=f.groups, instrumentation=f.instrumentation, environment=f.environment
+    )
+
+
+def _factor_prompts_aspect(factor_prompts: MLModelFactorPromptsDoc) -> MLModelFactorPromptsClass:
+    return MLModelFactorPromptsClass(
+        relevantFactors=(
+            [_factors(f) for f in factor_prompts.relevantFactors]
+            if factor_prompts.relevantFactors
+            else None
+        ),
+        evaluationFactors=(
+            [_factors(f) for f in factor_prompts.evaluationFactors]
+            if factor_prompts.evaluationFactors
+            else None
+        ),
+    )
+
+
+def _model_card_extra_aspects(doc: MLModelDoc) -> list[Any]:
+    """The MLModel "model card": every one of these aspects is valid only on
+    `mlModel`, so they live as plain fields on MLModelDoc rather than a
+    shared Has* mixin (D1 is for aspects shared *across* kinds)."""
+    aspects: list[Any] = []
+    if doc.intendedUse:
+        aspects.append(IntendedUseClass(**doc.intendedUse.model_dump(exclude_none=True)))
+    if doc.ethicalConsiderations:
+        aspects.append(
+            EthicalConsiderationsClass(**doc.ethicalConsiderations.model_dump(exclude_none=True))
+        )
+    if doc.caveatsAndRecommendations:
+        car = doc.caveatsAndRecommendations
+        caveats = (
+            CaveatDetailsClass(**car.caveats.model_dump(exclude_none=True)) if car.caveats else None
+        )
+        aspects.append(
+            CaveatsAndRecommendationsClass(
+                caveats=caveats,
+                recommendations=car.recommendations,
+                idealDatasetCharacteristics=car.idealDatasetCharacteristics,
+            )
+        )
+    if doc.trainingData:
+        aspects.append(TrainingDataClass(trainingData=_base_data_list(doc.trainingData)))
+    if doc.evaluationData:
+        aspects.append(EvaluationDataClass(evaluationData=_base_data_list(doc.evaluationData)))
+    if doc.factorPrompts:
+        aspects.append(_factor_prompts_aspect(doc.factorPrompts))
+    if doc.metrics:
+        aspects.append(
+            MetricsClass(
+                performanceMeasures=doc.metrics.performanceMeasures,
+                decisionThreshold=doc.metrics.decisionThreshold,
+            )
+        )
+    if doc.sourceCode:
+        aspects.append(
+            SourceCodeClass(
+                sourceCode=[
+                    SourceCodeUrlClass(type=s.type, sourceCodeUrl=s.sourceCodeUrl)
+                    for s in doc.sourceCode
+                ]
+            )
+        )
+    return aspects
+
+
 def build_ml_model(
     doc: MLModelDoc, index: ReferenceIndex, report: YamlSourceReport
 ) -> Iterable[MetadataWorkUnit]:
@@ -176,70 +248,7 @@ def build_ml_model(
             report.report_dangling_reference(f"{context} references an undeclared container")
         extra_aspects.append(ContainerClass(container=container_key(doc.container).as_urn()))
 
-    # The "model card": every one of these aspects is valid only on `mlModel`, so they
-    # live as plain fields on MLModelDoc rather than a shared Has* mixin (D1 is for
-    # aspects shared *across* kinds).
-    if doc.intendedUse:
-        extra_aspects.append(IntendedUseClass(**doc.intendedUse.model_dump(exclude_none=True)))
-    if doc.ethicalConsiderations:
-        extra_aspects.append(
-            EthicalConsiderationsClass(**doc.ethicalConsiderations.model_dump(exclude_none=True))
-        )
-    if doc.caveatsAndRecommendations:
-        car = doc.caveatsAndRecommendations
-        caveats = (
-            CaveatDetailsClass(**car.caveats.model_dump(exclude_none=True)) if car.caveats else None
-        )
-        extra_aspects.append(
-            CaveatsAndRecommendationsClass(
-                caveats=caveats,
-                recommendations=car.recommendations,
-                idealDatasetCharacteristics=car.idealDatasetCharacteristics,
-            )
-        )
-    if doc.trainingData:
-        extra_aspects.append(TrainingDataClass(trainingData=_base_data_list(doc.trainingData)))
-    if doc.evaluationData:
-        extra_aspects.append(
-            EvaluationDataClass(evaluationData=_base_data_list(doc.evaluationData))
-        )
-    if doc.factorPrompts:
-
-        def _factors(f) -> MLModelFactorsClass:
-            return MLModelFactorsClass(
-                groups=f.groups, instrumentation=f.instrumentation, environment=f.environment
-            )
-
-        extra_aspects.append(
-            MLModelFactorPromptsClass(
-                relevantFactors=(
-                    [_factors(f) for f in doc.factorPrompts.relevantFactors]
-                    if doc.factorPrompts.relevantFactors
-                    else None
-                ),
-                evaluationFactors=(
-                    [_factors(f) for f in doc.factorPrompts.evaluationFactors]
-                    if doc.factorPrompts.evaluationFactors
-                    else None
-                ),
-            )
-        )
-    if doc.metrics:
-        extra_aspects.append(
-            MetricsClass(
-                performanceMeasures=doc.metrics.performanceMeasures,
-                decisionThreshold=doc.metrics.decisionThreshold,
-            )
-        )
-    if doc.sourceCode:
-        extra_aspects.append(
-            SourceCodeClass(
-                sourceCode=[
-                    SourceCodeUrlClass(type=s.type, sourceCodeUrl=s.sourceCodeUrl)
-                    for s in doc.sourceCode
-                ]
-            )
-        )
+    extra_aspects.extend(_model_card_extra_aspects(doc))
 
     common["extra_aspects"] = extra_aspects or None
 

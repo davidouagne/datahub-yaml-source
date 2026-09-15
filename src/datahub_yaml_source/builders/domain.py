@@ -24,7 +24,7 @@ def topological_sort_domains(domains: list[DomainDoc]) -> list[DomainDoc]:
             children[doc.parentDomain].append(id_)
             indegree[id_] += 1
 
-    queue: deque = deque(k for k, d in indegree.items() if d == 0)
+    queue: deque[str] = deque(k for k, d in indegree.items() if d == 0)
     order: list[DomainDoc] = []
     seen = set()
 

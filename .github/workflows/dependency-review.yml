@@ -1,0 +1,43 @@
+name: Dependency review
+
+# Implements the contract documented in spec/spec-process-cicd-dependency-review.md.
+# Keep the two in sync: any change to triggers, jobs, or gates here
+# should update that spec first, per its Change Management section.
+#
+# PR-time gate: actions/dependency-review-action diffs the dependency
+# graph between the PR's base and head, failing the check if the PR
+# would introduce a high-severity-or-worse vulnerable dependency, or one
+# licensed under a copyleft license incompatible with this repo's
+# Apache-2.0 license. Needs a dependency graph GitHub can actually parse
+# from the manifest -- pyproject.toml/uv.lock, not a dynamic setup.py --
+# hence sequenced after the uv migration (issue #49).
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: dependency-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
+          # Apache-2.0 project: refuse dependencies under strong copyleft
+          # licenses incompatible with that license.
+          deny-licenses: >-
+            GPL-2.0-only, GPL-2.0-or-later,
+            GPL-3.0-only, GPL-3.0-or-later,
+            AGPL-3.0-only, AGPL-3.0-or-later

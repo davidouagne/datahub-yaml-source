@@ -16,9 +16,10 @@ spec-process-cicd-*.md` and `docs/adr/*.md` links inline -- this document is the
 territory.
 
 **Verified against live state on**: 2026-09-15, against `davidouagne/datahub-yaml-source` at commit
-`f09383e` (main); §1/§2.1/§2.3/§2.4/§3.4 amended the same day, twice, after re-verification triggered by
-direct repo-to-repo comparisons (`dependency-review` promoted to required; `ruff`/`mypy` merged into `CI
-status` as `lint`/`typecheck`; `dco` added — see those sections). **Originating
+`2e7d10a` (main); §1/§2.1/§2.3/§2.4/§2.6/§2.7/§3.4 amended the same day, three times, after
+re-verification triggered by direct repo-to-repo comparisons (`dependency-review` promoted to required;
+`ruff`/`mypy` merged into `CI status` as `lint`/`typecheck`; `dco` added; dependabot grouping,
+merge/PR/Actions settings, and GitHub Pages aligned or cleaned up — see those sections). **Originating
 epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately written last
 so it describes the finished state rather than a moving target.
 
@@ -133,11 +134,27 @@ Full contract: `spec/spec-process-cicd-release.md`.
 
 ### 2.6 Dependency updates (`dependabot.yml` + `dependabot-auto-merge.yml`)
 
-Dependabot watches two ecosystems (`uv`, `github-actions`), weekly (Monday), grouping all minor+patch
-bumps per ecosystem into one PR each; major bumps arrive individually. Patch-level bumps (any
-dependency) and minor-level bumps to dev-only dependencies **auto-merge** once required checks pass
-(ADR-0003, issue #51); majors and minor bumps to production dependencies always wait for the maintainer.
-Full contract: `spec/spec-process-cicd-dependabot.md` + `spec/spec-process-cicd-dependabot-auto-merge.md`.
+Dependabot watches two ecosystems, weekly (Monday). Grouping (matches the sibling repo exactly, adopted
+2026-09-15): on `uv`, every dev-only bump (any level, including major) groups into one PR
+(`dev-dependencies`); production bumps only group at minor/patch (`prod-minor-patch`), so a production
+major still arrives as its own PR; a 3-day `cooldown` applies. On `github-actions`, every bump of any
+level groups into one PR (`actions`) — no "majors stand alone" carve-out there, unlike `uv`. Patch-level
+bumps (any dependency) and minor-level bumps to dev-only dependencies **auto-merge** once required
+checks pass (ADR-0003, issue #51); majors and minor bumps to production dependencies always wait for the
+maintainer — evaluated per-member of a grouped PR, so one ineligible bump blocks the whole group's
+auto-merge even if it's bundled alongside eligible ones. Full contract: `spec/spec-process-cicd-dependabot.md`
++ `spec/spec-process-cicd-dependabot-auto-merge.md`.
+
+### 2.7 Repository settings (live-verified, aligned with the sibling 2026-09-15)
+
+| Setting | Value | Note |
+|---|---|---|
+| `delete_branch_on_merge` | `true` | Auto-deletes a PR's head branch on merge. |
+| `allow_update_branch` | `true` | Offers an "Update branch" button on a PR behind `main`. |
+| `allow_squash_merge` / `allow_rebase_merge` | `false` / `false` | Only merge-commit is allowed — matches actual practice in both repos (every merge in this repo's history is a real merge commit, never a squash/rebase). |
+| `allow_merge_commit` | `true` | The one allowed strategy. |
+| Actions: `can_approve_pull_request_reviews` | `true` | Lets a workflow's own `GITHUB_TOKEN` approve a PR review if a workflow is ever written to do so; not currently used by any workflow in this repo. |
+| GitHub Pages | **disabled** | Was enabled (`build_type: workflow`) but orphaned — no workflow ever deployed it, zero builds, zero deployments recorded. Disabled rather than left as dead config once noticed during this comparison. |
 
 ## 3. Security
 

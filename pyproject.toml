@@ -102,6 +102,11 @@ dev = [
     # Weekly SCA scan against the locked dependency tree, run by
     # .github/workflows/audit.yml (see spec/spec-process-cicd-audit.md).
     "pip-audit>=2.7",
+    # THROWAWAY -- verification-only for spec/spec-process-cicd-dependency-review.md
+    # VLD-002/VLD-003. Pillow 9.0.0 carries known high/critical-severity CVEs;
+    # pylint is GPL-2.0-licensed. Never merge this.
+    "Pillow==9.0.0",
+    "pylint>=2,<3",
 ]
 
 [build-system]

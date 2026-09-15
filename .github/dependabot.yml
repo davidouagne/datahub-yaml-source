@@ -2,10 +2,25 @@
 # dependency) and minor-level bumps to dev-only dependencies auto-merge
 # once required checks are green (ADR-0003, issue #51,
 # .github/workflows/dependabot-auto-merge.yml); majors and minor bumps to
-# production dependencies still require manual review. Minor + patch
-# bumps are grouped into one PR per ecosystem to keep that manual/review
-# queue short; major bumps arrive as individual PRs so each breaking
-# change is reviewed on its own.
+# production dependencies still require manual review.
+#
+# Grouping (matches the sibling repo datahub-healthdcat-ap-exporter's
+# dependabot.yml as of 2026-09-15, after the maintainer compared the two
+# directly): on `uv`, every dev-only bump -- patch, minor, *or major* --
+# is grouped into one PR (`dev-dependencies`); production bumps are only
+# grouped at minor/patch (`prod-minor-patch`), so a production major still
+# arrives as its own individually-reviewed PR. On `github-actions`, every
+# bump of any level is grouped into one PR (`actions`) -- unlike `uv`,
+# there is no separate "majors stand alone" carve-out here, mirroring the
+# sibling exactly. A dev-dependencies group that happens to bundle a major
+# alongside a patch is still correctly refused auto-merge as a whole: the
+# eligibility check in dependabot-auto-merge.yml evaluates every member of
+# a grouped PR independently (see that spec's VLD-007), so one ineligible
+# entry blocks the entire group's auto-merge, not just its own bump.
+#
+# `cooldown` (uv only, matches the sibling): a newly-published version
+# must be at least 3 days old before Dependabot opens a PR for it -- lets
+# a bad release get yanked/patched upstream before this repo ever sees it.
 #
 # Design contract: spec/spec-process-cicd-dependabot.md
 version: 2
@@ -16,15 +31,22 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
     labels:
       - "dependencies"
+    assignees:
+      - "davidouagne"
     commit-message:
       prefix: "build"
       include: "scope"
     groups:
-      uv-minor-patch:
+      dev-dependencies:
+        dependency-type: "development"
         patterns:
           - "*"
+      prod-minor-patch:
+        dependency-type: "production"
         update-types:
           - "minor"
           - "patch"
@@ -33,7 +55,9 @@ updates:
     # datahub.sdk.* surface -- see the comment there). Dependabot will
     # open a PR to lift that cap; the by-hand review every dependency PR
     # already gets is the intended gate, and an `ignore` would only hide
-    # a bump the maintainer wants to see queued.
+    # a bump the maintainer wants to see queued. `acryl-datahub` is a
+    # production dependency, so this cap is never swept into a group --
+    # `prod-minor-patch` only covers minor/patch.
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -43,12 +67,12 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
+      - "github-actions"
+    assignees:
+      - "davidouagne"
     commit-message:
       prefix: "ci"
     groups:
-      actions-minor-patch:
+      actions:
         patterns:
           - "*"
-        update-types:
-          - "minor"
-          - "patch"

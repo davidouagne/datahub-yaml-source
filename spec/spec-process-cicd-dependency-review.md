@@ -1,6 +1,6 @@
 ---
 title: CI/CD Workflow Specification - Dependency Review (PR gate)
-version: 1.1
+version: 1.2
 date_created: 2026-09-15
 last_updated: 2026-09-15
 owner: David Ouagne
@@ -137,25 +137,27 @@ proof that no GPL/AGPL code was introduced.
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
-| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **Not currently a `main` required status check** (see Integration Points) -- see the note below on what this means in practice. |
+| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **A required `main` status check as of v1.2** (see Integration Points) -- a failing check blocks the "Merge pull request" button, same as `ruff`/`mypy`/`CI status`. |
 
-**Not yet wired into branch protection.** Unlike `ruff`/`mypy`/`CI status`
-(`spec/spec-process-cicd-ci.md`'s "Branch protection on `main`" section), this check is not in `main`'s
-`required_status_checks.contexts` as of this spec version -- issue #57's acceptance criteria (mirroring
-how `#48` scoped issue #56's `pip-audit` workflow) required only that the check exist, run on every PR,
-and be verified to fail on a real violation; it did not require promoting it to a required check, and
-sibling repo `datahub-healthdcat-ap-exporter`'s own `dependency-review` job is likewise advisory there
-(that repo's `main` has no branch protection at all). A failing `dependency-review` check is therefore
-currently visible on the PR but does not block the "Merge pull request" button the way `ruff`/`mypy`/`CI
-status` do. Promoting it to required is a deliberate follow-up, not an oversight -- see Change
-Management.
+**Wired into branch protection as of v1.2.** `main`'s `required_status_checks.contexts` is
+`["CI status", "ruff", "mypy", "dependency-review"]` (live-verified: `gh api
+repos/davidouagne/datahub-yaml-source/branches/main/protection -q
+'.required_status_checks.contexts'`). At v1.0/v1.1 this check was deliberately left advisory, on the
+premise that it matched sibling repo `datahub-healthdcat-ap-exporter`'s own posture for the same job
+(that repo's `main` had no branch protection at all when issue #48's original comparison research was
+written, 2026-09-07). That premise went stale: the sibling's own companion ticket
+(`datahub-healthdcat-ap-exporter`#65) has since protected its `main` with `required_status_checks.contexts
+= ["CI status", "dependency-review"]` -- `dependency-review` *is* required there. Caught by the
+maintainer comparing the two repos directly (not by re-reading this spec, which is exactly the kind of
+drift a "matches the sibling" justification is prone to once the sibling itself changes). Promoted here
+to match, closing the gap rather than leaving the documentation's justification stale a second time.
 
 ## Integration Points
 
 | Component | Relationship | Mechanism |
 |-----------|---------------|--------------|
 | `spec/spec-process-cicd-audit.md` | Sibling security signal over the same dependency tree; that one is a scheduled re-scan of already-merged `uv.lock`, this one is a pre-merge gate on the diff | Independent triggers (`schedule`/`workflow_dispatch` vs. `pull_request`); no direct coupling |
-| `spec/spec-process-cicd-ci.md` | `main`'s required-status-check set (`CI status`, `ruff`, `mypy`) | This workflow's check is **not** currently a member of that set (see Quality Gates note) |
+| `spec/spec-process-cicd-ci.md` | `main`'s required-status-check set (`CI status`, `ruff`, `mypy`, `dependency-review`) | This workflow's check **is** a member of that set as of v1.2 (see Quality Gates note) |
 | GitHub dependency-graph API | Supplies the base..head dependency diff `dependency-review-action` evaluates | Parses `pyproject.toml`/`uv.lock`; requires the `uv` migration (issue #49) to have landed |
 | `spec/spec-process-cicd-dependabot.md` | Indirect -- a Dependabot PR is itself a dependency-manifest change, so it also triggers this check | Same `pull_request` trigger surface |
 
@@ -178,9 +180,9 @@ Management.
 - **VLD-004**: A PR that only touches non-dependency files, or bumps a dependency without introducing a
   new high-or-above vulnerability or denied license, shows the `dependency-review` check-run as passed.
 - **VLD-005**: `gh api repos/davidouagne/datahub-yaml-source/branches/main/protection -q
-  '.required_status_checks.contexts'` does **not** (yet) contain `dependency-review` -- confirms the
-  "advisory, not blocking" status recorded in Quality Gates is accurate at this spec version, not stale
-  documentation.
+  '.required_status_checks.contexts'` contains `dependency-review` (as of v1.2) -- confirms the
+  "required, blocking" status recorded in Quality Gates is accurate at this spec version, not stale
+  documentation. **Confirmed**: `["CI status","ruff","mypy","dependency-review"]`.
 
 ## Change Management
 
@@ -193,12 +195,8 @@ Management.
 4. **Deployment**: Merge; the check applies to every PR opened or updated afterward.
 
 Changing `fail-on-severity`, the `deny-licenses` list, or the trigger scope are each material changes:
-update this spec first. **Promoting this check to a `main` required status check** is also a material,
-deliberate change: update this spec's Quality Gates/Integration Points sections and
-`spec/spec-process-cicd-ci.md`'s "Branch protection on `main`" section together, then re-apply branch
-protection (`PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`) -- do not add it to
-the required-checks list without updating both documents first, mirroring how `mypy`'s promotion to
-required was recorded (`spec/spec-process-cicd-ci.md` v1.6, issue #13).
+update this spec first. **Demoting this check back to advisory** would likewise be a material, deliberate
+change requiring the same two-document update in reverse.
 
 ### Version History
 
@@ -206,13 +204,15 @@ required was recorded (`spec/spec-process-cicd-ci.md` v1.6, issue #13).
 |---------|------|---------|--------|
 | 1.0 | 2026-09-15 | Initial specification. `.github/workflows/dependency-review.yml` added (issue #57, part of the `#48` standardization epic), mirroring `datahub-healthdcat-ap-exporter`'s `dependency-review` job (there embedded in `ci.yml`; here a standalone workflow file, matching this repo's one-workflow-per-spec convention). `pull_request`-to-`main` trigger; `actions/dependency-review-action@v5` with `fail-on-severity: high` and `deny-licenses` covering GPL-2.0/3.0 and AGPL-3.0 in both `-only`/`-or-later` SPDX forms. Deliberately left out of `main`'s required status checks at this version -- issue #57's acceptance criteria did not ask for that, matching the sibling repo's own (unprotected-branch) posture for the same job. | David Ouagne |
 | 1.1 | 2026-09-15 | Verification pass (throwaway PR #70, closed unmerged, per issue #57's acceptance criteria): confirmed REQ-002 live against `Pillow==9.0.0` (21 real advisories, 2 critical). While verifying REQ-003, discovered and documented a real limitation: three different genuinely GPL-licensed PyPI packages (`pylint`, `chess`, `gnureadline`) all came back from GitHub's dependency-graph API as `AND`-combined SPDX expressions rather than a clean single identifier, and `deny-licenses`' `satisfiesAny` matching (confirmed by running the action's actual matching function offline) never denies an `AND`-combined expression even when every component is on the deny list -- upstream tool behavior (the option is itself marked deprecated upstream, `actions/dependency-review-action#938`), not a misconfiguration here. Added the new "Edge Cases & Known Limitations" section, revised REQ-003/VLD-003 to state what is and isn't actually guaranteed, and added an Error Handling Strategy row for this scenario. No workflow-file change -- `deny-licenses` is left as specified (it still correctly denies the clean/`OR`-expression cases, and remains what issue #57 asked for); this is a documentation-accuracy correction, not a behavior change. | David Ouagne |
+| 1.2 | 2026-09-15 | **Promoted `dependency-review` to a required `main` status check.** `main`'s `required_status_checks.contexts` changed from `["CI status", "ruff", "mypy"]` to `["CI status", "ruff", "mypy", "dependency-review"]` via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`. Trigger: the maintainer, comparing this repo against the sibling directly, found the sibling's `main` now requires `["CI status", "dependency-review"]` -- the "matches the sibling's advisory posture" justification recorded in v1.0/v1.1 had gone stale (the sibling's own companion ticket, `datahub-healthdcat-ap-exporter`#65, protected its `main` sometime after issue #48's 2026-09-07 comparison research was written, and this spec was never revisited to notice). Rather than re-assert a now-false "matches sibling" framing, promoted this check here too and updated Quality Gates/Integration Points/VLD-005 to describe the new, correct state, plus this version history entry so the reasoning (and the fact that it drifted once already) is preserved. No workflow-file change -- `dependency-review.yml` itself is unaffected; only branch protection and this spec changed. | David Ouagne |
 
 ## Related Specifications
 
 - `spec/spec-process-cicd-audit.md` -- the scheduled, post-merge sibling of this pre-merge gate; both
   are SCA signals over the same dependency tree, disjoint in timing.
-- `spec/spec-process-cicd-ci.md` -- owns `main`'s actual required-status-check set; this spec's Change
-  Management points there for the not-yet-taken step of making this check required.
+- `spec/spec-process-cicd-ci.md` -- owns `main`'s actual required-status-check set, which as of v1.2
+  includes this workflow's `dependency-review` check; update that spec's "Branch protection on `main`"
+  section alongside any future change here.
 - `spec/spec-process-cicd-codeql.md` -- the other advisory, non-blocking security check already on this
   repo (SAST, not SCA); same "exists and reports, doesn't yet gate" posture.
 - `spec/spec-process-cicd-dependabot.md` -- Dependabot PRs are themselves dependency-manifest changes and

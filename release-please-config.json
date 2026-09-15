@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "915b58d9a289784207ac3ef5075937d9522f2bd2",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "datahub-yaml-source",
+      "include-component-in-tag": false,
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false
+    }
+  }
+}

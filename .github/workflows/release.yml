@@ -5,35 +5,73 @@ name: Release
 # permissions here should update that spec first, per its Change
 # Management section.
 #
-# Upstream gate: ci.yml only runs on branch pushes and PRs, never on a
-# tag, so this workflow re-runs the test suite itself against the tagged
-# commit before anything is built or published (see the `build` job).
-
+# Mono-workflow (ADR-0001, issue #58). release-please's own GITHUB_TOKEN
+# creates the release tag and GitHub Release itself, but a tag pushed by
+# that token never triggers a separate tag-push workflow -- GitHub Actions
+# does not recursively fire workflows off an action taken by GITHUB_TOKEN,
+# to prevent infinite loops. So build / publish / smoke are jobs of THIS
+# SAME workflow run (triggered by the push-to-main event that merged the
+# release PR), gated on `release_created == 'true'`, rather than a second
+# tag-triggered workflow the way the old manual-tag flow worked.
+#
+# `workflow_dispatch` (input `publish_tag`): recovery path for when the
+# automated run failed AFTER release-please already created the tag (so
+# build/publish/smoke never ran, or failed partway through). Replays
+# build -> publish -> smoke against an already-existing tag.
 on:
   push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_tag:
+        description: "Existing tag (e.g. v0.2.0) to (re)build and publish to PyPI."
+        type: string
+        required: true
 
-# Nothing at the top level. Each job opts in to exactly what it needs;
-# only `pypi-publish` gets `id-token: write`, only `github-release` gets
-# `contents: write`.
 permissions: {}
 
 concurrency:
-  # One release per tag; never cancel a publish that is already running.
-  group: release-${{ github.ref }}
+  # One release pipeline at a time; never cancel a publish mid-flight.
+  group: release
   cancel-in-progress: false
 
 jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
   build:
     name: build + verify
+    needs: release-please
+    # A release-please merge just tagged a new version, or this is a manual
+    # recovery run against an already-existing tag.
+    if: ${{ needs.release-please.outputs.release_created == 'true' || inputs.publish_tag }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: read
+      # gh release upload -- attaches dist/ to the GitHub Release
+      # release-please already created.
+      contents: write
+    env:
+      TAG: ${{ inputs.publish_tag || needs.release-please.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ env.TAG }}
           # Full history + tags so hatch-vcs derives the real version.
           fetch-depth: 0
 
@@ -43,21 +81,15 @@ jobs:
           enable-cache: true
           python-version: "3.12"
 
-      - name: Install (dev group + all extras)
-        run: uv sync --frozen --group dev --extra git --extra s3
-
-      - name: Run the test suite against the tagged commit
-        run: uv run pytest tests/unit tests/integration -q
-
       - name: Build sdist + wheel
         run: uv build
 
       - name: Verify the build matches the tag
         run: |
           ls -l dist/
-          tag="${GITHUB_REF_NAME#v}"
+          tag="${TAG#v}"
           if [ ! -f "dist/datahub_yaml_source-${tag}.tar.gz" ]; then
-            echo "::error::built artifacts do not match tag ${GITHUB_REF_NAME}"
+            echo "::error::built artifacts do not match tag ${TAG}"
             echo "::error::expected dist/datahub_yaml_source-${tag}.tar.gz -- a dirty"
             echo "::error::tree or a tag not on a clean commit makes hatch-vcs"
             echo "::error::append a dev/local segment."
@@ -66,6 +98,11 @@ jobs:
 
       - name: twine check
         run: uvx twine check --strict dist/*
+
+      - name: Attach the built artifacts to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/* --clobber
 
       - uses: actions/upload-artifact@v7
         with:
@@ -81,7 +118,9 @@ jobs:
     # The `pypi` environment carries a required-reviewer protection rule:
     # the maintainer must approve this job before the (irreversible)
     # upload runs. Its name is half of the PyPI Trusted Publisher config
-    # (see issue #8); keep it stable.
+    # (see issue #8); keep it stable. Its deployment-branch policy allows
+    # `main` (not a tag pattern) -- this workflow's trigger is a branch
+    # push, so `github.ref` is `refs/heads/main`, not the tag.
     environment:
       name: pypi
       url: https://pypi.org/project/datahub-yaml-source/
@@ -97,29 +136,27 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  github-release:
-    name: GitHub Release
-    needs: pypi-publish
+  smoke:
+    name: smoke test
+    needs: [release-please, pypi-publish]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: write
+    # Advisory only -- the release is already published to PyPI and cannot
+    # be undone by this job failing.
+    continue-on-error: true
+    permissions: {}
+    env:
+      TAG: ${{ inputs.publish_tag || needs.release-please.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist/
-
-      - name: Create the GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Install from PyPI and confirm the yaml source plugin registers
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
-            --generate-notes \
-            --latest \
-            dist/*
+          set -euo pipefail
+          version="${TAG#v}"
+          python -m venv /tmp/smoke
+          for i in 1 2 3 4 5; do
+            /tmp/smoke/bin/pip install "datahub-yaml-source==$version" && break
+            sleep 30
+          done
+          /tmp/smoke/bin/datahub check plugins > /tmp/plugins.out
+          cat /tmp/plugins.out
+          grep -qx yaml /tmp/plugins.out

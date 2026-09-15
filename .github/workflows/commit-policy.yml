@@ -1,0 +1,69 @@
+name: Commit policy
+
+# Implements the contract documented in spec/spec-process-cicd-commit-policy.md.
+# Keep the two in sync: any change to triggers, jobs, or gates here
+# should update that spec first, per its Change Management section.
+#
+# Policy (issue #52, part of the #48 standardization epic): every
+# non-merge commit in a PR must be a Conventional Commit
+# (commitlint.config.mjs, checked by wagoid/commitlint-github-action), and
+# the PR title itself must be a valid Conventional Commit / semantic PR
+# title (amannn/action-semantic-pull-request). DCO sign-off enforcement is
+# explicitly NOT part of this repo -- left absent, per #52's acceptance
+# criteria.
+#
+# Plain `pull_request` throughout, not `pull_request_target`: every PR in
+# this repo (maintainer's own, or Dependabot's) is a same-repo branch,
+# never a fork, so there is no untrusted-head-with-base-repo-secrets
+# concern `pull_request_target` exists to manage (same posture as
+# spec/spec-process-cicd-dependabot-auto-merge.md's SEC-002).
+#
+# Both jobs run on every trigger type, including `edited` -- an earlier
+# draft skipped `commitlint` on `edited` to avoid re-linting unchanged
+# commits on a title-only tweak, but `edited` also fires on a PR base-branch
+# retarget (distinguishable only via `github.event.changes.base`, which
+# that guard didn't check), so it could skip commitlint exactly when a PR
+# first became subject to this workflow. Simpler and correct beats a
+# minor CI-minutes saving: always run both jobs.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: commit-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    name: commitlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history so commitlint can walk every commit between the
+          # PR's base and head, not just the checked-out tip.
+          fetch-depth: 0
+
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: commitlint.config.mjs
+
+  pr-title:
+    name: pr-title
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          requireScope: false

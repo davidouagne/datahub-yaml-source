@@ -1,8 +1,11 @@
-# Dependency updates for a single-maintainer repo. No auto-merge: every
-# Dependabot PR is reviewed and merged by hand (decision recorded on the
-# wayfinder map, issue #1). Minor + patch bumps are grouped into one PR
-# per ecosystem to keep that manual queue short; major bumps arrive as
-# individual PRs so each breaking change is reviewed on its own.
+# Dependency updates for a single-maintainer repo. Patch-level bumps (any
+# dependency) and minor-level bumps to dev-only dependencies auto-merge
+# once required checks are green (ADR-0003, issue #51,
+# .github/workflows/dependabot-auto-merge.yml); majors and minor bumps to
+# production dependencies still require manual review. Minor + patch
+# bumps are grouped into one PR per ecosystem to keep that manual/review
+# queue short; major bumps arrive as individual PRs so each breaking
+# change is reviewed on its own.
 #
 # Design contract: spec/spec-process-cicd-dependabot.md
 version: 2

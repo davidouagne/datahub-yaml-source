@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.9
+version: 1.10
 date_created: 2026-08-16
-last_updated: 2026-09-14
+last_updated: 2026-09-15
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -188,7 +188,8 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
 | Release (`spec/spec-process-cicd-release.md`) | Downstream; its `build+verify` job re-runs this suite on the tagged commit before publishing | Independent trigger (version tag), not chained to a `main` CI run |
-| Dependabot (`.github/dependabot.yml`, `spec/spec-process-cicd-dependabot.md`) | Upstream PR producer — opens weekly grouped dependency-update PRs that this workflow (and `quality.yml`) gate before a by-hand merge | Dependabot's own weekly schedule; resulting PRs trigger this workflow via `pull_request` to `main` |
+| Dependabot (`.github/dependabot.yml`, `spec/spec-process-cicd-dependabot.md`) | Upstream PR producer — opens weekly grouped dependency-update PRs that this workflow (and `quality.yml`) gate before merge | Dependabot's own weekly schedule; resulting PRs trigger this workflow via `pull_request` to `main` |
+| Dependabot auto-merge (`.github/workflows/dependabot-auto-merge.yml`, `spec/spec-process-cicd-dependabot-auto-merge.md`) | Downstream consumer of this workflow's `CI status` gate — for low-risk Dependabot PRs it calls `gh pr merge --auto`, which merges only once this workflow (and `quality.yml`) report success | Runs on the same `pull_request` event as this workflow, independently |
 
 ### Branch protection on `main` (issue #9)
 
@@ -291,6 +292,7 @@ the protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches
 | 1.7 | 2026-09-07 | The `test` job will also emit `coverage.xml` (`--cov-report=xml`) and upload it to Codecov via `codecov/codecov-action` using GitHub OIDC (`id-token: write` on `test`; no stored token). Reporting only — no new required check, `--cov-fail-under=80` unchanged. Contract in the new `spec/spec-process-cicd-codecov.md`; the `ci.yml` change itself is deferred to wayfinder map issue #40's wiring ticket. This revision records the Secrets/Outputs/Security-Controls/Edge-Case impact and refreshes the stale "None yet" Related Specifications stub. | David Ouagne |
 | 1.8 | 2026-09-07 | Workflow-file change: the `test` job now runs `pytest ... --cov-report=xml`, sets job-level `permissions: {contents: read, id-token: write}`, and has a `codecov/codecov-action@v5` upload step (`use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, `if: always()`). Implements what 1.7 specified; `spec/spec-process-cicd-codecov.md` → 1.1 in the same change. `CI status` still aggregates only `test` + `minimal-install-check`; the Codecov step cannot fail the job. | David Ouagne |
 | 1.9 | 2026-09-14 | Migrated from `pip`/`setup.py` to `uv`/`pyproject.toml` (`datahub-yaml-source`#49): `test` installs via `uv sync --frozen --group dev --extra git --extra s3` and runs tests via `uv run pytest`; `minimal-install-check` now builds the wheel with `uv build --wheel` and installs it into a fresh venv (`uv venv` + `uv pip install`) instead of `pip install .`, closer proof of what an actual consumer of the published package gets. Version derivation moved from `setuptools-scm` to `hatch-vcs` (same underlying scheme options), so every reference to the former is now the latter. `astral-sh/setup-uv`'s own cache (keyed on `uv.lock`) replaces `actions/setup-python`'s pip cache (keyed on `setup.py`). No change to jobs, gates, matrix, or `CI status`'s aggregation. | David Ouagne |
+| 1.10 | 2026-09-15 | Dependent Workflows table: added Dependabot auto-merge (`.github/workflows/dependabot-auto-merge.yml`, issue #51) as a downstream consumer of this workflow's `CI status` gate. No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
 
 ## Related Specifications
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.2...v0.2.3) (2026-09-17)
+
+
+### Bug Fixes
+
+* exact host match for URL sanitization + PyPI badge fix ([24df151](https://github.com/davidouagne/datahub-yaml-source/commit/24df151a160048ac521fda690a022d322583430e))
+* use .svg PyPI badge URL so version updates render ([4ea7b4d](https://github.com/davidouagne/datahub-yaml-source/commit/4ea7b4d65ebb1737dc58149d5ab99ceba45070bc))
+
 ## [0.2.2](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.1...v0.2.2) (2026-09-17)
 
 

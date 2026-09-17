@@ -29,7 +29,8 @@ def _https_clone_url(repo: Any) -> str | None:  # noqa: ANN401
     if not isinstance(repo, str):
         return None
     repo = repo.strip().rstrip("/")
-    if repo.startswith("github.com/") or repo.startswith("gitlab.com/"):
+    host = repo.split("/", 1)[0]
+    if host in ("github.com", "gitlab.com"):
         repo = f"https://{repo}"
     elif "://" not in repo and repo.count("/") == 1:
         repo = f"https://github.com/{repo}"

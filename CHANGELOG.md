@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.0...v0.2.1) (2026-09-17)
+
+
+### Continuous Integration
+
+* sign off release-please's own release commits ([5a3bbd5](https://github.com/davidouagne/datahub-yaml-source/commit/5a3bbd59993d0dbd163bf8d28018e60ebc45a4d0))
+* sign off release-please's own release commits ([8a1f786](https://github.com/davidouagne/datahub-yaml-source/commit/8a1f78645f1a6b242c55c3a712521fc759bd3f3c))
+
 ## [0.2.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.1.0...v0.2.0) (2026-09-17)
 
 

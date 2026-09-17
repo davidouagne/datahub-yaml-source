@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.1...v0.2.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* use exact host match instead of URL substring check ([8a14c63](https://github.com/davidouagne/datahub-yaml-source/commit/8a14c63f1086d67319a6ee5ebc3fe9da74c9d721))
+* use exact host match instead of URL substring check ([5032b4b](https://github.com/davidouagne/datahub-yaml-source/commit/5032b4b97f5afb2216f2fa7ddd5be806b0ff50ef))
+
 ## [0.2.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.0...v0.2.1) (2026-09-17)
 
 

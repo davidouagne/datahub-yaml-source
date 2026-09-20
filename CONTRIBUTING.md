@@ -113,14 +113,14 @@ with a real annotation/guard; a `# type: ignore[<code>]` (mypy) or
 5. Use a [Conventional Commit](https://www.conventionalcommits.org/) message
    (`type: subject` or `type(scope): subject`, e.g. `fix: handle empty
    containers`) for every commit, and give the PR itself a Conventional
-   Commit title. `commit-policy.yml` checks both in CI
+   Commit title. `commit-policy.yml` checks both in CI (required checks on `main`)
    (`spec/spec-process-cicd-commit-policy.md`); `commitlint.config.mjs`
    configures the accepted types via `@commitlint/config-conventional`'s
    standard list (`build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
    `refactor`, `revert`, `style`, `test`).
 6. Sign off every commit (`git commit -s`, or `-S` combined with GPG
    signing) with a `Signed-off-by:` trailer — the `dco` job checks for it
-   (advisory, not yet required). Uses your `git config user.name`/`user.email`
+   (a required check on `main`, so a PR with an unsigned commit cannot merge). Uses your `git config user.name`/`user.email`
    automatically.
 
 By contributing, you agree that your contributions will be licensed under the

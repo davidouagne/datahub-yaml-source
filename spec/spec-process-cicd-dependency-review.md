@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Dependency Review (PR gate)
-version: 1.2
+version: 1.3
 date_created: 2026-09-15
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, security, license-compliance, supply-chain]
 ---
@@ -137,12 +137,13 @@ proof that no GPL/AGPL code was introduced.
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
-| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **A required `main` status check as of v1.2** (see Integration Points) -- a failing check blocks the "Merge pull request" button, same as `ruff`/`mypy`/`CI status`. |
+| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **A required `main` status check as of v1.2** (see Integration Points) -- a failing check blocks the "Merge pull request" button, same as the other required checks in `main`'s ruleset (`CI status`, `dco`, `commitlint`, `pr-title`). |
 
-**Wired into branch protection as of v1.2.** `main`'s `required_status_checks.contexts` is
-`["CI status", "ruff", "mypy", "dependency-review"]` (live-verified: `gh api
-repos/davidouagne/datahub-yaml-source/branches/main/protection -q
-'.required_status_checks.contexts'`). At v1.0/v1.1 this check was deliberately left advisory, on the
+**Wired into `main`'s required checks as of v1.2.** As of v1.3, `main` is protected by a repository ruleset
+whose `required_status_checks` are `dco`, `commitlint`, `pr-title`, `dependency-review` and `CI status`
+(live-verified: `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main`). The v1.2-era list
+`["CI status", "ruff", "mypy", "dependency-review"]` below is history: it lived in classic branch
+protection, which no longer exists. At v1.0/v1.1 this check was deliberately left advisory, on the
 premise that it matched sibling repo `datahub-healthdcat-ap-exporter`'s own posture for the same job
 (that repo's `main` had no branch protection at all when issue #48's original comparison research was
 written, 2026-09-07). That premise went stale: the sibling's own companion ticket
@@ -179,10 +180,10 @@ to match, closing the gap rather than leaving the documentation's justification 
   workflow misconfiguration).
 - **VLD-004**: A PR that only touches non-dependency files, or bumps a dependency without introducing a
   new high-or-above vulnerability or denied license, shows the `dependency-review` check-run as passed.
-- **VLD-005**: `gh api repos/davidouagne/datahub-yaml-source/branches/main/protection -q
-  '.required_status_checks.contexts'` contains `dependency-review` (as of v1.2) -- confirms the
-  "required, blocking" status recorded in Quality Gates is accurate at this spec version, not stale
-  documentation. **Confirmed**: `["CI status","ruff","mypy","dependency-review"]`.
+- **VLD-005**: `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main` lists
+  `dependency-review` among the `required_status_checks` rule's contexts -- confirms the "required,
+  blocking" status recorded in Quality Gates is accurate at this spec version, not stale documentation.
+  **Confirmed (2026-09-20)**: `dco`, `commitlint`, `pr-title`, `dependency-review`, `CI status`.
 
 ## Change Management
 
@@ -205,6 +206,7 @@ change requiring the same two-document update in reverse.
 | 1.0 | 2026-09-15 | Initial specification. `.github/workflows/dependency-review.yml` added (issue #57, part of the `#48` standardization epic), mirroring `datahub-healthdcat-ap-exporter`'s `dependency-review` job (there embedded in `ci.yml`; here a standalone workflow file, matching this repo's one-workflow-per-spec convention). `pull_request`-to-`main` trigger; `actions/dependency-review-action@v5` with `fail-on-severity: high` and `deny-licenses` covering GPL-2.0/3.0 and AGPL-3.0 in both `-only`/`-or-later` SPDX forms. Deliberately left out of `main`'s required status checks at this version -- issue #57's acceptance criteria did not ask for that, matching the sibling repo's own (unprotected-branch) posture for the same job. | David Ouagne |
 | 1.1 | 2026-09-15 | Verification pass (throwaway PR #70, closed unmerged, per issue #57's acceptance criteria): confirmed REQ-002 live against `Pillow==9.0.0` (21 real advisories, 2 critical). While verifying REQ-003, discovered and documented a real limitation: three different genuinely GPL-licensed PyPI packages (`pylint`, `chess`, `gnureadline`) all came back from GitHub's dependency-graph API as `AND`-combined SPDX expressions rather than a clean single identifier, and `deny-licenses`' `satisfiesAny` matching (confirmed by running the action's actual matching function offline) never denies an `AND`-combined expression even when every component is on the deny list -- upstream tool behavior (the option is itself marked deprecated upstream, `actions/dependency-review-action#938`), not a misconfiguration here. Added the new "Edge Cases & Known Limitations" section, revised REQ-003/VLD-003 to state what is and isn't actually guaranteed, and added an Error Handling Strategy row for this scenario. No workflow-file change -- `deny-licenses` is left as specified (it still correctly denies the clean/`OR`-expression cases, and remains what issue #57 asked for); this is a documentation-accuracy correction, not a behavior change. | David Ouagne |
 | 1.2 | 2026-09-15 | **Promoted `dependency-review` to a required `main` status check.** `main`'s `required_status_checks.contexts` changed from `["CI status", "ruff", "mypy"]` to `["CI status", "ruff", "mypy", "dependency-review"]` via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`. Trigger: the maintainer, comparing this repo against the sibling directly, found the sibling's `main` now requires `["CI status", "dependency-review"]` -- the "matches the sibling's advisory posture" justification recorded in v1.0/v1.1 had gone stale (the sibling's own companion ticket, `datahub-healthdcat-ap-exporter`#65, protected its `main` sometime after issue #48's 2026-09-07 comparison research was written, and this spec was never revisited to notice). Rather than re-assert a now-false "matches sibling" framing, promoted this check here too and updated Quality Gates/Integration Points/VLD-005 to describe the new, correct state, plus this version history entry so the reasoning (and the fact that it drifted once already) is preserved. No workflow-file change -- `dependency-review.yml` itself is unaffected; only branch protection and this spec changed. | David Ouagne |
+| 1.3 | 2026-09-20 | Documentation-accuracy correction, no workflow-file change: `main`'s classic branch protection was replaced by a repository ruleset (`spec/spec-process-cicd-ci.md` v1.13), so the live-verification command in VLD-005 and the required-checks list in Quality Gates now reference the ruleset (`gh api .../rules/branches/main`) and its current five checks. `dependency-review` remains required. | David Ouagne |
 
 ## Related Specifications
 

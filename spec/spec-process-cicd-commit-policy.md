@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Commit Policy
-version: 1.1
+version: 1.2
 date_created: 2026-09-15
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, conventional-commits, commitlint]
 ---
@@ -13,7 +13,8 @@ tags: [process, cicd, github-actions, automation, conventional-commits, commitli
 `main`, so they can safely become load-bearing for automated tooling later (release-please's
 version/changelog computation, per issue #48's user story 6) rather than being a manual-discipline-only
 convention that silently drifts. As of v1.1, also checks every commit carries a DCO `Signed-off-by`
-trailer (advisory) — see "Why DCO was added" below.
+trailer — see "Why DCO was added" below. As of v1.2, `commitlint`, `pr-title` and `dco` are all
+required status checks on `main` (see "Promoted to required (v1.2)").
 
 **Trigger Events**: `pull_request` (`opened`, `edited`, `reopened`, `synchronize`), scoped to `main`.
 
@@ -37,6 +38,20 @@ narrower than the sibling's own config by deliberate, still-standing choice (REQ
 ported as-is: a straightforward per-commit `Signed-off-by:` trailer check has no repo-specific nuance to
 diverge on the way commit-type/header-length policy does.
 
+### Promoted to required (v1.2, 2026-09-20)
+
+`commitlint`, `pr-title` and `dco` are now all required status checks in `main`'s repository ruleset (the
+classic branch protection this spec used to reference no longer exists — see
+`spec/spec-process-cicd-ci.md` v1.13). Two earlier claims are superseded:
+
+- "Not planned for promotion: Dependabot's own commits would always fail `dco`." This was wrong.
+  Dependabot's commits carry `Signed-off-by: dependabot[bot] <support@github.com>` (checked on this repo's
+  merged Dependabot commits, e.g. PR #61's commit `099237a`), which matches the job's
+  `^Signed-off-by: .+ <.+>$` regex, so `dco` passes on Dependabot PRs and does not block
+  `gh pr merge --auto`.
+- "`commitlint`/`pr-title` stay advisory as an initial-rollout decision." The rollout is finished; REQ-006
+  already verifies Dependabot commits and titles pass both.
+
 ## Execution Flow Diagram
 
 ```mermaid
@@ -53,7 +68,7 @@ graph TD
     E -->|all pass| H[commitlint check: green]
     F -->|title fails| I[pr-title check: red]
     F -->|title passes| J[pr-title check: green]
-    M -->|any commit missing trailer| N[dco check: red, advisory]
+    M -->|any commit missing trailer| N[dco check: red, blocks merge]
     M -->|all carry trailer| O[dco check: green]
 
     style A fill:#e1f5fe
@@ -71,7 +86,7 @@ graph TD
 |----------|---------|--------------|--------------------|
 | `commitlint` | Lint every non-merge commit between the PR's base and head against `commitlint.config.mjs`. Runs on every trigger type, including `edited` — see REQ-010 for why an earlier draft's skip-on-`edited` optimization was reverted. | None | Linux runner, `timeout-minutes: 10` |
 | `pr-title` | Validate the PR title itself is a well-formed Conventional Commit / semantic PR title. Runs on every trigger type, including `edited`, since that's exactly when the title can change. | None | Linux runner (no checkout — reads the event payload), `timeout-minutes: 10` |
-| `dco` | Verify every non-merge commit between the PR's base and head carries a `Signed-off-by: Name <email>` trailer. Advisory only (v1.1) — see "Why DCO was added". | None | Linux runner, `timeout-minutes: 10` |
+| `dco` | Verify every non-merge commit between the PR's base and head carries a `Signed-off-by: Name <email>` trailer. Required status check (advisory in v1.1, promoted in v1.2) — see "Why DCO was added". | None | Linux runner, `timeout-minutes: 10` |
 
 ## Requirements Matrix
 
@@ -83,7 +98,7 @@ graph TD
 | REQ-002 | Merge commits inside a PR do not themselves need to be Conventional Commits. | Medium | Not special-cased in this workflow — relies on commitlint's own default-ignores, which exempt messages shaped like `Merge pull request #N ...` / `Merge branch '...'` (verified locally: `echo "Merge pull request #62 from davidouagne/..." \| commitlint` passes). |
 | REQ-003 | The PR title is checked against Conventional Commits / semantic PR title rules. | High | The `pr-title` job runs `amannn/action-semantic-pull-request`, which validates `type(scope): subject` structure against the Conventional Commit type list, with `requireScope: false`. |
 | REQ-004 | A malformed commit message or PR title fails its respective check. | High | Verified per Validation Criteria below — a synthetic malformed commit/title fails; fixing it and re-running passes. |
-| REQ-005 | Every non-merge commit in a PR carries a DCO `Signed-off-by` trailer. | Medium (advisory) | The `dco` job runs `git rev-list --no-merges BASE..HEAD` and greps each commit's message for `^Signed-off-by: .+ <.+>$`, failing if any commit lacks one. **Reversed from v1.0's explicit non-goal** — see "Why DCO was added" above. Not a required status check (matches the sibling repo's own posture for its `dco` job). |
+| REQ-005 | Every non-merge commit in a PR carries a DCO `Signed-off-by` trailer. | Medium (required) | The `dco` job runs `git rev-list --no-merges BASE..HEAD` and greps each commit's message for `^Signed-off-by: .+ <.+>$`, failing if any commit lacks one. **Reversed from v1.0's explicit non-goal** — see "Why DCO was added" above. A required status check on `main` since v1.2 — see "Promoted to required (v1.2)". |
 | REQ-006 | Dependabot's own commits and PR titles keep passing. | High | Verified against this repo's real merged Dependabot commit (PR #61): fails strict `@commitlint/config-conventional` on `subject-case` (Dependabot capitalizes: "Bump codecov/codecov-action..."), passes with this config's `subject-case: [0]`. Dependabot PR titles observed in this repo (`ci: Bump ...`, `build(deps-dev): Update ...`) already match `type(scope): subject`. |
 
 ### Non-Functional / Consistency Requirements
@@ -109,22 +124,22 @@ graph TD
 | A commit message doesn't follow Conventional Commits | `commitlint` job fails, printing the specific rule violated | Author amends/rewords the offending commit (`git commit --amend` / interactive rebase) and force-pushes the PR branch; the check re-runs on `synchronize`. |
 | The PR title doesn't follow Conventional Commits | `pr-title` job fails, printing the specific rule violated | Author edits the PR title in the GitHub UI; the check re-runs on `edited` (no new commit needed). |
 | A grouped Dependabot PR's auto-generated commit body/footer has long non-URL lines | `body-max-line-length`/`footer-max-line-length` are disabled in `commitlint.config.mjs`, so this alone cannot fail the check | Not an error case by design — see REQ-006/REQ-008. If a future Dependabot format change introduces a genuinely non-conventional *type/subject*, that would still (correctly) fail. |
-| A commit lacks a `Signed-off-by` trailer | `dco` job fails, naming the offending SHA (advisory — does not block merge) | Author re-commits with `git commit -s` (or amends: `git commit -s --amend`, or an interactive rebase adding `-s` to each commit), force-pushes; the check re-runs on `synchronize`. Dependabot's own commits do **not** carry this trailer and will always fail `dco` — accepted, since the check is advisory and Dependabot's commit content itself is trusted (generated by GitHub's own service). |
+| A commit lacks a `Signed-off-by` trailer | `dco` job fails, naming the offending SHA (required — blocks merge) | Author re-commits with `git commit -s` (or amends: `git commit -s --amend`, or an interactive rebase adding `-s` to each commit), force-pushes; the check re-runs on `synchronize`. Dependabot's own commits carry `Signed-off-by: dependabot[bot] <support@github.com>` and pass this check (verified on merged Dependabot commits), so it does not block Dependabot auto-merge. |
 
 ## Quality Gates
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
-| `commitlint` | Every non-merge commit in the PR passes `commitlint.config.mjs` | None built into the workflow. **Not currently a required status check on `main`** — deliberate initial-rollout decision, not an oversight (mirrors `mypy`'s own advisory-then-required history, `spec/spec-process-cicd-ci.md`). |
-| `pr-title` | The PR title passes `amannn/action-semantic-pull-request` | Same as above — advisory, not yet a required status check. |
-| `dco` | Every non-merge commit in the PR carries a `Signed-off-by` trailer | Advisory only, by design — matches the sibling repo's own `dco` job, which is likewise not a required status check there. Not planned for promotion (unlike `mypy`'s history): Dependabot's own commits would always fail it. |
+| `commitlint` | Every non-merge commit in the PR passes `commitlint.config.mjs` | None built into the workflow. **A required status check on `main` as of v1.2** (advisory at v1.0/v1.1 as a deliberate rollout step, mirroring `mypy`'s advisory-then-required history, `spec/spec-process-cicd-ci.md`). |
+| `pr-title` | The PR title passes `amannn/action-semantic-pull-request` | Same as above — required on `main` as of v1.2. |
+| `dco` | Every non-merge commit in the PR carries a `Signed-off-by` trailer | **A required status check on `main` as of v1.2** (advisory at v1.1). Dependabot's own commits carry a `Signed-off-by` trailer and pass it. |
 
 ## Integration Points
 
 | Component | Relationship | Mechanism |
 |-----------|---------------|--------------|
 | `commitlint.config.mjs` (repo root) | Config the `commitlint` job's action reads | `configFile: commitlint.config.mjs` input |
-| `spec/spec-process-cicd-dependabot.md` / `spec/spec-process-cicd-dependabot-auto-merge.md` | Dependabot PRs are the highest-volume, most format-constrained input to this workflow; also always fail `dco` (Error Handling Strategy) but this never blocks Dependabot auto-merge since `dco` isn't a required check | REQ-006 verifies `commitlint` compatibility directly against a real merged Dependabot commit |
+| `spec/spec-process-cicd-dependabot.md` / `spec/spec-process-cicd-dependabot-auto-merge.md` | Dependabot PRs are the highest-volume, most format-constrained input to this workflow; carry a `Signed-off-by: dependabot[bot]` trailer, so they pass the required `dco` check and auto-merge is not blocked | REQ-006 verifies `commitlint` compatibility directly against a real merged Dependabot commit |
 | `spec/spec-process-cicd-ci.md` | Precedent for the advisory-then-required promotion pattern this spec's Quality Gates section follows (`mypy`'s own history, formerly `spec/spec-process-cicd-quality.md`, retired into this document) | `mypy`'s own version history |
 | `wagoid/commitlint-github-action@v6` / `amannn/action-semantic-pull-request@v6` (third-party Actions) | Implement the `commitlint`/`pr-title` checks | `uses:` steps, no separate `npm install`/`package.json` needed — both actions bundle their own toolchain |
 | `datahub-healthdcat-ap-exporter`'s own `ADR-0002` (DCO, a different repo/document — not this repo's `docs/adr/0002-migrate-to-uv.md`, which is unrelated) | `dco`'s design (check shape, advisory posture) is ported from the sibling repo's own job, not independently designed here | Referenced in "Why DCO was added" above |
@@ -151,9 +166,11 @@ graph TD
 - **VLD-006**: Open a throwaway PR with a commit that has no `Signed-off-by` trailer and confirm the
   `dco` check fails, naming the offending SHA. Amend with `git commit -s --amend` and confirm the check
   turns green on the next push.
-- **VLD-007**: Confirm a real Dependabot-authored PR's commits (which never carry `Signed-off-by`) show
-  `dco` as failed but do not block `gh pr merge --auto` — `dco` is absent from `main`'s required status
-  checks.
+- **VLD-007**: Confirm a real Dependabot-authored PR's commits carry
+  `Signed-off-by: dependabot[bot] <support@github.com>` (`git log --author=dependabot --format=%B`) and that
+  `dco` passes on it, so the required `dco` check does not block `gh pr merge --auto`. Confirm
+  `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main` lists `dco`, `commitlint` and
+  `pr-title` as required.
 
 ## Change Management
 
@@ -164,10 +181,8 @@ graph TD
 3. **Verification**: Confirm the Validation Criteria against a real or throwaway PR.
 4. **Deployment**: Merge; the workflow applies to the next PR opened or synchronized against `main`.
 
-Widening/narrowing the allowed commit `type` set, changing `requireScope`, promoting `dco` to a required
-status check (would break Dependabot auto-merge — see Error Handling Strategy), or promoting
-`commitlint`/`pr-title` to required status checks on `main` are each material changes: update this
-spec first.
+Widening/narrowing the allowed commit `type` set, changing `requireScope`, or demoting `dco`/`commitlint`/`pr-title` from the required status checks in `main`'s
+ruleset (they are required as of v1.2) are each material changes: update this spec first.
 
 ### Version History
 
@@ -175,6 +190,7 @@ spec first.
 |---------|------|---------|--------|
 | 1.0 | 2026-09-15 | Initial specification. `.github/workflows/commit-policy.yml` + `commitlint.config.mjs` added (issue #52, part of the `#48` standardization epic): `commitlint` job (`wagoid/commitlint-github-action@v6`) lints every non-merge PR commit; `pr-title` job (`amannn/action-semantic-pull-request@v6`) validates the PR title. Deliberately narrower than the sibling repo's `commit-policy.yml`: no `dco` job (DCO explicitly out of scope per #52), no custom `type-enum` restriction (the sibling's 6-type list would break this repo's existing `ci`/`refactor`/`style` commit usage), default `header-max-length` (100, not 72). Both `subject-case` and `body-max-line-length`/`footer-max-line-length` relaxed, validated directly against this repo's real merged Dependabot commit (PR #61) rather than assumed from the sibling's rationale. Neither check added to `main`'s required status checks in this change — advisory rollout, mirroring `mypy`'s own history. Three code-review passes (all still pre-merge) refined this before it ever shipped: (1) added `timeout-minutes: 10` to both jobs, matching `ci.yml`/`quality.yml`/`release.yml`; (2) a `commitlint`-skip-on-`edited` optimization was added to avoid re-linting unchanged commits on a title tweak, then (3) reverted after two further reviews found it could skip commit-linting entirely on a PR base-branch retarget, and separately race with a shared `concurrency.group` to leave the check stuck "cancelled" — REQ-010 records the rejected design and why. Also corrected an inaccurate `CONTRIBUTING.md` claim that `commitlint.config.mjs` itself enumerates the accepted commit types (it only does `extends: [...]`; the list lives in `@commitlint/config-conventional`). | David Ouagne |
 | 1.1 | 2026-09-15 | **Added `dco` job (advisory), reversing v1.0's explicit DCO non-goal** — see "Why DCO was added" above: prompted by the maintainer comparing this repo's checks against the sibling repo directly, which runs `dco` (advisory, `ADR-0002`-driven there). Ported as-is (no repo-specific divergence, unlike `commitlint`'s narrower `type-enum`/`header-max-length`): checks every non-merge commit between base/head for a `^Signed-off-by: .+ <.+>$` trailer via plain `git rev-list --no-merges` + `grep`, no third-party Action. Not added to `main`'s required status checks and not planned to be — Dependabot's own commits never carry this trailer and would permanently fail it, documented as an accepted, expected state in the new Error Handling Strategy row. `CONTRIBUTING.md` updated with a `git commit -s` recommendation. Former REQ-005 ("DCO sign-off is not enforced") replaced with a new REQ-005 describing the check; REQ-009's job-count wording, SEC-001/SEC-002, Quality Gates, Integration Points, and Change Management's "adding DCO enforcement" material-change note all updated to match the new state. | David Ouagne |
+| 1.2 | 2026-09-20 | **`dco`, `commitlint` and `pr-title` promoted to required status checks on `main`**, now enforced by a repository ruleset rather than classic branch protection (`spec/spec-process-cicd-ci.md` v1.13). Corrected the earlier claim that Dependabot's commits never carry `Signed-off-by` (they carry `Signed-off-by: dependabot[bot] <support@github.com>`, so `dco` passes and auto-merge is not blocked); updated Quality Gates, Integration Points, Error Handling Strategy, REQ-005, VLD-007 and Change Management accordingly. No workflow-file logic change. | David Ouagne |
 
 ## Related Specifications
 
@@ -184,6 +200,5 @@ spec first.
   reasoning is shared with this spec's SEC-002.
 - `spec/spec-process-cicd-ci.md` — precedent for the advisory-then-required promotion pattern this
   spec's Quality Gates section follows (`mypy`'s history, now documented there — the former
-  `spec/spec-process-cicd-quality.md` is retired). Also `main`'s branch protection, where
-  `commitlint`/`pr-title` would be
-  added if/when promoted to required (not done in this change).
+  `spec/spec-process-cicd-quality.md` is retired). Also `main`'s ruleset, where
+  `dco`/`commitlint`/`pr-title` are required as of v1.2.

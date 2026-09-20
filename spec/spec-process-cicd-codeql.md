@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Code Scanning (CodeQL, default setup)
-version: 1.1
+version: 1.2
 date_created: 2026-09-07
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, security, sast, codeql, code-scanning]
 ---
@@ -136,7 +136,7 @@ filters (default setup does not support it); narrowing would require switching t
 
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
-| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). `main`'s required checks are `["CI status", "dependency-review"]` (`spec/spec-process-cicd-ci.md`, `spec/spec-process-cicd-dependency-review.md`). | n/a |
+| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). `main`'s ruleset requires `CI status`, `dependency-review`, `dco`, `commitlint` and `pr-title` (`spec/spec-process-cicd-ci.md`, `spec/spec-process-cicd-dependency-review.md`, `spec/spec-process-cicd-commit-policy.md`). | n/a |
 | `spec/spec-process-cicd-ci.md` (CI) | Sibling; disjoint responsibility. CI owns test/coverage/lint/format/types (the latter two folded in from the now-retired `spec/spec-process-cicd-quality.md` as of `ci.md` v1.12), this owns SAST. CI gates `main`; this is advisory. | Same trigger events (push/PR to `main`) |
 | `spec/spec-process-cicd-dependency-review.md` | Also gates `main` (required as of v1.2); disjoint responsibility (SCA license/vuln gate, not SAST). | Same trigger events (PR to `main`) |
 
@@ -174,6 +174,7 @@ protection.
 |---------|------|---------|--------|
 | 1.0 | 2026-09-07 | Initial specification. CodeQL enabled via **default setup** (`state=configured`, `query_suite=default`, `languages=python,actions`, `threat_model=remote`, weekly schedule). No workflow file committed. Advisory only — not a required check on `main`. Recorded baseline: 2 open `py/incomplete-url-substring-sanitization` alerts (both likely false positives on `startswith` prefix guards in `yaml_source_config.py`), 0 from Actions analysis. | David Ouagne |
 | 1.1 | 2026-09-15 | Live-state refresh (no config change): `languages` now returns `actions, javascript, javascript-typescript, python, typescript` (was `python, actions`) — GitHub's own default-setup auto-detection, not new JS/TS source in this repo (confirmed via `git ls-files`, first caught in `docs/standards/ci-cd-security-quality.md` §3.3, issue #59). Also: the open-alert location's line number corrected `:31` → `:32` (unrelated edits shifted it); every `spec/spec-process-cicd-quality.md` reference replaced following that spec's retirement into `spec/spec-process-cicd-ci.md` v1.12; `main`'s required-checks references corrected from the stale `["CI status", "ruff"]` to the current `["CI status", "dependency-review"]`. | David Ouagne |
+| 1.2 | 2026-09-20 | Documentation-accuracy correction, no behavior change: Integration Points now lists the five checks required by `main`'s ruleset (which replaced classic branch protection; `spec/spec-process-cicd-ci.md` v1.13). CodeQL remains advisory. | David Ouagne |
 
 ## Related Specifications
 

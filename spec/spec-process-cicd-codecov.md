@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Coverage Reporting (Codecov)
-version: 1.3
+version: 1.4
 date_created: 2026-09-07
-last_updated: 2026-09-07
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, coverage, codecov]
 ---
@@ -219,7 +219,7 @@ spec (drop `informational`) **and** a `main` branch-protection change
 - **VLD-001**: `.github/workflows/ci.yml`'s `test` job contains a `codecov/codecov-action@v5` step with `use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, and a job-level `permissions` block granting `contents: read` **and** `id-token: write`.
 - **VLD-002**: The pytest command in the `test` job passes `--cov-report=xml` alongside the existing `--cov-report=term-missing` and `--cov-fail-under=80`.
 - **VLD-003**: `codecov.yml` at the repo root sets `project` and `patch` statuses to `informational: true`, `comment.after_n_builds: 3`, `comment.require_changes: true`, `github_checks.annotations: false`.
-- **VLD-004**: `gh api repos/davidouagne/datahub-yaml-source/branches/main/protection` does not list any `codecov/*` context.
+- **VLD-004**: `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main` (the `required_status_checks` rule of `main`'s ruleset; classic branch protection no longer exists) does not list any `codecov/*` context.
 - **VLD-005**: `gh secret list --repo davidouagne/datahub-yaml-source` contains no `CODECOV_TOKEN`.
 - **VLD-006**: On a trial PR, the Codecov comment appears after the third matrix leg and `CI status` is green regardless of the Codecov upload's outcome.
 - **VLD-007**: The README badge row renders the Codecov badge for `main`.
@@ -249,6 +249,7 @@ branch-protection change:
 | 1.1 | 2026-09-07 | Implemented: the `codecov/codecov-action@v5` step and job-level `id-token: write` are in `ci.yml`'s `test` job, `--cov-report=xml` added to the pytest call, `codecov.yml` committed at the repo root, `coverage.xml` added to `.gitignore`. Status banner flipped from "not yet implemented" to "implemented"; future-tense wording in Configuration / VLD-001 made present-tense. README badge still pending (map issue #40). `ci.md` → 1.8 in the same change. | David Ouagne |
 | 1.2 | 2026-09-07 | README badge row now carries the Codecov badge (`branch/main/graph/badge.svg`); verified rendering ~97% off the first `main` upload. Status banner updated — the whole destination on wayfinder map issue #40 is now reached. | David Ouagne |
 | 1.3 | 2026-09-15 | Cross-reference update, no workflow-file change: `spec/spec-process-cicd-quality.md` was retired and merged into `spec/spec-process-cicd-ci.md` v1.12 (`ruff`/`mypy` renamed `lint`/`typecheck`). Updated the two mentions of it here to point at the current location. | David Ouagne |
+| 1.4 | 2026-09-20 | Documentation-accuracy correction, no config change: VLD-004 now checks `gh api .../rules/branches/main` instead of the classic branch-protection endpoint, which returns 404 since `main` moved to a repository ruleset (`spec/spec-process-cicd-ci.md` v1.13). Codecov statuses remain informational and are not required. | David Ouagne |
 
 ## Related Specifications
 

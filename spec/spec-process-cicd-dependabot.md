@@ -1,8 +1,8 @@
 ---
 title: CI/CD Process Specification - Dependency Updates (Dependabot)
-version: 1.5
+version: 1.6
 date_created: 2026-09-07
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github, automation, dependencies, dependabot, supply-chain]
 ---
@@ -115,7 +115,7 @@ hand (it is the action's publisher-recommended moving pointer).
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|---------------------|
-| CI on Dependabot PRs | `ci.yml` (`CI status`, which since v1.12 includes lint/typecheck) and `dependency-review.yml` (`dependency-review`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main`, including the ones auto-merged; `gh pr merge --auto` queues the merge, it does not bypass branch protection. |
+| CI on Dependabot PRs | `ci.yml` (`CI status`, which since v1.12 includes lint/typecheck), `dependency-review.yml` (`dependency-review`) and `commit-policy.yml` (`dco`, `commitlint`, `pr-title`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main` (enforced by its repository ruleset), including the ones auto-merged; `gh pr merge --auto` queues the merge, it does not bypass the ruleset. Dependabot's commits carry a `Signed-off-by` trailer, so `dco` passes. |
 | Human review | Every non-low-risk Dependabot PR is read and merged by a maintainer | Patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies skip this gate — see `spec/spec-process-cicd-dependabot-auto-merge.md` (ADR-0003 / issue #51). |
 
 ## Integration Points
@@ -168,6 +168,7 @@ Configuration table's summary of the policy goes stale.
 | 1.3 | 2026-09-15 | Cross-reference update, no config change: `spec/spec-process-cicd-release.md` reached v2.0 (issue #58), replacing the manual-tag release flow with `release-please`, which removed `.github/release.yml` and its label-based release-notes categorisation. Updated every reference to that file (Configuration table's `labels` row, REQ-006 marked superseded, Integration Points, Related Specifications) — the `dependencies` label itself is unaffected and still created/used here, just no longer consumed for release notes. Added a Related Specifications / Integration Points cross-reference to `spec/spec-process-cicd-audit.md`, which reuses the same label for its own findings. | David Ouagne |
 | 1.4 | 2026-09-15 | Cross-reference update, no config change: `spec/spec-process-cicd-quality.md` was retired and merged into `spec/spec-process-cicd-ci.md` v1.12 (`ruff`/`mypy` renamed `lint`/`typecheck`, folded into `CI status`); `spec/spec-process-cicd-dependency-review.md` reached v1.2, promoting `dependency-review` to a required check. Every stale `quality.yml`/`ruff`-as-required-check reference here replaced with the current `ci.yml`/`CI status` (lint/typecheck folded in) and `dependency-review.yml`/`dependency-review`. | David Ouagne |
 | 1.5 | 2026-09-15 | **`.github/dependabot.yml` grouping strategy replaced to match the sibling repo exactly**, after the maintainer compared the two configs directly (part of a broader repo-settings comparison that day). `uv-minor-patch`/`actions-minor-patch` (minor+patch only, majors always individual) replaced with `dev-dependencies` (all `uv` dev-type bumps, any level including major) + `prod-minor-patch` (production minor/patch only, majors still individual) on `uv`, and `actions` (all bumps, any level including major, no carve-out) on `github-actions`. Real behavior change, not cosmetic: a major bump to a dev-only `uv` dependency or to any `github-actions` action now arrives bundled in a group PR rather than standing alone — `dependabot-auto-merge.yml`'s per-member eligibility check (already verified, VLD-007 in that spec) still correctly refuses to auto-merge a group containing an ineligible major. Also added, matching the sibling: `cooldown: default-days: 3` on `uv` only; `assignees: ["davidouagne"]` on both ecosystems; a new `github-actions` label (created in the repo) added alongside `dependencies` on the `github-actions` block. **Not** changed, by deliberate choice: `commit-message.prefix` stays `ci` for `github-actions` (sibling uses `build` for both ecosystems) — this repo's own commit-type conventions take precedence, per `spec/spec-process-cicd-commit-policy.md` REQ-007's established reasoning for the same divergence. REQ-003/REQ-004, the Execution Flow Diagram, and VLD-002 updated to describe the new grouping precisely. | David Ouagne |
+| 1.6 | 2026-09-20 | Documentation-accuracy correction, no `dependabot.yml` change: the CI-on-Dependabot-PRs gate now lists all five checks required by `main`'s ruleset (`spec/spec-process-cicd-ci.md` v1.13). | David Ouagne |
 
 ## Related Specifications
 

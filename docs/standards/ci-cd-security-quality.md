@@ -19,28 +19,38 @@ territory.
 `2e7d10a` (main); §1/§2.1/§2.3/§2.4/§2.6/§2.7/§3.4 amended the same day, three times, after
 re-verification triggered by direct repo-to-repo comparisons (`dependency-review` promoted to required;
 `ruff`/`mypy` merged into `CI status` as `lint`/`typecheck`; `dco` added; dependabot grouping,
-merge/PR/Actions settings, and GitHub Pages aligned or cleaned up — see those sections). **Originating
-epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately written last
-so it describes the finished state rather than a moving target.
+merge/PR/Actions settings, and GitHub Pages aligned or cleaned up — see those sections). **Re-verified
+2026-09-20**: `main`'s classic branch protection was replaced by a repository ruleset (with `dco`,
+`commitlint` and `pr-title` promoted to required), and §1, §2.3, §2.4, §2.7 and §4 were rewritten to match.
+**Originating epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately
+written last so it describes the finished state rather than a moving target.
 
 ## 1. Governance
 
-- **No required PR review, no `CODEOWNERS`.** `main`'s branch protection has no
-  `required_pull_request_reviews` block at all (confirmed live:
-  `gh api repos/.../branches/main/protection` -- the key is simply absent). No `CODEOWNERS` file exists
-  in the repo. This is a deliberate decision, not an oversight: with a single maintainer, a review
-  requirement would be self-blocking. Revisit if a second maintainer joins.
-- **`enforce_admins` is `false`.** The maintainer keeps a direct-push escape hatch on `main` to avoid
-  locking themselves out. Required status checks (below) still apply to any PR; this only affects
-  whether the maintainer personally can bypass them via direct push.
-- **DCO sign-off is checked, advisory-only.** A `dco` job (`commit-policy.yml`) verifies every
-  non-merge PR commit carries a `Signed-off-by` trailer, matching the sibling repo's own `dco` job
-  (`ADR-0002`-driven there). **Reversed from this document's original text**, which recorded DCO as
-  "intentionally absent" per issue #48's scoping -- the maintainer revisited that decision after
-  comparing this repo's checks against the sibling directly and asked for parity; see
-  `spec/spec-process-cicd-commit-policy.md` v1.1 for the full reasoning. Not a required status check
-  (Dependabot's own commits never carry the trailer and would always fail it). Conventional Commit
-  enforcement (below) is a separate mechanism and *is* enforced (also advisory, not yet required).
+- **Protection is a repository ruleset, not classic branch protection.** `main` is covered by the
+  active ruleset `main` (target `~DEFAULT_BRANCH`); `gh api repos/.../branches/main/protection` now
+  returns 404 because no classic protection exists. Tags `v*` are covered by a second ruleset, `tags-v`
+  (deletion and force-push blocked -- a published release tag cannot be moved or removed).
+- **A PR is required, but no approval is.** The ruleset's `pull_request` rule forbids direct pushes to
+  `main` (for non-bypass actors) and requires every review thread to be resolved, with
+  `required_approving_review_count = 0`. No `CODEOWNERS` file exists in the repo. Zero approvals is a
+  deliberate decision, not an oversight: with a single maintainer, an approval requirement would be
+  self-blocking. Revisit if a second maintainer joins.
+- **History is protected.** The ruleset blocks deletion and non-fast-forward updates (force-push) of
+  `main`.
+- **The Admin role can bypass the ruleset (`bypass_mode: always`).** This replaces the classic
+  `enforce_admins: false` and serves the same purpose: the maintainer keeps a direct-push escape hatch
+  on `main` so they cannot lock themselves out. Ordinary PRs are still gated by the required checks
+  (§2.3); the bypass only matters when the maintainer chooses to skip the PR flow. Both rulesets carry
+  the same bypass actor.
+- **DCO sign-off is checked and required.** A `dco` job (`commit-policy.yml`) verifies every non-merge
+  PR commit carries a `Signed-off-by` trailer, matching the sibling repo's own `dco` job (`ADR-0002`-driven
+  there). It was added (issue #48 had scoped DCO out; reversed after a direct comparison with the sibling,
+  see `spec/spec-process-cicd-commit-policy.md` v1.1) as advisory, then promoted to a required status
+  check (`spec/spec-process-cicd-commit-policy.md` v1.2). Dependabot's own commits *do* carry
+  `Signed-off-by: dependabot[bot] <support@github.com>` (verified on this repo's merged Dependabot
+  commits), so the required check does not block Dependabot auto-merge. Conventional Commit enforcement
+  (`commitlint`, `pr-title`, §2.4) is likewise required.
 - **`allow_auto_merge`** is `true` at the repo-settings level (required for Dependabot auto-merge,
   below, to function at all -- see `spec/spec-process-cicd-dependabot-auto-merge.md`).
 
@@ -49,7 +59,7 @@ so it describes the finished state rather than a moving target.
 ### 2.1 Continuous Integration + Quality (`ci.yml`)
 
 Triggers on push/PR to `main` and `workflow_dispatch`. One workflow file, four jobs feeding a single
-aggregate gate named exactly `CI status` (the branch-protection context string):
+aggregate gate named exactly `CI status` (the required-status-check context string in `main`'s ruleset):
 
 - **`lint`**: `ruff check` + `ruff format --check`. Lint rule set: `E, F, I, UP, B, C4, SIM, RUF, ANN,
   PL` (`pyproject.toml` `[tool.ruff.lint] select`) -- `ANN`/`PL` scoped to `src/` only via
@@ -80,35 +90,54 @@ Codecov uploads from every `test` matrix leg, but is **informational only** -- `
 `project` and `patch` statuses to `informational: true`. It never posts a blocking check; the actual
 coverage gate is `ci.yml`'s own `--cov-fail-under=80`. Full contract: `spec/spec-process-cicd-codecov.md`.
 
-### 2.3 Branch protection on `main` (live-verified)
+### 2.3 Branch protection on `main` (live-verified, ruleset)
 
 ```
-required_status_checks.contexts = ["CI status", "dependency-review"]
-required_status_checks.strict   = false
-required_pull_request_reviews   = (absent -- none configured)
-enforce_admins                  = false
-restrictions                    = (absent -- none configured)
+ruleset "main"  (active, target ~DEFAULT_BRANCH)
+  deletion                      = blocked
+  non_fast_forward              = blocked            (no force-push)
+  pull_request                  = required_approving_review_count 0,
+                                  required_review_thread_resolution true,
+                                  allowed_merge_methods [merge, squash, rebase]
+  required_status_checks        = ["dco", "commitlint", "pr-title",
+                                   "dependency-review", "CI status"]
+  strict_required_status_checks = false
+  bypass_actors                 = RepositoryRole 5 (Admin), always
+
+ruleset "tags-v"  (active, target refs/tags/v*)
+  deletion, non_fast_forward    = blocked
+  bypass_actors                 = RepositoryRole 5 (Admin), always
 ```
 
-Two required checks, deliberately matching the sibling repo's own required-check list exactly. CodeQL
-(§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate choice
-recorded in its own spec, not an oversight. This list changed twice since this document first published:
-`dependency-review` was promoted from advisory (its original "matches the sibling's advisory posture"
-justification went stale once the sibling's own `main` was separately protected, its companion ticket
-`#65`); then `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`, `spec/
-spec-process-cicd-ci.md` v1.12) and dropped from this list individually -- both changes triggered by the
-maintainer comparing the two repos' live settings directly, a concrete instance of the discipline §3.3
-and the closing section of this document both call for. `strict: false` means a PR does not need to be
-rebased onto the latest `main` before merging -- accepted friction trade-off for a solo maintainer (see
-`spec/spec-process-cicd-ci.md`'s Branch Protection section for the full rationale and residual-risk
-discussion).
+Five required checks. `CI status` is the aggregate of `lint`/`typecheck`/`test`/`build` (§2.1);
+`dependency-review` is §3.4; `dco`, `commitlint` and `pr-title` are the commit-policy jobs (§1, §2.4).
+CodeQL (§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate choice
+recorded in its own spec, not an oversight. The list has changed three times since this document first
+published: `dependency-review` was promoted from advisory (its original "matches the sibling's advisory
+posture" justification went stale once the sibling's own `main` was separately protected, its companion
+ticket `#65`); then `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`, `spec/
+spec-process-cicd-ci.md` v1.12) and dropped from the list individually -- both triggered by the maintainer
+comparing the two repos' live settings directly, a concrete instance of the discipline §3.3 and the
+closing section of this document both call for; finally (2026-09-20) the classic branch protection was
+replaced by the ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required.
+
+`strict_required_status_checks_policy: false` means a PR does not need to be rebased onto the latest `main`
+before merging -- accepted friction trade-off for a solo maintainer (see `spec/spec-process-cicd-ci.md`'s
+Branch Protection section for the rationale and residual-risk discussion). `allowed_merge_methods` in the
+ruleset lists all three methods, but the repo-level settings (§2.7) allow only merge commits, and GitHub
+applies the more restrictive of the two.
+
+Renaming any required check (`CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title`) is a
+breaking change: update the ruleset's required-check list (Settings -> Rules -> Rulesets -> `main`, or
+`gh api repos/.../rulesets/<id>`) and this section together. Verify with
+`gh api repos/.../rules/branches/main`.
 
 ### 2.4 Commit and PR-title discipline (`commit-policy.yml`)
 
 `commitlint` (via `@commitlint/config-conventional`) checks every commit message on a PR is a valid
 Conventional Commit; `amannn/action-semantic-pull-request` checks the PR title itself is one too; `dco`
-(§1) checks every commit carries a `Signed-off-by` trailer. All three advisory, not required status
-checks. `commitlint`/`pr-title` exist specifically because release-please (§2.5) parses commit messages
+(§1) checks every commit carries a `Signed-off-by` trailer. All three are **required status checks** on
+`main` (§2.3). `commitlint`/`pr-title` exist specifically because release-please (§2.5) parses commit messages
 to compute version bumps and changelog entries -- a malformed commit message is no longer just a style
 nit, it would silently mis-compute a release. Full contract: `spec/spec-process-cicd-commit-policy.md`.
 
@@ -151,7 +180,7 @@ auto-merge even if it's bundled alongside eligible ones. Full contract: `spec/sp
 |---|---|---|
 | `delete_branch_on_merge` | `true` | Auto-deletes a PR's head branch on merge. |
 | `allow_update_branch` | `true` | Offers an "Update branch" button on a PR behind `main`. |
-| `allow_squash_merge` / `allow_rebase_merge` | `false` / `false` | Only merge-commit is allowed — matches actual practice in both repos (every merge in this repo's history is a real merge commit, never a squash/rebase). |
+| `allow_squash_merge` / `allow_rebase_merge` | `false` / `false` | Only merge-commit is allowed — matches actual practice in both repos (every merge in this repo's history is a real merge commit, never a squash/rebase). `main`'s ruleset (§2.3) lists all three methods as allowed, so this repo-level setting is what actually restricts the strategy. |
 | `allow_merge_commit` | `true` | The one allowed strategy. |
 | Actions: `can_approve_pull_request_reviews` | `true` | Lets a workflow's own `GITHUB_TOKEN` approve a PR review if a workflow is ever written to do so; not currently used by any workflow in this repo. |
 | GitHub Pages | **disabled** | Was enabled (`build_type: workflow`) but orphaned — no workflow ever deployed it, zero builds, zero deployments recorded. Disabled rather than left as dead config once noticed during this comparison. |
@@ -246,10 +275,10 @@ published tag are supported.
 - `.github/PULL_REQUEST_TEMPLATE.md` -- a checklist covering Conventional Commit compliance, the test
   suite, the `models.py` → docs/schema regeneration trap (`AGENTS.md`'s "one rule that bites silently"),
   golden-file refresh when output intentionally changes, and lint/format/type cleanliness.
-- No required review, no `CODEOWNERS` (§1).
-- Every PR is gated by `CI status` (which since v1.12 includes `lint`/`typecheck`) and
-  `dependency-review` (both required), and, advisory only, CodeQL and `dco`/`commitlint`/`pr-title`
-  (§2.3, §2.4, §3.3).
+- A PR is required for `main` and its review threads must be resolved, but no approval is needed, and there
+  is no `CODEOWNERS` (§1).
+- Every PR is gated by five required checks: `CI status` (which since v1.12 includes `lint`/`typecheck`),
+  `dependency-review`, `dco`, `commitlint` and `pr-title` (§2.3, §2.4). Only CodeQL is advisory (§3.3).
 
 ## 5. Package publishing
 

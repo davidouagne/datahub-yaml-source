@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.3...v0.2.4) (2026-09-20)
+
+
+### Documentation
+
+* align CI/CD docs with the main branch ruleset ([46408cb](https://github.com/davidouagne/datahub-yaml-source/commit/46408cb224cad69e6d98b4ce0fd1167838369f95))
+* align CI/CD docs with the main branch ruleset ([3a0bd72](https://github.com/davidouagne/datahub-yaml-source/commit/3a0bd72a618ecb9e6da4d44d702995d3bb0d3a7e))
+
 ## [0.2.3](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.2...v0.2.3) (2026-09-17)
 
 

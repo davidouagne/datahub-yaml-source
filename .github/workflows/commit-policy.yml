@@ -13,9 +13,12 @@ name: Commit policy
 # DCO (dco job): every non-merge commit must carry a Signed-off-by
 # trailer. Originally out of scope by explicit decision (issue #52); added
 # later, matching the sibling repo's own dco job, after a direct
-# repo-to-repo comparison found the sibling enforces it (advisory there,
-# not required -- same posture here; see spec/spec-process-cicd-commit-policy.md's
-# version history for the full reasoning behind the reversal).
+# repo-to-repo comparison found the sibling enforces it (see
+# spec/spec-process-cicd-commit-policy.md's version history for the full
+# reasoning behind the reversal). All three jobs here (dco, commitlint,
+# pr-title) are required status checks in main's repository ruleset as
+# of spec v1.2. Dependabot's commits carry a Signed-off-by trailer, so
+# they pass dco.
 #
 # Plain `pull_request` throughout, not `pull_request_target`: every PR in
 # this repo (maintainer's own, or Dependabot's) is a same-repo branch,

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Dependabot Auto-merge
-version: 1.2
+version: 1.3
 date_created: 2026-09-15
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, dependencies, dependabot, supply-chain]
 ---
@@ -33,7 +33,7 @@ graph TD
     C --> D{every dependency in the PR is<br/>patch-level, OR minor + direct:development?}
     D -->|yes, all of them| E[gh pr merge --auto --merge<br/>queues the merge]
     D -->|no, at least one fails| F[No action -- PR waits for manual review]
-    E --> G[main branch protection: CI status + ruff + mypy]
+    E --> G[main ruleset: CI status + dependency-review + dco + commitlint + pr-title]
     G -->|all green| H[GitHub merges the PR automatically]
     G -->|any red| I[Merge stays queued until fixed, or PR closed by hand]
 
@@ -59,7 +59,7 @@ graph TD
 | REQ-003 | Major-version bumps never auto-merge. | High | A Dependabot PR containing **any** entry with `updateType: version-update:semver-major` does not have `gh pr merge --auto` invoked on it, regardless of what the other entries in the same PR are. |
 | REQ-004 | Minor-version bumps to production (or indirect) dependencies never auto-merge. | High | A Dependabot PR containing **any** entry with `updateType: version-update:semver-minor` and `dependencyType` of `direct:production` or `indirect` does not have `gh pr merge --auto` invoked on it, regardless of what the other entries in the same PR are — this holds even inside a grouped PR that also contains an eligible dependency (REQ-003/REQ-004 are per-dependency, not per-PR-aggregate; see Error Handling Strategy for why the aggregated `update-type`/`dependency-type` outputs cannot be used for this check). |
 | REQ-005 | Non-Dependabot PRs are never touched. | High | The job's `if: github.actor == 'dependabot[bot]'` skips the entire job for any other PR author. |
-| REQ-006 | Auto-merge never bypasses required status checks. | High | `gh pr merge --auto` only *enables* GitHub's native auto-merge on the PR; the PR still merges only once `main`'s required status checks (`CI status`, `dependency-review`) report success. |
+| REQ-006 | Auto-merge never bypasses required status checks. | High | `gh pr merge --auto` only *enables* GitHub's native auto-merge on the PR; the PR still merges only once `main`'s required status checks (`CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title`) report success. |
 | REQ-007 | The repository allows GitHub's native auto-merge, so `gh pr merge --auto` can actually succeed. | High | Repo setting "Allow auto-merge" (`allow_auto_merge` via `gh api repos/{owner}/{repo}`) is `true`. Enabled 2026-09-15 as part of this change (previously `false`, which would have made every eligible PR fail silently — see Error Handling Strategy). Without it, `gh pr merge --auto` fails for every eligible PR. |
 
 ### Security Requirements
@@ -86,7 +86,7 @@ graph TD
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
-| `main` branch protection | `CI status`, `dependency-review` all pass | None — `gh pr merge --auto` requests a merge GitHub will only perform once these pass; it grants no bypass. |
+| `main` ruleset | `CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title` all pass | None — `gh pr merge --auto` requests a merge GitHub will only perform once these pass; it grants no bypass. |
 | Classification correctness | Only patch (any) and minor+dev-only PRs get `gh pr merge --auto` called on them | None — this is what the workflow exists to gate; see Validation Criteria. |
 
 ## Integration Points
@@ -95,7 +95,7 @@ graph TD
 |-----------|---------------|--------------|
 | `spec/spec-process-cicd-dependabot.md` | Upstream PR producer for scheduled version-update PRs | Triggers on `pull_request`, filtered to `dependabot[bot]` |
 | Repo "Dependabot security updates" setting | Also an upstream PR producer — on-demand security-fix PRs are authored by `dependabot[bot]` too, independent of `.github/dependabot.yml`'s schedule/grouping, and pass this workflow's actor filter the same way | Same trigger/filter as above; classification (REQ-001..REQ-004) applies identically — a patch-level security fix auto-merges, a minor-to-production one still waits for review |
-| `spec/spec-process-cicd-ci.md` / `spec/spec-process-cicd-dependency-review.md` | The required status checks that gate the actual merge | `main` branch protection (`CI status`, `dependency-review`) |
+| `spec/spec-process-cicd-ci.md` / `spec/spec-process-cicd-dependency-review.md` | The required status checks that gate the actual merge | `main` ruleset required checks (`CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title`) |
 | `dependabot/fetch-metadata@v3` (third-party Action) | Supplies `updated-dependencies-json` (one entry per dependency updated by the triggering PR), which the `eligibility` step evaluates per-dependency | `uses: dependabot/fetch-metadata@v3` step, no inputs needed (reads the PR from the triggering event) |
 | `docs/adr/0003-dependabot-auto-merge-policy.md` | Records the decision this workflow implements | Referenced in the workflow file's header comment |
 
@@ -150,6 +150,7 @@ this spec and `docs/adr/0003-dependabot-auto-merge-policy.md` first.
 | 1.0 | 2026-09-15 | Initial specification. `.github/workflows/dependabot-auto-merge.yml` added (issue #51, part of the `#48` standardization epic; policy recorded in ADR-0003, mirroring `datahub-healthdcat-ap-exporter`'s workflow of the same name): `pull_request` trigger gated to `dependabot[bot]`, `dependabot/fetch-metadata@v3` for classification, `gh pr merge --auto --merge` for patch-level (any dependency) or minor-level dev-only bumps. `spec/spec-process-cicd-dependabot.md` updated in the same change to reference this document and drop its "no auto-merge" assertions. Repo setting "Allow auto-merge" (`allow_auto_merge`) enabled via `gh api` in the same change — it was `false`, which would have made `gh pr merge --auto` fail for every eligible PR (caught in code review before merge). Also corrected an initial-draft claim that this workflow only sees `.github/dependabot.yml`-produced PRs; on-demand Dependabot security-update PRs pass the same actor filter and are classified identically. A second code-review pass (still pre-merge) caught a logic bug in the initial draft: it used the action's aggregated top-level `update-type`/`dependency-type` outputs, which are each computed independently across the whole PR and can therefore report a combination no single dependency in a grouped PR actually has (e.g. an indirect minor bump reading as eligible alongside an unrelated direct-dev patch bump). Replaced with an `eligibility` step that evaluates `updated-dependencies-json` per-dependency via `jq`'s `all(.[]; ...)`, requiring every updated dependency in the PR to independently qualify; REQ-003/REQ-004/SEC-003 and this table's grouped-PR row rewritten to match, SEC-004 and VLD-007 added. A third code-review pass (still pre-merge) caught two more issues in that same `eligibility` step and its trigger: `all(.[]; ...)` is vacuously `true` on an empty array, so a PR for which Dependabot metadata extraction failed (`updated-dependencies-json: []`) would have wrongly passed eligibility — fixed by prefixing the filter with `(. != []) and`, added SEC's coverage via VLD-008. Separately, the `pull_request` trigger had no `branches: [main]` filter (inconsistent with `ci.yml`/`quality.yml`), so a `dependabot[bot]`-authored PR targeting a branch without `main`'s required-checks protection could have had auto-merge enabled unconstrained by any required check — fixed by scoping the trigger to `branches: [main]`; added SEC-005 and VLD-009. | David Ouagne |
 | 1.1 | 2026-09-15 | Cross-reference update, no workflow-file change: `main`'s actual required-status-checks list moved on twice since v1.0 (`spec/spec-process-cicd-ci.md` v1.11/v1.12) — `dependency-review` was promoted to required, then `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`) and `quality.yml` was retired/merged into `ci.yml`. Every stale `["CI status", "ruff", "mypy"]` reference in this document updated to the current `["CI status", "dependency-review"]`, and `spec/spec-process-cicd-quality.md` references replaced with `spec/spec-process-cicd-dependency-review.md`. | David Ouagne |
 | 1.2 | 2026-09-15 | Cross-reference update, no workflow-file change: `.github/dependabot.yml`'s group names changed (`spec/spec-process-cicd-dependabot.md` v1.5, matching the sibling repo) from `uv-minor-patch`/`actions-minor-patch` to `dev-dependencies`/`prod-minor-patch`/`actions`. Updated the Edge Cases scenario row's illustrative group names to match; the per-member eligibility logic it describes (VLD-007) is unaffected. | David Ouagne |
+| 1.3 | 2026-09-20 | Documentation-accuracy correction, no workflow-file change: `main` is now protected by a repository ruleset requiring `CI status`, `dependency-review`, `dco`, `commitlint` and `pr-title` (`spec/spec-process-cicd-ci.md` v1.13); updated the flow diagram, REQ-006, Quality Gates and Integration Points. Dependabot's commits carry `Signed-off-by: dependabot[bot]`, so the newly-required `dco` does not block auto-merge (`spec/spec-process-cicd-commit-policy.md` v1.2). | David Ouagne |
 
 ## Related Specifications
 

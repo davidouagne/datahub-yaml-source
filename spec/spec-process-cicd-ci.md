@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.12
+version: 1.13
 date_created: 2026-08-16
-last_updated: 2026-09-15
+last_updated: 2026-09-20
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -68,7 +68,7 @@ graph TD
 | `typecheck` | `mypy` over `src/` per `[tool.mypy]` in `pyproject.toml` (`strict = true`). Absorbed from the retired `quality.yml`'s `mypy` job (renamed, v1.12); no longer individually required — feeds `ci-status`. | None | Linux runner, Python 3.12 |
 | `test` | Install with dev extras; run unit + integration tests with coverage across the supported Python matrix. Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner, matrix over Python 3.10–3.12 |
 | `build` | Install with base dependencies only (no optional extras); confirm the package imports and the `yaml` source plugin registers. Renamed from `minimal-install-check` (v1.12) to match the sibling repo's job id for the analogous (though not identical-content) step, for easier cross-repo diffing. | None | Linux runner, single Python version |
-| `ci-status` (job id; **check-run name `CI status`**) | Aggregate gate: succeeds only if `lint`, `typecheck`, `test` (all matrix legs), and `build` succeed. Its `name:` — `CI status`, *with a space* — is the exact context string `main` branch protection requires (not the job id `ci-status`). | `lint`, `typecheck`, `test`, `build` | Linux runner, no build steps |
+| `ci-status` (job id; **check-run name `CI status`**) | Aggregate gate: succeeds only if `lint`, `typecheck`, `test` (all matrix legs), and `build` succeed. Its `name:` — `CI status`, *with a space* — is the exact context string `main`'s ruleset requires (not the job id `ci-status`). | `lint`, `typecheck`, `test`, `build` | Linux runner, no build steps |
 
 ## Requirements Matrix
 
@@ -361,29 +361,39 @@ loader's git/S3/HTTP code paths are exercised in the test suite exclusively thro
 | Dependabot (`.github/dependabot.yml`, `spec/spec-process-cicd-dependabot.md`) | Upstream PR producer — opens weekly grouped dependency-update PRs that this workflow gates before merge (`lint`/`typecheck` folded in as of v1.12, formerly a separate `quality.yml`) | Dependabot's own weekly schedule; resulting PRs trigger this workflow via `pull_request` to `main` |
 | Dependabot auto-merge (`.github/workflows/dependabot-auto-merge.yml`, `spec/spec-process-cicd-dependabot-auto-merge.md`) | Downstream consumer of this workflow's `CI status` gate — for low-risk Dependabot PRs it calls `gh pr merge --auto`, which merges only once this workflow reports success | Runs on the same `pull_request` event as this workflow, independently |
 
-### Branch protection on `main` (issue #9)
+### Branch protection on `main` (issue #9; ruleset since v1.13)
 
-`main` is protected with **required status checks only** — the posture chosen for a single
-maintainer with no second reviewer available:
+`main` is protected by a **repository ruleset** named `main` (target `~DEFAULT_BRANCH`, enforcement
+`active`). Classic branch protection no longer exists (`gh api repos/davidouagne/datahub-yaml-source/
+branches/main/protection` returns 404); it was replaced by the ruleset, which was last edited 2026-09-20.
+The posture is unchanged in spirit — a PR-and-status-check gate that a single maintainer cannot lock themselves
+out of — but the mechanism and the check list differ:
 
-| Setting | Value | Rationale |
-|---------|-------|-----------|
-| Required status checks | exactly **`CI status`** (this workflow's aggregate gate — now including `lint`/`typecheck` as of v1.12) and **`dependency-review`** (`spec/spec-process-cicd-dependency-review.md`) | The two blocking gate names. Match the sibling repo `datahub-healthdcat-ap-exporter`'s own required-checks list exactly (`["CI status", "dependency-review"]`), by deliberate design as of v1.12. Names are the check-run `name:` values, matched verbatim. |
-| `strict` (require branch up to date before merge) | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
+| Rule | Value | Rationale |
+|------|-------|-----------|
+| `required_status_checks` | **`CI status`** (this workflow's aggregate gate — includes `lint`/`typecheck` as of v1.12), **`dependency-review`** (`spec/spec-process-cicd-dependency-review.md`), and **`dco`**, **`commitlint`**, **`pr-title`** (`spec/spec-process-cicd-commit-policy.md` v1.2) | The five blocking gate names. Names are the check-run `name:` values, matched verbatim; `CI status` is additionally pinned to the GitHub Actions integration (`integration_id` 15368). |
+| `strict_required_status_checks_policy` | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
+| `pull_request` | required; `required_approving_review_count: 0`; `required_review_thread_resolution: true` | A PR is mandatory (no direct push for non-bypass actors) but needs no approval: no second reviewer exists, so an approval requirement would be self-blocking. Review threads, if any, must be resolved. |
+| `pull_request.allowed_merge_methods` | `merge`, `squash`, `rebase` | The ruleset allows all three; the repo-level settings (`allow_squash_merge`/`allow_rebase_merge: false`) restrict the effective strategy to merge commits. |
+| `deletion`, `non_fast_forward` | blocked | `main` cannot be deleted or force-pushed. |
+| Bypass actors | Repository role `Admin` (id 5), `bypass_mode: always` | Replaces classic `enforce_admins: false`: the maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
 | CodeQL / `Analyze (*)` | **not required** | Advisory only at this stage (map issue #1 Notes; `spec/spec-process-cicd-codeql.md`). |
-| `required_pull_request_reviews` | none | No second reviewer exists; a review requirement would be self-blocking. |
-| `enforce_admins` | `false` | The maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
-| `restrictions` | none | Single maintainer; no push allow-list needed. |
 
-Renaming `CI status` or `dependency-review` is a breaking change: update this list and re-apply the
-protection. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`. History:
-`mypy` was added as its own required check when promoted to blocking (issue #13); `dependency-review`
-was added later (`spec/spec-process-cicd-dependency-review.md` v1.2) — deliberately advisory-only when
-issue #57 first landed it, then promoted once the maintainer noticed, comparing live settings against
-the sibling repo directly, that the sibling's own `main` had started requiring it and this repo's
-"matches the sibling" justification had gone stale; then (v1.12) `ruff`/`mypy` were folded into `CI
-status` (renamed `lint`/`typecheck`) and dropped from this list individually, again to match the
-sibling's structure, arriving at the current two-entry list.
+A second ruleset, `tags-v` (target `refs/tags/v*`), blocks deletion and force-push of release tags, with the
+same Admin bypass.
+
+Renaming any of the five required checks is a breaking change: update the ruleset's required-check list
+(Settings -> Rules -> Rulesets -> `main`, or `PUT /repos/davidouagne/datahub-yaml-source/rulesets/23425836`).
+Verify the live state with `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main`.
+
+History: `mypy` was added as its own required check when promoted to blocking (issue #13);
+`dependency-review` was added later (`spec/spec-process-cicd-dependency-review.md` v1.2) — deliberately
+advisory-only when issue #57 first landed it, then promoted once the maintainer noticed, comparing live settings
+against the sibling repo directly, that the sibling's own `main` had started requiring it; then (v1.12)
+`ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`) and dropped from the list individually,
+again to match the sibling's structure, arriving at a two-entry list (`["CI status", "dependency-review"]`,
+applied via `PUT /repos/.../branches/main/protection`). Finally (v1.13) classic protection was replaced by the
+ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required.
 
 ## Compliance & Governance
 
@@ -480,6 +490,7 @@ sibling's structure, arriving at the current two-entry list.
 | 1.10 | 2026-09-15 | Dependent Workflows table: added Dependabot auto-merge (`.github/workflows/dependabot-auto-merge.yml`, issue #51) as a downstream consumer of this workflow's `CI status` gate. No workflow-file change in *this* spec's scope (`ci.yml` untouched). | David Ouagne |
 | 1.11 | 2026-09-15 | Branch protection on `main`: added `dependency-review` (`spec/spec-process-cicd-dependency-review.md` v1.2) to the required-status-checks list, promoting it from advisory. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`; see that spec's own version history for why (the maintainer caught, by comparing live settings against the sibling repo directly, that a "matches the sibling's advisory posture" justification had gone stale once the sibling's own branch protection changed independently). No workflow-file change in *this* spec's scope (`ci.yml` untouched — the required-checks list is a branch-protection setting, not part of this workflow file). | David Ouagne |
 | 1.12 | 2026-09-15 | **Merged `quality.yml` into `ci.yml`** (see "Why merged into one file" above), prompted by the maintainer comparing this repo's CI job/check structure against the sibling repo directly. `ruff`/`mypy` jobs moved here, renamed `lint`/`typecheck` to match the sibling's own job names; `minimal-install-check` renamed `build` for the same cross-repo-diffing reason. `ci-status` now aggregates `[lint, typecheck, test, build]` (was `[test, minimal-install-check]`). `main`'s required-status-checks list changed from `["CI status", "ruff", "mypy", "dependency-review"]` to `["CI status", "dependency-review"]` (applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`) — `lint`/`typecheck` are no longer individually required, but still block merge transitively through `ci-status`, so this is a consolidation, not a weakening. `spec/spec-process-cicd-quality.md` retired to a redirect stub; its full content (Ruff/mypy config tables, mypy-baseline-zero story, issue #55 `ANN`/`PL` breakdown) reproduced verbatim (job-name references updated) in the new "Lint & Type-Check Configuration" section of this document, so none of that detail was lost. Every `minimal-install-check` reference in this spec updated to `build`. | David Ouagne |
+| 1.13 | 2026-09-20 | **Documentation-accuracy correction, no workflow-file change: `main` is protected by a repository ruleset, not classic branch protection.** Rewrote "Branch protection on `main`" from the live ruleset (`gh api .../rules/branches/main`, `.../rulesets`): required checks are now `CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title` (was `["CI status", "dependency-review"]`); a PR is required with zero approvals and resolved review threads; deletion and force-push are blocked; the Admin role bypasses the ruleset (replacing `enforce_admins: false`); a `tags-v` ruleset protects `v*` tags. `strict` remains off. Updated the `CI status` row ("`main`'s ruleset requires"). | David Ouagne |
 
 ## Related Specifications
 

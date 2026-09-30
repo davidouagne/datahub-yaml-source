@@ -4497,7 +4497,7 @@
         "json": {
             "path": [
                 {
-                    "id": "ehr_to_warehouse",
+                    "id": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
                     "urn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)"
                 }
             ]
@@ -4621,7 +4621,7 @@
         "json": {
             "path": [
                 {
-                    "id": "ehr_to_warehouse",
+                    "id": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)",
                     "urn": "urn:li:dataFlow:(airflow,ehr_to_warehouse,PROD)"
                 }
             ]

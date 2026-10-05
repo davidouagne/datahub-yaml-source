@@ -22,6 +22,9 @@ re-verification triggered by direct repo-to-repo comparisons (`dependency-review
 merge/PR/Actions settings, and GitHub Pages aligned or cleaned up — see those sections). **Re-verified
 2026-09-20**: `main`'s classic branch protection was replaced by a repository ruleset (with `dco`,
 `commitlint` and `pr-title` promoted to required), and §1, §2.3, §2.4, §2.7 and §4 were rewritten to match.
+**Amended 2026-10-05**, aligned with the sibling repo: `main` accepts rebase merge only and `pr-title` is no
+longer a check (ADR-0005), and Dependabot security updates are enabled; §1, §2.3, §2.4, §2.7, §3.1 and §4
+rewritten to match.
 **Originating epic**: issue #48 (tickets #49-#58); this document is the final ticket, #59, deliberately
 written last so it describes the finished state rather than a moving target.
 
@@ -36,8 +39,8 @@ written last so it describes the finished state rather than a moving target.
   `required_approving_review_count = 0`. No `CODEOWNERS` file exists in the repo. Zero approvals is a
   deliberate decision, not an oversight: with a single maintainer, an approval requirement would be
   self-blocking. Revisit if a second maintainer joins.
-- **History is protected.** The ruleset blocks deletion and non-fast-forward updates (force-push) of
-  `main`.
+- **History is protected and linear.** The ruleset blocks deletion and non-fast-forward updates
+  (force-push) of `main`, allows rebase merge only and requires linear history (ADR-0005).
 - **The Admin role can bypass the ruleset (`bypass_mode: always`).** This replaces the classic
   `enforce_admins: false` and serves the same purpose: the maintainer keeps a direct-push escape hatch
   on `main` so they cannot lock themselves out. Ordinary PRs are still gated by the required checks
@@ -50,7 +53,7 @@ written last so it describes the finished state rather than a moving target.
   check (`spec/spec-process-cicd-commit-policy.md` v1.2). Dependabot's own commits *do* carry
   `Signed-off-by: dependabot[bot] <support@github.com>` (verified on this repo's merged Dependabot
   commits), so the required check does not block Dependabot auto-merge. Conventional Commit enforcement
-  (`commitlint`, `pr-title`, §2.4) is likewise required.
+  (`commitlint`, §2.4) is likewise required.
 - **`allow_auto_merge`** is `true` at the repo-settings level (required for Dependabot auto-merge,
   below, to function at all -- see `spec/spec-process-cicd-dependabot-auto-merge.md`).
 
@@ -98,8 +101,9 @@ ruleset "main"  (active, target ~DEFAULT_BRANCH)
   non_fast_forward              = blocked            (no force-push)
   pull_request                  = required_approving_review_count 0,
                                   required_review_thread_resolution true,
-                                  allowed_merge_methods [merge, squash, rebase]
-  required_status_checks        = ["dco", "commitlint", "pr-title",
+                                  allowed_merge_methods [rebase]
+  required_linear_history       = on
+  required_status_checks        = ["dco", "commitlint",
                                    "dependency-review", "CI status"]
   strict_required_status_checks = false
   bypass_actors                 = RepositoryRole 5 (Admin), always
@@ -109,8 +113,8 @@ ruleset "tags-v"  (active, target refs/tags/v*)
   bypass_actors                 = RepositoryRole 5 (Admin), always
 ```
 
-Five required checks. `CI status` is the aggregate of `lint`/`typecheck`/`test`/`build` (§2.1);
-`dependency-review` is §3.4; `dco`, `commitlint` and `pr-title` are the commit-policy jobs (§1, §2.4).
+Four required checks. `CI status` is the aggregate of `lint`/`typecheck`/`test`/`build` (§2.1);
+`dependency-review` is §3.4; `dco` and `commitlint` are the commit-policy jobs (§1, §2.4).
 CodeQL (§3.3) is **not** in this list -- advisory at this standard's current version, by deliberate choice
 recorded in its own spec, not an oversight. The list has changed three times since this document first
 published: `dependency-review` was promoted from advisory (its original "matches the sibling's advisory
@@ -119,27 +123,32 @@ ticket `#65`); then `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`
 spec-process-cicd-ci.md` v1.12) and dropped from the list individually -- both triggered by the maintainer
 comparing the two repos' live settings directly, a concrete instance of the discipline §3.3 and the
 closing section of this document both call for; finally (2026-09-20) the classic branch protection was
-replaced by the ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required.
+replaced by the ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required; then
+(2026-10-05) `pr-title` was dropped with the switch to rebase-only merging (ADR-0005, §2.4).
 
 `strict_required_status_checks_policy: false` means a PR does not need to be rebased onto the latest `main`
 before merging -- accepted friction trade-off for a solo maintainer (see `spec/spec-process-cicd-ci.md`'s
 Branch Protection section for the rationale and residual-risk discussion). `allowed_merge_methods` in the
-ruleset lists all three methods, but the repo-level settings (§2.7) allow only merge commits, and GitHub
-applies the more restrictive of the two.
+ruleset and the repo-level settings (§2.7) both allow rebase merge only.
 
-Renaming any required check (`CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title`) is a
+Renaming any required check (`CI status`, `dependency-review`, `dco`, `commitlint`) is a
 breaking change: update the ruleset's required-check list (Settings -> Rules -> Rulesets -> `main`, or
 `gh api repos/.../rulesets/<id>`) and this section together. Verify with
 `gh api repos/.../rules/branches/main`.
 
-### 2.4 Commit and PR-title discipline (`commit-policy.yml`)
+### 2.4 Commit discipline (`commit-policy.yml`)
 
 `commitlint` (via `@commitlint/config-conventional`) checks every commit message on a PR is a valid
-Conventional Commit; `amannn/action-semantic-pull-request` checks the PR title itself is one too; `dco`
-(§1) checks every commit carries a `Signed-off-by` trailer. All three are **required status checks** on
-`main` (§2.3). `commitlint`/`pr-title` exist specifically because release-please (§2.5) parses commit messages
-to compute version bumps and changelog entries -- a malformed commit message is no longer just a style
-nit, it would silently mis-compute a release. Full contract: `spec/spec-process-cicd-commit-policy.md`.
+Conventional Commit; `dco` (§1) checks every commit carries a `Signed-off-by` trailer. Both are **required
+status checks** on `main` (§2.3). `commitlint` exists specifically because release-please (§2.5) parses
+commit messages to compute version bumps and changelog entries -- a malformed commit message is no longer
+just a style nit, it would silently mis-compute a release.
+
+**Rebase merge only (ADR-0005).** Every branch commit lands on `main` as-is; a branch is kept free of merge
+commits and updated by rebase. The PR title never reaches history, so it is not checked: the former
+`pr-title` job was removed on 2026-10-05. Under merge commits, GitHub always put the PR title in the merge
+commit's message and release-please parsed it on top of the branch commits, so every changelog entry from
+`v0.2.0` to `v0.2.4` appears twice. Full contract: `spec/spec-process-cicd-commit-policy.md`.
 
 ### 2.5 Release automation (`release.yml` + `release-please`)
 
@@ -180,8 +189,8 @@ auto-merge even if it's bundled alongside eligible ones. Full contract: `spec/sp
 |---|---|---|
 | `delete_branch_on_merge` | `true` | Auto-deletes a PR's head branch on merge. |
 | `allow_update_branch` | `true` | Offers an "Update branch" button on a PR behind `main`. |
-| `allow_squash_merge` / `allow_rebase_merge` | `false` / `false` | Only merge-commit is allowed — matches actual practice in both repos (every merge in this repo's history is a real merge commit, never a squash/rebase). `main`'s ruleset (§2.3) lists all three methods as allowed, so this repo-level setting is what actually restricts the strategy. |
-| `allow_merge_commit` | `true` | The one allowed strategy. |
+| `allow_rebase_merge` | `true` | The one allowed strategy since 2026-10-05 (ADR-0005), matching the sibling repo and `main`'s ruleset (§2.3). |
+| `allow_merge_commit` / `allow_squash_merge` | `false` / `false` | Merge commits were the only strategy until 2026-10-05; they put the PR title into history and duplicated every changelog entry (§2.4). Squash would make the changelog depend on the PR title alone. |
 | Actions: `can_approve_pull_request_reviews` | `true` | Lets a workflow's own `GITHUB_TOKEN` approve a PR review if a workflow is ever written to do so; not currently used by any workflow in this repo. |
 | GitHub Pages | **disabled** | Was enabled (`build_type: workflow`) but orphaned — no workflow ever deployed it, zero builds, zero deployments recorded. Disabled rather than left as dead config once noticed during this comparison. |
 
@@ -196,13 +205,20 @@ auto-merge even if it's bundled alongside eligible ones. Full contract: `spec/sp
 | Secret scanning non-provider patterns | `disabled` |
 | Secret scanning validity checks | `disabled` |
 | Dependabot alerts (`vulnerability-alerts`) | `enabled` (HTTP 204 on the check endpoint) |
-| Dependabot automated security-fix PRs (`automated-security-fixes`) | `disabled` |
+| Dependabot automated security-fix PRs (`automated-security-fixes`) | `enabled` (since 2026-10-05) |
 
 Dependabot **alerts** (visibility into known vulnerabilities in the Security tab) and Dependabot
 **security updates** (automatic on-demand PRs fixing them) are two independent GitHub settings --
-issue #53 enabled the former; the latter remains off, matching what was actually asked for and not
-conflating the two. Scheduled version updates (§2.6) and the weekly `pip-audit` scan (§3.2) already give
-this repo two independent vulnerability-discovery paths without also needing on-demand auto-PRs.
+issue #53 enabled the former. The latter was first left off on the grounds that scheduled version updates
+(§2.6) and the weekly `pip-audit` scan (§3.2) already covered vulnerabilities. That only held for direct
+dependencies: version updates ignore transitives, and `pip-audit` detects without fixing. Issue #90
+(urllib3 2.7.0, a transitive dependency, vulnerable with 2.8.0 available and no Dependabot PR) showed the
+gap, so security updates were enabled, matching the sibling repo (its ADR-0003, issue #98). They reuse
+`.github/dependabot.yml`'s labels, commit-message prefix and assignee, ignore its `cooldown`, and do not
+count towards `open-pull-requests-limit`. Their PRs go through the same auto-merge eligibility (§2.6): a
+patch bump auto-merges, a minor bump to an indirect dependency (like urllib3 2.7 → 2.8) waits for review.
+Known limit: a transitive dependency held back by a parent's version
+constraint is not fixed; `pip-audit` remains the safety net for that case.
 
 ### 3.2 Scheduled SCA scan (`audit.yml`, `pip-audit`)
 
@@ -277,8 +293,9 @@ published tag are supported.
   golden-file refresh when output intentionally changes, and lint/format/type cleanliness.
 - A PR is required for `main` and its review threads must be resolved, but no approval is needed, and there
   is no `CODEOWNERS` (§1).
-- Every PR is gated by five required checks: `CI status` (which since v1.12 includes `lint`/`typecheck`),
-  `dependency-review`, `dco`, `commitlint` and `pr-title` (§2.3, §2.4). Only CodeQL is advisory (§3.3).
+- Every PR is gated by four required checks: `CI status` (which since v1.12 includes `lint`/`typecheck`),
+  `dependency-review`, `dco` and `commitlint` (§2.3, §2.4). Only CodeQL is advisory (§3.3).
+- PRs merge by rebase only; the branch history is what lands on `main` (§2.4).
 
 ## 5. Package publishing
 
@@ -297,7 +314,8 @@ published tag are supported.
 - `spec/spec-process-cicd-dependabot.md`, `spec/spec-process-cicd-dependabot-auto-merge.md`
 - `spec/spec-process-cicd-audit.md`, `spec/spec-process-cicd-dependency-review.md`, `spec/spec-process-cicd-codeql.md`
 - `docs/adr/0001-release-please-for-release-automation.md`, `docs/adr/0002-migrate-to-uv.md`,
-  `docs/adr/0003-dependabot-auto-merge-policy.md`
+  `docs/adr/0003-dependabot-auto-merge-policy.md`, `docs/adr/0004-forced-release-with-visible-infra-changelog.md`,
+  `docs/adr/0005-rebase-merge-only.md`
 - `SECURITY.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `CONTRIBUTING.md`, `AGENTS.md`
 
 ## Keeping this document accurate

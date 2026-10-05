@@ -124,4 +124,4 @@ jobs:
 
           Full detail in the run logs: $RUN_URL
 
-          This issue is deduped by title -- it won't be reopened while it stays open."
+          While this issue stays open, later audits don't open a new one (deduped by title): close it once fixed so the audit can report the next vulnerabilities."

@@ -206,7 +206,7 @@ smoke_result: status            # pass/fail (advisory) of the post-publish insta
 
 | Workflow | Relationship | Mechanism |
 |----------|--------------|-----------|
-| `spec/spec-process-cicd-ci.md` (CI) | A release PR is an ordinary PR against `main` and is gated by `CI status` (which as of v1.12 includes `lint`/`typecheck`, formerly separate `ruff`/`mypy` required checks) and `dependency-review` like any other before it can be merged; the resulting merge commit is *also* independently re-tested by `ci.yml`'s own `push: branches: [main]` trigger. Because of this double coverage, `build` in **this** workflow deliberately does **not** re-run the test suite (unlike the pre-release-please `v1.x` design, whose `build` job ran `pytest` because a tag push had no other gate at all). | Same `push: branches: [main]` event triggers both workflows independently |
+| `spec/spec-process-cicd-ci.md` (CI) | A release PR is an ordinary PR against `main` and is gated by `CI status` (which as of v1.12 includes `lint`/`typecheck`, formerly separate `ruff`/`mypy` required checks) and `dependency-review` like any other before it can be merged; the release commit it lands on `main` (rebase merge only, ADR-0005) is *also* independently re-tested by `ci.yml`'s own `push: branches: [main]` trigger. Because of this double coverage, `build` in **this** workflow deliberately does **not** re-run the test suite (unlike the pre-release-please `v1.x` design, whose `build` job ran `pytest` because a tag push had no other gate at all). | Same `push: branches: [main]` event triggers both workflows independently |
 | `spec/spec-process-cicd-dependency-review.md` | The release PR is itself an ordinary PR, so it also passes through `dependency-review` (a required check as of that spec's v1.2) like any other PR. | Same `pull_request` trigger |
 | `docs/adr/0001-release-please-for-release-automation.md` | Records the decision this workflow implements. | Referenced in the workflow file's header comment |
 
@@ -276,7 +276,7 @@ noted here so it isn't mistaken for an oversight later.
 
 ## Related Specifications
 
-- `spec/spec-process-cicd-ci.md` -- CI (install/test/coverage). The release PR and its merge commit are
+- `spec/spec-process-cicd-ci.md` -- CI (install/test/coverage). The release PR and the commit it lands on `main` are
   both gated by this before `release.yml`'s `build`/`publish` jobs matter.
 - `spec/spec-process-cicd-dependency-review.md` -- required check as of v1.2, same PR gating as CI.
 - `spec/spec-process-cicd-dependency-review.md` -- gates the release PR like any other PR.

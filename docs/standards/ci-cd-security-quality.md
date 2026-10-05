@@ -180,8 +180,12 @@ level groups into one PR (`actions`) — no "majors stand alone" carve-out there
 bumps (any dependency) and minor-level bumps to dev-only dependencies **auto-merge** once required
 checks pass (ADR-0003, issue #51); majors and minor bumps to production dependencies always wait for the
 maintainer — evaluated per-member of a grouped PR, so one ineligible bump blocks the whole group's
-auto-merge even if it's bundled alongside eligible ones. Full contract: `spec/spec-process-cicd-dependabot.md`
-+ `spec/spec-process-cicd-dependabot-auto-merge.md`.
+auto-merge even if it's bundled alongside eligible ones. Auto-merge is enabled with a fine-grained PAT stored
+as the Dependabot secret `AUTO_MERGE_TOKEN` (ADR-0006), not `GITHUB_TOKEN`: a merge attributed to
+`GITHUB_TOKEN` triggers no workflow, so release-please never refreshed the release PR and `ci.yml` never ran
+on auto-merged commits. The PAT is limited to this repo (Contents, Pull requests, Workflows read/write) and
+must be rotated before it expires; without it the workflow falls back to `GITHUB_TOKEN` with a warning.
+Full contract: `spec/spec-process-cicd-dependabot.md` + `spec/spec-process-cicd-dependabot-auto-merge.md`.
 
 ### 2.7 Repository settings (live-verified, aligned with the sibling 2026-09-15)
 
@@ -299,7 +303,7 @@ published tag are supported.
 
 ## 5. Package publishing
 
-- **PyPI Trusted Publishing (OIDC)** -- no API token stored as a secret anywhere in this repo. Trusted
+- **PyPI Trusted Publishing (OIDC)** -- no PyPI API token stored as a secret anywhere in this repo. Trusted
   Publisher registered against this exact repo, workflow filename (`release.yml`), and environment name
   (`pypi`); unchanged by the release-please migration (§2.5) even though the workflow's *trigger* changed.
 - **Human gate**: the `pypi` Environment's required-reviewer rule (the maintainer approves their own
@@ -315,7 +319,7 @@ published tag are supported.
 - `spec/spec-process-cicd-audit.md`, `spec/spec-process-cicd-dependency-review.md`, `spec/spec-process-cicd-codeql.md`
 - `docs/adr/0001-release-please-for-release-automation.md`, `docs/adr/0002-migrate-to-uv.md`,
   `docs/adr/0003-dependabot-auto-merge-policy.md`, `docs/adr/0004-forced-release-with-visible-infra-changelog.md`,
-  `docs/adr/0005-rebase-merge-only.md`
+  `docs/adr/0005-rebase-merge-only.md`, `docs/adr/0006-pat-for-dependabot-auto-merge.md`
 - `SECURITY.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `CONTRIBUTING.md`, `AGENTS.md`
 
 ## Keeping this document accurate

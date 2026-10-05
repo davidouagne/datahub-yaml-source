@@ -101,7 +101,7 @@ hand (it is the action's publisher-recommended moving pointer).
 | ID | Requirement | Implementation Constraint |
 |----|-------------|---------------------------|
 | SEC-001 | Dependabot security updates stay enabled. | Repo setting "Dependabot security updates" is on; a `dependabot.yml` presence does not disable it. Security PRs bypass the weekly schedule by design. |
-| SEC-002 | No secret is exposed to Dependabot. | The config declares no `registries`; all indexes are public (PyPI, GitHub). |
+| SEC-002 | No secret is exposed to Dependabot. | The config declares no `registries`; all indexes are public (PyPI, GitHub). The Dependabot secret `AUTO_MERGE_TOKEN` (ADR-0006) is unrelated: Dependabot's updater never uses it; only the `auto-merge` job of `dependabot-auto-merge.yml` reads it. |
 
 ## Error Handling Strategy
 

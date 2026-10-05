@@ -15,6 +15,16 @@ name: Dependabot auto-merge
 # Requires the repo's "Allow auto-merge" setting (`allow_auto_merge`) to
 # be on -- without it `gh pr merge --auto` fails for every eligible PR.
 #
+# Token (ADR-0006): auto-merge is enabled with the maintainer's
+# fine-grained PAT, stored as the *Dependabot* secret AUTO_MERGE_TOKEN
+# (a workflow triggered by Dependabot only sees Dependabot secrets, not
+# Actions secrets). The merge is then attributed to the maintainer, so
+# its push to main triggers release.yml (release-please refreshes the
+# release PR) and ci.yml. With GITHUB_TOKEN, GitHub suppresses every
+# workflow run that push would trigger. If the secret is missing, the
+# step falls back to GITHUB_TOKEN with a warning: the PR still merges,
+# but release-please waits for the next push to main.
+#
 # Evaluated per dependency, not off the action's aggregated `update-type`/
 # `dependency-type` outputs: those two are each computed independently
 # (highest semver level across the whole PR; highest-priority dependency
@@ -63,6 +73,14 @@ jobs:
       - name: Enable auto-merge for low-risk bumps
         if: steps.eligibility.outcome == 'success'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_MERGE_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN }}
+          GITHUB_TOKEN_FALLBACK: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
-        run: gh pr merge --auto --rebase "$PR_URL"
+        run: |
+          if [ -n "$AUTO_MERGE_TOKEN" ]; then
+            export GH_TOKEN="$AUTO_MERGE_TOKEN"
+          else
+            echo "::warning::Dependabot secret AUTO_MERGE_TOKEN is not set -- falling back to GITHUB_TOKEN; the merge will not trigger release.yml (ADR-0006)."
+            export GH_TOKEN="$GITHUB_TOKEN_FALLBACK"
+          fi
+          gh pr merge --auto --rebase "$PR_URL"

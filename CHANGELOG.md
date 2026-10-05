@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.5](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.4...v0.2.5) (2026-10-05)
+
+
+### Documentation
+
+* record rebase merge and Dependabot security updates in the standard ([e1ac33f](https://github.com/davidouagne/datahub-yaml-source/commit/e1ac33f1f2ee4dba5194142ed22a9e4785046041))
+
+
+### Build System
+
+* **deps-dev:** Bump the dev-dependencies group with 4 updates ([118567a](https://github.com/davidouagne/datahub-yaml-source/commit/118567ace5e7af919924fa61a837d6a9e75d9493))
+* **deps:** Bump acryl-datahub from 1.7.0.13 to 1.7.0.14 ([479b4ed](https://github.com/davidouagne/datahub-yaml-source/commit/479b4ed3eecd89f9072d5532fbfc48d606a47b1d))
+* **deps:** bump urllib3 from 2.7.0 to 2.8.0 ([5ebd3c0](https://github.com/davidouagne/datahub-yaml-source/commit/5ebd3c04ed41057babad9f23d83119b5707a49e2)), closes [#90](https://github.com/davidouagne/datahub-yaml-source/issues/90)
+
+
+### Continuous Integration
+
+* clarify deduplication wording in the audit issue ([3706c0f](https://github.com/davidouagne/datahub-yaml-source/commit/3706c0f98e21189185166d58ecfd23ce29f2590f))
+* enable Dependabot auto-merge with a PAT so merges trigger release-please ([6f475ac](https://github.com/davidouagne/datahub-yaml-source/commit/6f475ac793f8e7adb14d053924fd63649c325602))
+* switch to rebase merge only and drop the pr-title check ([e848589](https://github.com/davidouagne/datahub-yaml-source/commit/e8485897e27ca8e2e60a231b86fbd890dfdafafc))
+
 ## [0.2.4](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.3...v0.2.4) (2026-09-20)
 
 

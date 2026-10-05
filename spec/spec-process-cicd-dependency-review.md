@@ -137,10 +137,10 @@ proof that no GPL/AGPL code was introduced.
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
-| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **A required `main` status check as of v1.2** (see Integration Points) -- a failing check blocks the "Merge pull request" button, same as the other required checks in `main`'s ruleset (`CI status`, `dco`, `commitlint`, `pr-title`). |
+| `dependency-review` check | No new/changed dependency in the PR has a known vulnerability at severity `high`+, and none is licensed under a denied license | None built into the workflow itself. **A required `main` status check as of v1.2** (see Integration Points) -- a failing check blocks the "Merge pull request" button, same as the other required checks in `main`'s ruleset (`CI status`, `dco`, `commitlint`). |
 
 **Wired into `main`'s required checks as of v1.2.** As of v1.3, `main` is protected by a repository ruleset
-whose `required_status_checks` are `dco`, `commitlint`, `pr-title`, `dependency-review` and `CI status`
+whose `required_status_checks` are `dco`, `commitlint`, `dependency-review` and `CI status`
 (live-verified: `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main`). The v1.2-era list
 `["CI status", "ruff", "mypy", "dependency-review"]` below is history: it lived in classic branch
 protection, which no longer exists. At v1.0/v1.1 this check was deliberately left advisory, on the

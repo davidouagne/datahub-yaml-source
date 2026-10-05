@@ -112,13 +112,21 @@ with a real annotation/guard; a `# type: ignore[<code>]` (mypy) or
    message and PR description should stand on their own.
 5. Use a [Conventional Commit](https://www.conventionalcommits.org/) message
    (`type: subject` or `type(scope): subject`, e.g. `fix: handle empty
-   containers`) for every commit, and give the PR itself a Conventional
-   Commit title. `commit-policy.yml` checks both in CI (required checks on `main`)
+   containers`) for every commit. `commit-policy.yml` checks each one in CI
+   (`commitlint`, a required check on `main`)
    (`spec/spec-process-cicd-commit-policy.md`); `commitlint.config.mjs`
    configures the accepted types via `@commitlint/config-conventional`'s
    standard list (`build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
-   `refactor`, `revert`, `style`, `test`).
-6. Sign off every commit (`git commit -s`, or `-S` combined with GPG
+   `refactor`, `revert`, `style`, `test`). The PR title is not checked: it
+   never reaches `main`'s history (next point).
+6. Keep the branch history clean. `main` only accepts **rebase merge** (no
+   merge commit, no squash; linear history required — ADR-0005): every
+   branch commit lands on `main` as-is and release-please reads each one to
+   compute the version and the changelog. Tidy the branch (interactive
+   rebase) before opening the PR so every commit is atomic and its message
+   exact, and catch up with `main` by rebasing ("Update with rebase"), not
+   by merging `main` into the branch.
+7. Sign off every commit (`git commit -s`, or `-S` combined with GPG
    signing) with a `Signed-off-by:` trailer — the `dco` job checks for it
    (a required check on `main`, so a PR with an unsigned commit cannot merge). Uses your `git config user.name`/`user.email`
    automatically.

@@ -1,7 +1,6 @@
 <!--
-The PR title becomes the merge commit's subject: it must itself be a valid
-Conventional Commit (type: subject, e.g. `fix: handle empty containers`),
-same as every commit on this branch -- checked in CI (commit-policy.yml).
+Rebase merge only (ADR-0005): every commit on this branch lands on `main`
+as-is and feeds the changelog. The PR title never reaches history.
 -->
 
 ## Summary
@@ -10,9 +9,11 @@ same as every commit on this branch -- checked in CI (commit-policy.yml).
 
 ## Checklist
 
-- [ ] Every commit is a valid Conventional Commit (`feat` / `fix` / `docs` /
-      `build` / `ci` / `refactor` / `style` / `test` / `chore` / `perf` /
-      `revert`), and the PR title is too.
+- [ ] Every commit is a signed-off (`git commit -s`), valid Conventional Commit
+      (`feat` / `fix` / `docs` / `build` / `ci` / `refactor` / `style` /
+      `test` / `chore` / `perf` / `revert`).
+- [ ] Clean branch history with no merge commit (interactive rebase before
+      opening, update by rebase) — every commit lands on `main` as-is.
 - [ ] `uv run pytest tests/unit tests/integration` passes.
 - [ ] If `src/datahub_yaml_source/models.py` changed: `docs/sources/yaml/reference.md`
       and the JSON Schema were regenerated (`uv run python scripts/generate_json_schema.py`

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.13
+version: 1.14
 date_created: 2026-08-16
-last_updated: 2026-09-20
+last_updated: 2026-10-05
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -371,10 +371,11 @@ out of — but the mechanism and the check list differ:
 
 | Rule | Value | Rationale |
 |------|-------|-----------|
-| `required_status_checks` | **`CI status`** (this workflow's aggregate gate — includes `lint`/`typecheck` as of v1.12), **`dependency-review`** (`spec/spec-process-cicd-dependency-review.md`), and **`dco`**, **`commitlint`**, **`pr-title`** (`spec/spec-process-cicd-commit-policy.md` v1.2) | The five blocking gate names. Names are the check-run `name:` values, matched verbatim; `CI status` is additionally pinned to the GitHub Actions integration (`integration_id` 15368). |
+| `required_status_checks` | **`CI status`** (this workflow's aggregate gate — includes `lint`/`typecheck` as of v1.12), **`dependency-review`** (`spec/spec-process-cicd-dependency-review.md`), and **`dco`**, **`commitlint`** (`spec/spec-process-cicd-commit-policy.md` v1.3) | The four blocking gate names. Names are the check-run `name:` values, matched verbatim; `CI status` is additionally pinned to the GitHub Actions integration (`integration_id` 15368). |
 | `strict_required_status_checks_policy` | `false` | Would force every open PR — including the batch of Dependabot PRs — to be updated after each merge; not worth the friction for one maintainer. |
 | `pull_request` | required; `required_approving_review_count: 0`; `required_review_thread_resolution: true` | A PR is mandatory (no direct push for non-bypass actors) but needs no approval: no second reviewer exists, so an approval requirement would be self-blocking. Review threads, if any, must be resolved. |
-| `pull_request.allowed_merge_methods` | `merge`, `squash`, `rebase` | The ruleset allows all three; the repo-level settings (`allow_squash_merge`/`allow_rebase_merge: false`) restrict the effective strategy to merge commits. |
+| `pull_request.allowed_merge_methods` | `rebase` | Rebase merge only (`docs/adr/0005-rebase-merge-only.md`), matched by the repo-level settings (`allow_rebase_merge: true`, `allow_merge_commit`/`allow_squash_merge: false`). A merge commit carried the PR title, which release-please parsed as a second Conventional Commit, duplicating every changelog entry. |
+| `required_linear_history` | on | Follows from rebase-only merging; also rejects a direct push of a merge commit by the Admin bypass. |
 | `deletion`, `non_fast_forward` | blocked | `main` cannot be deleted or force-pushed. |
 | Bypass actors | Repository role `Admin` (id 5), `bypass_mode: always` | Replaces classic `enforce_admins: false`: the maintainer keeps a direct-push escape hatch to avoid locking themselves out. |
 | CodeQL / `Analyze (*)` | **not required** | Advisory only at this stage (map issue #1 Notes; `spec/spec-process-cicd-codeql.md`). |
@@ -382,7 +383,7 @@ out of — but the mechanism and the check list differ:
 A second ruleset, `tags-v` (target `refs/tags/v*`), blocks deletion and force-push of release tags, with the
 same Admin bypass.
 
-Renaming any of the five required checks is a breaking change: update the ruleset's required-check list
+Renaming any of the four required checks is a breaking change: update the ruleset's required-check list
 (Settings -> Rules -> Rulesets -> `main`, or `PUT /repos/davidouagne/datahub-yaml-source/rulesets/23425836`).
 Verify the live state with `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main`.
 
@@ -393,7 +394,8 @@ against the sibling repo directly, that the sibling's own `main` had started req
 `ruff`/`mypy` were folded into `CI status` (renamed `lint`/`typecheck`) and dropped from the list individually,
 again to match the sibling's structure, arriving at a two-entry list (`["CI status", "dependency-review"]`,
 applied via `PUT /repos/.../branches/main/protection`). Finally (v1.13) classic protection was replaced by the
-ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required.
+ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required. Then (v1.14, 2026-10-05) `main`
+switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 
 ## Compliance & Governance
 
@@ -491,6 +493,7 @@ ruleset above and `dco`/`commitlint`/`pr-title` were promoted to required.
 | 1.11 | 2026-09-15 | Branch protection on `main`: added `dependency-review` (`spec/spec-process-cicd-dependency-review.md` v1.2) to the required-status-checks list, promoting it from advisory. Applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`; see that spec's own version history for why (the maintainer caught, by comparing live settings against the sibling repo directly, that a "matches the sibling's advisory posture" justification had gone stale once the sibling's own branch protection changed independently). No workflow-file change in *this* spec's scope (`ci.yml` untouched — the required-checks list is a branch-protection setting, not part of this workflow file). | David Ouagne |
 | 1.12 | 2026-09-15 | **Merged `quality.yml` into `ci.yml`** (see "Why merged into one file" above), prompted by the maintainer comparing this repo's CI job/check structure against the sibling repo directly. `ruff`/`mypy` jobs moved here, renamed `lint`/`typecheck` to match the sibling's own job names; `minimal-install-check` renamed `build` for the same cross-repo-diffing reason. `ci-status` now aggregates `[lint, typecheck, test, build]` (was `[test, minimal-install-check]`). `main`'s required-status-checks list changed from `["CI status", "ruff", "mypy", "dependency-review"]` to `["CI status", "dependency-review"]` (applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`) — `lint`/`typecheck` are no longer individually required, but still block merge transitively through `ci-status`, so this is a consolidation, not a weakening. `spec/spec-process-cicd-quality.md` retired to a redirect stub; its full content (Ruff/mypy config tables, mypy-baseline-zero story, issue #55 `ANN`/`PL` breakdown) reproduced verbatim (job-name references updated) in the new "Lint & Type-Check Configuration" section of this document, so none of that detail was lost. Every `minimal-install-check` reference in this spec updated to `build`. | David Ouagne |
 | 1.13 | 2026-09-20 | **Documentation-accuracy correction, no workflow-file change: `main` is protected by a repository ruleset, not classic branch protection.** Rewrote "Branch protection on `main`" from the live ruleset (`gh api .../rules/branches/main`, `.../rulesets`): required checks are now `CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title` (was `["CI status", "dependency-review"]`); a PR is required with zero approvals and resolved review threads; deletion and force-push are blocked; the Admin role bypasses the ruleset (replacing `enforce_admins: false`); a `tags-v` ruleset protects `v*` tags. `strict` remains off. Updated the `CI status` row ("`main`'s ruleset requires"). | David Ouagne |
+| 1.14 | 2026-10-05 | **`main` accepts rebase merge only; `pr-title` no longer required** (`docs/adr/0005-rebase-merge-only.md`, `spec/spec-process-cicd-commit-policy.md` v1.3). Ruleset `main`: `allowed_merge_methods` narrowed to `rebase`, `required_linear_history` added, `pr-title` removed from `required_status_checks` (four checks remain). Repo settings: `allow_rebase_merge: true`, `allow_merge_commit: false`. No change to this workflow file. | David Ouagne |
 
 ## Related Specifications
 

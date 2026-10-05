@@ -115,7 +115,7 @@ hand (it is the action's publisher-recommended moving pointer).
 
 | Gate | Criteria | Bypass Conditions |
 |------|----------|---------------------|
-| CI on Dependabot PRs | `ci.yml` (`CI status`, which since v1.12 includes lint/typecheck), `dependency-review.yml` (`dependency-review`) and `commit-policy.yml` (`dco`, `commitlint`, `pr-title`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main` (enforced by its repository ruleset), including the ones auto-merged; `gh pr merge --auto` queues the merge, it does not bypass the ruleset. Dependabot's commits carry a `Signed-off-by` trailer, so `dco` passes. |
+| CI on Dependabot PRs | `ci.yml` (`CI status`, which since v1.12 includes lint/typecheck), `dependency-review.yml` (`dependency-review`) and `commit-policy.yml` (`dco`, `commitlint`) pass before merge | None — Dependabot PRs go through the same required checks as any PR to `main` (enforced by its repository ruleset), including the ones auto-merged; `gh pr merge --auto` queues the merge, it does not bypass the ruleset. Dependabot's commits carry a `Signed-off-by` trailer, so `dco` passes. |
 | Human review | Every non-low-risk Dependabot PR is read and merged by a maintainer | Patch-level bumps (any dependency) and minor-level bumps to dev-only dependencies skip this gate — see `spec/spec-process-cicd-dependabot-auto-merge.md` (ADR-0003 / issue #51). |
 
 ## Integration Points

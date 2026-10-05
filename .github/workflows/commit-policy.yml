@@ -6,19 +6,22 @@ name: Commit policy
 #
 # Policy (issue #52, part of the #48 standardization epic): every
 # non-merge commit in a PR must be a Conventional Commit
-# (commitlint.config.mjs, checked by wagoid/commitlint-github-action), and
-# the PR title itself must be a valid Conventional Commit / semantic PR
-# title (amannn/action-semantic-pull-request).
+# (commitlint.config.mjs, checked by wagoid/commitlint-github-action).
+#
+# Rebase merge only (ADR-0005): every branch commit lands on main as-is
+# and the PR title never reaches history, so it is not checked. The former
+# pr-title job (amannn/action-semantic-pull-request) was removed with the
+# switch away from merge commits, whose PR title release-please read as a
+# second Conventional Commit, duplicating every changelog entry.
 #
 # DCO (dco job): every non-merge commit must carry a Signed-off-by
 # trailer. Originally out of scope by explicit decision (issue #52); added
 # later, matching the sibling repo's own dco job, after a direct
 # repo-to-repo comparison found the sibling enforces it (see
 # spec/spec-process-cicd-commit-policy.md's version history for the full
-# reasoning behind the reversal). All three jobs here (dco, commitlint,
-# pr-title) are required status checks in main's repository ruleset as
-# of spec v1.2. Dependabot's commits carry a Signed-off-by trailer, so
-# they pass dco.
+# reasoning behind the reversal). Both jobs here (dco, commitlint) are
+# required status checks in main's repository ruleset as of spec v1.2.
+# Dependabot's commits carry a Signed-off-by trailer, so they pass dco.
 #
 # Plain `pull_request` throughout, not `pull_request_target`: every PR in
 # this repo (maintainer's own, or Dependabot's) is a same-repo branch,
@@ -26,9 +29,9 @@ name: Commit policy
 # concern `pull_request_target` exists to manage (same posture as
 # spec/spec-process-cicd-dependabot-auto-merge.md's SEC-002).
 #
-# All three jobs run on every trigger type, including `edited` -- an
-# earlier draft skipped `commitlint` on `edited` to avoid re-linting
-# unchanged commits on a title-only tweak, but `edited` also fires on a PR
+# Both jobs run on every trigger type, including `edited` -- an earlier
+# draft skipped `commitlint` on `edited` to avoid re-linting unchanged
+# commits on a title-only tweak, but `edited` also fires on a PR
 # base-branch retarget (distinguishable only via
 # `github.event.changes.base`, which that guard didn't check), so it could
 # skip commitlint exactly when a PR first became subject to this workflow.
@@ -89,16 +92,3 @@ jobs:
       - uses: wagoid/commitlint-github-action@v6
         with:
           configFile: commitlint.config.mjs
-
-  pr-title:
-    name: pr-title
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      pull-requests: read
-    steps:
-      - uses: amannn/action-semantic-pull-request@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          requireScope: false

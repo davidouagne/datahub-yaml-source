@@ -136,7 +136,7 @@ filters (default setup does not support it); narrowing would require switching t
 
 | Workflow | Relationship | Trigger Mechanism |
 |----------|---------------|---------------------|
-| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). `main`'s ruleset requires `CI status`, `dependency-review`, `dco`, `commitlint` and `pr-title` (`spec/spec-process-cicd-ci.md`, `spec/spec-process-cicd-dependency-review.md`, `spec/spec-process-cicd-commit-policy.md`). | n/a |
+| Branch protection on `main` | **Not** coupled at this version — CodeQL is intentionally excluded from required status checks (map issue #1, Notes). `main`'s ruleset requires `CI status`, `dependency-review`, `dco` and `commitlint` (`spec/spec-process-cicd-ci.md`, `spec/spec-process-cicd-dependency-review.md`, `spec/spec-process-cicd-commit-policy.md`). | n/a |
 | `spec/spec-process-cicd-ci.md` (CI) | Sibling; disjoint responsibility. CI owns test/coverage/lint/format/types (the latter two folded in from the now-retired `spec/spec-process-cicd-quality.md` as of `ci.md` v1.12), this owns SAST. CI gates `main`; this is advisory. | Same trigger events (push/PR to `main`) |
 | `spec/spec-process-cicd-dependency-review.md` | Also gates `main` (required as of v1.2); disjoint responsibility (SCA license/vuln gate, not SAST). | Same trigger events (PR to `main`) |
 

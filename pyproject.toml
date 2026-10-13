@@ -96,7 +96,7 @@ dev = [
     # local and CI must agree on the exact ruleset. 0.12..0.16 is a
     # clean range for this tree (0.16 added Markdown code-block
     # formatting, hence the `*.md` exclude in [tool.ruff]).
-    "ruff>=0.12,<0.17",
+    "ruff>=0.12,<0.18",
     "mypy>=1.17",
     "types-PyYAML>=6.0",
     # Weekly SCA scan against the locked dependency tree, run by

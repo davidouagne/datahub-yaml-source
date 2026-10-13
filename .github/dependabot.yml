@@ -33,6 +33,14 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 3
+    # Default `allow` is direct dependencies only, so a vulnerable
+    # transitive pin in uv.lock (e.g. multidict via aiohttp, issue #96)
+    # was never bumped -- and Dependabot security updates only fire when
+    # GitHub raises an alert, which it failed to do there. `all` makes the
+    # weekly run cover indirect deps too. Deliberate divergence from the
+    # sibling repo (spec v1.7).
+    allow:
+      - dependency-type: "all"
     labels:
       - "dependencies"
     assignees:

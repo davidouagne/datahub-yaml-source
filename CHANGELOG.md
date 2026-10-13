@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.6](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.5...v0.2.6) (2026-10-13)
+
+
+### Build System
+
+* **deps:** bump multidict from 6.8.0 to 6.9.1 ([e7255ce](https://github.com/davidouagne/datahub-yaml-source/commit/e7255ceba36f799e78121e84325235d593b3df81)), closes [#96](https://github.com/davidouagne/datahub-yaml-source/issues/96)
+
+
+### Continuous Integration
+
+* let Dependabot version updates cover transitive uv dependencies ([dfe8d81](https://github.com/davidouagne/datahub-yaml-source/commit/dfe8d818eda7cf3901ef1b9513b4b1c93e0c49b9)), closes [#96](https://github.com/davidouagne/datahub-yaml-source/issues/96)
+
 ## [0.2.5](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.4...v0.2.5) (2026-10-05)
 
 

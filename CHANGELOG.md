@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.7](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.6...v0.2.7) (2026-10-13)
+
+
+### Build System
+
+* **deps-dev:** Bump the dev-dependencies group with 2 updates ([3fbefc9](https://github.com/davidouagne/datahub-yaml-source/commit/3fbefc9cb689c7816a1a50c2fc4de2ef410d911e))
+* **deps:** Bump filelock from 3.32.6 to 4.1.0 ([c644909](https://github.com/davidouagne/datahub-yaml-source/commit/c6449092634022b84ce2610ba0b38d2a4a75fdf5))
+* **deps:** Bump the prod-minor-patch group across 1 directory with 17 updates ([2898aa9](https://github.com/davidouagne/datahub-yaml-source/commit/2898aa9b73ee1c720ce44036db4d952ee07513dd))
+
 ## [0.2.6](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.5...v0.2.6) (2026-10-13)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.8](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.7...v0.2.8) (2026-10-19)
+
+
+### Build System
+
+* **deps-dev:** Bump the dev-dependencies group with 3 updates ([4c1a6fa](https://github.com/davidouagne/datahub-yaml-source/commit/4c1a6fa9e24b0fb153a7a74333e7f7d9eff3957a))
+* **deps:** Bump the prod-minor group with 5 updates ([b6329d9](https://github.com/davidouagne/datahub-yaml-source/commit/b6329d963c71191e36a68067144be06dae07144e))
+* **deps:** Bump the prod-patch group with 5 updates ([e55b747](https://github.com/davidouagne/datahub-yaml-source/commit/e55b747555afa3a9fec63279f43d07b38a09eff1))
+
+
+### Continuous Integration
+
+* split Dependabot prod group into patch and minor ([ac63627](https://github.com/davidouagne/datahub-yaml-source/commit/ac6362730bb1b9473544a5e581064c968e622a20))
+
 ## [0.2.7](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.6...v0.2.7) (2026-10-13)
 
 

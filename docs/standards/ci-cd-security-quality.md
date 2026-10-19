@@ -172,10 +172,11 @@ Full contract: `spec/spec-process-cicd-release.md`.
 
 ### 2.6 Dependency updates (`dependabot.yml` + `dependabot-auto-merge.yml`)
 
-Dependabot watches two ecosystems, weekly (Monday). Grouping (matches the sibling repo exactly, adopted
-2026-09-15): on `uv`, every dev-only bump (any level, including major) groups into one PR
-(`dev-dependencies`); production bumps only group at minor/patch (`prod-minor-patch`), so a production
-major still arrives as its own PR; a 3-day `cooldown` applies. On `github-actions`, every bump of any
+Dependabot watches two ecosystems, weekly (Monday). Grouping (adopted from the sibling repo 2026-09-15):
+on `uv`, every dev-only bump (any level, including major) groups into one PR (`dev-dependencies`);
+production bumps (indirect ones included) only group at minor/patch, in two separate PRs — `prod-patch`
+and `prod-minor` (a divergence from the sibling, spec v1.8, so indirect minor bumps don't block patch
+auto-merge) — so a production major still arrives as its own PR; a 3-day `cooldown` applies. On `github-actions`, every bump of any
 level groups into one PR (`actions`) — no "majors stand alone" carve-out there, unlike `uv`. Patch-level
 bumps (any dependency) and minor-level bumps to dev-only dependencies **auto-merge** once required
 checks pass (ADR-0003, issue #51); majors and minor bumps to production dependencies always wait for the

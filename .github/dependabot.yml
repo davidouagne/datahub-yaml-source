@@ -8,8 +8,12 @@
 # dependabot.yml as of 2026-09-15, after the maintainer compared the two
 # directly): on `uv`, every dev-only bump -- patch, minor, *or major* --
 # is grouped into one PR (`dev-dependencies`); production bumps are only
-# grouped at minor/patch (`prod-minor-patch`), so a production major still
-# arrives as its own individually-reviewed PR. On `github-actions`, every
+# grouped at minor/patch, so a production major still arrives as its own
+# individually-reviewed PR. Unlike the sibling, production patch and minor
+# bumps go into separate groups (`prod-patch` / `prod-minor`, spec v1.8):
+# indirect deps (`allow: all` below) are grouped as production, and an
+# indirect minor bump is never auto-merge-eligible -- in a combined group
+# it held every patch hostage to manual review (PR #107). On `github-actions`, every
 # bump of any level is grouped into one PR (`actions`) -- unlike `uv`,
 # there is no separate "majors stand alone" carve-out here, mirroring the
 # sibling exactly. A dev-dependencies group that happens to bundle a major
@@ -53,11 +57,14 @@ updates:
         dependency-type: "development"
         patterns:
           - "*"
-      prod-minor-patch:
+      prod-patch:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+      prod-minor:
         dependency-type: "production"
         update-types:
           - "minor"
-          - "patch"
     # No `ignore` entry for acryl-datahub majors. pyproject.toml deliberately
     # caps it at <1.8 (undeprecated breaks in the still-experimental
     # datahub.sdk.* surface -- see the comment there). Dependabot will
@@ -65,7 +72,7 @@ updates:
     # already gets is the intended gate, and an `ignore` would only hide
     # a bump the maintainer wants to see queued. `acryl-datahub` is a
     # production dependency, so this cap is never swept into a group --
-    # `prod-minor-patch` only covers minor/patch.
+    # `prod-patch` / `prod-minor` only cover patch / minor.
 
   - package-ecosystem: "github-actions"
     directory: "/"

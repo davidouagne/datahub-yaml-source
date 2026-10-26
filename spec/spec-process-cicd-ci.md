@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.14
+version: 1.15
 date_created: 2026-08-16
-last_updated: 2026-10-05
+last_updated: 2026-10-26
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -49,7 +49,7 @@ breakdown) is reproduced in this document's "Lint & Type-Check Configuration" se
 graph TD
     A[Trigger: push / PR to main / manual] --> B[lint: ruff check + format --check]
     A --> C[typecheck: mypy --strict over src/]
-    A --> D[test: matrix py3.10-3.12]
+    A --> D[test: matrix py3.11-3.12]
     A --> E[build: minimal install, no extras]
     B --> F[ci-status]
     C --> F[ci-status]
@@ -66,7 +66,7 @@ graph TD
 |----------|---------|--------------|-------------------|
 | `lint` | `ruff check` (lint) + `ruff format --check` (format) over first-party Python (`src/`, `tests/`, `scripts/`). Absorbed from the retired `quality.yml`'s `ruff` job (renamed, v1.12); no longer individually required — feeds `ci-status`. | None | Linux runner, Python 3.12 |
 | `typecheck` | `mypy` over `src/` per `[tool.mypy]` in `pyproject.toml` (`strict = true`). Absorbed from the retired `quality.yml`'s `mypy` job (renamed, v1.12); no longer individually required — feeds `ci-status`. | None | Linux runner, Python 3.12 |
-| `test` | Install with dev extras; run unit + integration tests with coverage across the supported Python matrix. Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner, matrix over Python 3.10–3.12 |
+| `test` | Install with dev extras; run unit + integration tests with coverage across the supported Python matrix. Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner, matrix over Python 3.11–3.12 |
 | `build` | Install with base dependencies only (no optional extras); confirm the package imports and the `yaml` source plugin registers. Renamed from `minimal-install-check` (v1.12) to match the sibling repo's job id for the analogous (though not identical-content) step, for easier cross-repo diffing. | None | Linux runner, single Python version |
 | `ci-status` (job id; **check-run name `CI status`**) | Aggregate gate: succeeds only if `lint`, `typecheck`, `test` (all matrix legs), and `build` succeed. Its `name:` — `CI status`, *with a space* — is the exact context string `main`'s ruleset requires (not the job id `ci-status`). | `lint`, `typecheck`, `test`, `build` | Linux runner, no build steps |
 
@@ -183,7 +183,7 @@ and workflow file (`quality.yml`→`ci.yml`) references updated. The exact confi
 | Setting | Value | Rationale |
 |---------|-------|-----------|
 | `line-length` | `100` | A deliberate loosening from the 88 default; the pre-existing code sat well above 88 and 100 keeps the one-off reformat from rewrapping nearly every signature. |
-| `target-version` | `py310` | Matches `pyproject.toml`'s `requires-python` floor (driven by `acryl-datahub>=1.7.0`). |
+| `target-version` | `py311` | Matches `pyproject.toml`'s `requires-python` floor (3.11 since v1.15, issue #111). |
 | `lint.select` | `E`, `F`, `I`, `UP`, `B`, `C4`, `SIM`, `RUF`, `ANN`, `PL` | pycodestyle/pyflakes errors, import sorting, pyupgrade, bugbear, comprehensions, simplify, Ruff-native, plus annotation-completeness (`ANN`) and pylint (`PL`) — added by issue #55 to match the sibling repo's posture. `ANN`/`PL` are scoped to `src/` only via `lint.per-file-ignores` below, not narrowed at the `select` level, so a future `src/` file can't accidentally land unchecked. |
 | `lint.per-file-ignores` | `__init__.py` → `F401`; `tests/**` → `E501`, `ANN`, `PL`; `scripts/**` → `ANN`, `PL` | Re-export modules use unused imports on purpose; test fixtures embed full DataHub URNs and JSON blobs as string literals that are not meaningfully breakable (the formatter still enforces 100 cols on everything it can reflow). `ANN`/`PL` are held to `src/` only (issue #55), mirroring `[tool.mypy] files = ["src"]` — annotating every test function/script would be a much larger, separate undertaking (387 violations outside `src/` vs. the 48 inside it that issue #55 actually fixed) with no matching safety payoff, since mypy never checks `tests/`/`scripts/` either. |
 | `lint.isort.known-first-party` | `["datahub_yaml_source"]` | Correct first/third-party split in a `src/` layout. |
@@ -206,7 +206,7 @@ schema + docs (per `AGENTS.md`) and confirming no drift.
 | Setting | Value | Rationale |
 |---------|-------|-----------|
 | `files` | `["src"]` | Package source only. `tests/` and `scripts/` are out of scope. |
-| `python_version` | `"3.10"` | Assume the semantics of the supported floor. |
+| `python_version` | `"3.11"` | Assume the semantics of the supported floor. |
 | `strict` | `true` | Issue #55: promoted from the non-strict baseline (`check_untyped_defs`/`warn_unused_ignores`/`warn_redundant_casts`, individually set) to `strict = true`, matching the sibling repo. `strict` is a superset that subsumes all three of those flags plus `disallow_untyped_defs`, `disallow_any_generics`, `warn_return_any`, `disallow_subclassing_any`, `no_implicit_reexport`, and more — they're no longer listed individually. |
 | overrides: `datahub.*`, `deepdiff.*` | `ignore_missing_imports = true` | `acryl-datahub` ships partial/absent type information; without this the log is dominated by import errors rather than findings about our code. |
 | overrides: `tests.*` | `disallow_untyped_defs = false` | Issue #55, mirroring the sibling repo. Currently a no-op in practice — `files = ["src"]` already keeps mypy off `tests/` entirely — kept so `files` can later be widened without silently demanding full annotation coverage in test code too. |
@@ -440,7 +440,7 @@ switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 
 ### Workflow Validation
 
-- **VLD-001**: `test` job passes on all matrix legs (Python 3.10, 3.11, 3.12) using
+- **VLD-001**: `test` job passes on all matrix legs (Python 3.11, 3.12) using
   `uv sync --frozen --group dev --extra git --extra s3`.
 - **VLD-002**: `build` passes using a base install (a built wheel installed into a fresh
   venv via `uv build --wheel` + `uv pip install`, no extras, no dev group) and confirms the `yaml` source
@@ -494,6 +494,7 @@ switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 | 1.12 | 2026-09-15 | **Merged `quality.yml` into `ci.yml`** (see "Why merged into one file" above), prompted by the maintainer comparing this repo's CI job/check structure against the sibling repo directly. `ruff`/`mypy` jobs moved here, renamed `lint`/`typecheck` to match the sibling's own job names; `minimal-install-check` renamed `build` for the same cross-repo-diffing reason. `ci-status` now aggregates `[lint, typecheck, test, build]` (was `[test, minimal-install-check]`). `main`'s required-status-checks list changed from `["CI status", "ruff", "mypy", "dependency-review"]` to `["CI status", "dependency-review"]` (applied via `PUT /repos/davidouagne/datahub-yaml-source/branches/main/protection`) — `lint`/`typecheck` are no longer individually required, but still block merge transitively through `ci-status`, so this is a consolidation, not a weakening. `spec/spec-process-cicd-quality.md` retired to a redirect stub; its full content (Ruff/mypy config tables, mypy-baseline-zero story, issue #55 `ANN`/`PL` breakdown) reproduced verbatim (job-name references updated) in the new "Lint & Type-Check Configuration" section of this document, so none of that detail was lost. Every `minimal-install-check` reference in this spec updated to `build`. | David Ouagne |
 | 1.13 | 2026-09-20 | **Documentation-accuracy correction, no workflow-file change: `main` is protected by a repository ruleset, not classic branch protection.** Rewrote "Branch protection on `main`" from the live ruleset (`gh api .../rules/branches/main`, `.../rulesets`): required checks are now `CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title` (was `["CI status", "dependency-review"]`); a PR is required with zero approvals and resolved review threads; deletion and force-push are blocked; the Admin role bypasses the ruleset (replacing `enforce_admins: false`); a `tags-v` ruleset protects `v*` tags. `strict` remains off. Updated the `CI status` row ("`main`'s ruleset requires"). | David Ouagne |
 | 1.14 | 2026-10-05 | **`main` accepts rebase merge only; `pr-title` no longer required** (`docs/adr/0005-rebase-merge-only.md`, `spec/spec-process-cicd-commit-policy.md` v1.3). Ruleset `main`: `allowed_merge_methods` narrowed to `rebase`, `required_linear_history` added, `pr-title` removed from `required_status_checks` (four checks remain). Repo settings: `allow_rebase_merge: true`, `allow_merge_commit: false`. No change to this workflow file. | David Ouagne |
+| 1.15 | 2026-10-26 | **Python 3.10 dropped** (issue #111): filelock, a transitive of the dev tool `pip-audit`, ships its security fixes only for Python >=3.11 (4.1.1 onwards), so a single lock could not fix it while 3.10 stayed supported. Python 3.10 reaches end of life in October 2026. `requires-python` is now `>=3.11`; `test` matrix 3.11/3.12; install-smoke job on the 3.11 floor; ruff `target-version = py311`; mypy `python_version = 3.11`. | David Ouagne |
 
 ## Related Specifications
 

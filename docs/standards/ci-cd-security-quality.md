@@ -175,13 +175,17 @@ Full contract: `spec/spec-process-cicd-release.md`.
 Dependabot watches two ecosystems, weekly (Monday). Grouping (adopted from the sibling repo 2026-09-15):
 on `uv`, every dev-only bump (any level, including major) groups into one PR (`dev-dependencies`);
 production bumps (indirect ones included) only group at minor/patch, in two separate PRs — `prod-patch`
-and `prod-minor` (a divergence from the sibling, spec v1.8, so indirect minor bumps don't block patch
-auto-merge) — so a production major still arrives as its own PR; a 3-day `cooldown` applies. On `github-actions`, every bump of any
+and `prod-minor` (a divergence from the sibling, spec v1.8, so a direct production minor bump doesn't
+block patch auto-merge) — so a production major still arrives as its own PR; a 3-day `cooldown` applies. On `github-actions`, every bump of any
 level groups into one PR (`actions`) — no "majors stand alone" carve-out there, unlike `uv`. Patch-level
-bumps (any dependency) and minor-level bumps to dev-only dependencies **auto-merge** once required
-checks pass (ADR-0003, issue #51); majors and minor bumps to production dependencies always wait for the
+bumps (any dependency) and minor-level bumps to dev-only and transitive (`indirect`) dependencies
+**auto-merge** once required checks pass (ADR-0003, issue #51; transitives since 2026-10-26, PR #112,
+aligned with the sibling); majors and minor bumps to direct production dependencies always wait for the
 maintainer — evaluated per-member of a grouped PR, so one ineligible bump blocks the whole group's
-auto-merge even if it's bundled alongside eligible ones. Auto-merge is enabled with a fine-grained PAT stored
+auto-merge even if it's bundled alongside eligible ones. Pitfall: for an `indirect` security update,
+`dependabot/fetch-metadata` returns an empty `updateType`, so a single-dependency PR's bump type is derived
+from its title's "from X to Y". Commit prefixes: `deps` for production `uv` bumps (own `Dependencies`
+changelog section), `build` for dev, `ci` for Actions. Auto-merge is enabled with a fine-grained PAT stored
 as the Dependabot secret `AUTO_MERGE_TOKEN` (ADR-0006), not `GITHUB_TOKEN`: a merge attributed to
 `GITHUB_TOKEN` triggers no workflow, so release-please never refreshed the release PR and `ci.yml` never ran
 on auto-merged commits. The PAT is limited to this repo (Contents, Pull requests, Workflows read/write) and
@@ -221,7 +225,7 @@ dependencies: version updates ignore transitives, and `pip-audit` detects withou
 gap, so security updates were enabled, matching the sibling repo (its ADR-0003, issue #98). They reuse
 `.github/dependabot.yml`'s labels, commit-message prefix and assignee, ignore its `cooldown`, and do not
 count towards `open-pull-requests-limit`. Their PRs go through the same auto-merge eligibility (§2.6): a
-patch bump auto-merges, a minor bump to an indirect dependency (like urllib3 2.7 → 2.8) waits for review.
+patch or minor bump to an indirect dependency (like urllib3 2.7 → 2.8) auto-merges (since 2026-10-26).
 Known limit: a transitive dependency held back by a parent's version
 constraint is not fixed; `pip-audit` remains the safety net for that case.
 

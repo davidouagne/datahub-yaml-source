@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Dependabot Auto-merge
-version: 1.5
+version: 1.6
 date_created: 2026-09-15
-last_updated: 2026-10-05
+last_updated: 2026-10-26
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, dependencies, dependabot, supply-chain]
 ---
@@ -30,7 +30,7 @@ graph TD
     A[pull_request event] --> B{actor == dependabot bot?}
     B -->|no| Z[Job skipped]
     B -->|yes| C[dependabot/fetch-metadata@v3<br/>reads updated-dependencies-json]
-    C --> D{every dependency in the PR is<br/>patch-level, OR minor + direct:development?}
+    C --> D{every dependency in the PR is<br/>patch-level, OR minor + direct:development/indirect?<br/>empty type: derived from the PR title}
     D -->|yes, all of them| E[gh pr merge --auto --rebase<br/>queues the merge]
     D -->|no, at least one fails| F[No action -- PR waits for manual review]
     E --> G[main ruleset: CI status + dependency-review + dco + commitlint]
@@ -46,7 +46,7 @@ graph TD
 
 | Job Name | Purpose | Dependencies | Execution Context |
 |----------|---------|--------------|--------------------|
-| `auto-merge` | Read the triggering PR's Dependabot metadata; if **every** dependency it updates is patch-level (any dependency) or minor-level to a dev-only dependency, call `gh pr merge --auto --rebase` on it. No-ops (via `if:` on the whole job) for any PR not opened by `dependabot[bot]`, and no-ops (via a `continue-on-error` eligibility step gating the merge step) for any PR where at least one updated dependency fails the classification. | None | Linux runner |
+| `auto-merge` | Read the triggering PR's Dependabot metadata; if **every** dependency it updates is patch-level (any dependency) or minor-level to a dev-only or transitive (`indirect`) dependency, call `gh pr merge --auto --rebase` on it. No-ops (via `if:` on the whole job) for any PR not opened by `dependabot[bot]`, and no-ops (via a `continue-on-error` eligibility step gating the merge step) for any PR where at least one updated dependency fails the classification. | None | Linux runner |
 
 ## Requirements Matrix
 
@@ -55,12 +55,13 @@ graph TD
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
 | REQ-001 | Patch-level bumps auto-merge regardless of which dependency they touch. | High | A Dependabot PR where every entry in `updated-dependencies-json` has `updateType: version-update:semver-patch` has `gh pr merge --auto` invoked on it. |
-| REQ-002 | Minor-level bumps to dev-only dependencies auto-merge. | High | A Dependabot PR where every entry in `updated-dependencies-json` is either patch-level, or `updateType: version-update:semver-minor` with `dependencyType: direct:development`, has `gh pr merge --auto` invoked on it. |
+| REQ-002 | Minor-level bumps to dev-only and transitive dependencies auto-merge. | High | A Dependabot PR where every entry in `updated-dependencies-json` is either patch-level, or `updateType: version-update:semver-minor` with `dependencyType` of `direct:development` or `indirect`, has `gh pr merge --auto` invoked on it. `indirect` added in v1.6 (PR #112). |
 | REQ-003 | Major-version bumps never auto-merge. | High | A Dependabot PR containing **any** entry with `updateType: version-update:semver-major` does not have `gh pr merge --auto` invoked on it, regardless of what the other entries in the same PR are. |
-| REQ-004 | Minor-version bumps to production (or indirect) dependencies never auto-merge. | High | A Dependabot PR containing **any** entry with `updateType: version-update:semver-minor` and `dependencyType` of `direct:production` or `indirect` does not have `gh pr merge --auto` invoked on it, regardless of what the other entries in the same PR are — this holds even inside a grouped PR that also contains an eligible dependency (REQ-003/REQ-004 are per-dependency, not per-PR-aggregate; see Error Handling Strategy for why the aggregated `update-type`/`dependency-type` outputs cannot be used for this check). |
+| REQ-004 | Minor-version bumps to direct production dependencies never auto-merge. | High | A Dependabot PR containing **any** entry with `updateType: version-update:semver-minor` and `dependencyType: direct:production` does not have `gh pr merge --auto` invoked on it, regardless of what the other entries in the same PR are — this holds even inside a grouped PR that also contains an eligible dependency (REQ-003/REQ-004 are per-dependency, not per-PR-aggregate; see Error Handling Strategy for why the aggregated `update-type`/`dependency-type` outputs cannot be used for this check). |
 | REQ-005 | Non-Dependabot PRs are never touched. | High | The job's `if: github.actor == 'dependabot[bot]'` skips the entire job for any other PR author. |
 | REQ-006 | Auto-merge never bypasses required status checks. | High | `gh pr merge --auto` only *enables* GitHub's native auto-merge on the PR; the PR still merges only once `main`'s required status checks (`CI status`, `dependency-review`, `dco`, `commitlint`) report success. |
 | REQ-007 | The repository allows GitHub's native auto-merge, so `gh pr merge --auto` can actually succeed. | High | Repo setting "Allow auto-merge" (`allow_auto_merge` via `gh api repos/{owner}/{repo}`) is `true`. Enabled 2026-09-15 as part of this change (previously `false`, which would have made every eligible PR fail silently — see Error Handling Strategy). Without it, `gh pr merge --auto` fails for every eligible PR. |
+| REQ-008 | An empty bump type on a single-dependency PR is derived from the PR title. | High | When `updated-dependencies-json` holds exactly one entry and its `updateType` is empty or null (an `indirect` security update: Dependabot's commit message lacks the previous version), the `eligibility` step derives it from the title's `from X to Y`: first component differs → major, second differs → minor, otherwise patch. REQ-001..REQ-004 then apply to the derived type. An unrecognized title leaves the type empty, so the PR is refused. Grouped PRs never use the title. |
 
 ### Security Requirements
 
@@ -68,8 +69,8 @@ graph TD
 |----|-------------|----------------------------|
 | SEC-001 | The job holds the minimum token scope it needs. | Top-level `permissions: {}`; the `auto-merge` job grants its `GITHUB_TOKEN` only `contents: write` and `pull-requests: write` (needed by `gh pr merge` on the fallback path, SEC-006), nothing else. |
 | SEC-002 | The job cannot be triggered to act on arbitrary attacker-controlled PRs. | Gated on `github.actor == 'dependabot[bot]'`, which is not attacker-settable; Dependabot PRs in this repo are always same-repo branches (never forks), so no `pull_request_target`/secret-exposure concern applies. |
-| SEC-003 | Auto-merge cannot silently widen beyond the two approved bump classes. | The eligibility condition is a single `jq` filter in the `eligibility` step, reviewed in this spec; any change to it is a Change-Management-tracked edit to this document. |
-| SEC-004 | Dependency/package names cannot be used to inject shell commands into this workflow. | `updated-dependencies-json` is passed into the `eligibility` step via `env: DEPENDENCIES_JSON`, never interpolated directly into the `run:` script body via `${{ }}` — the standard mitigation for the GitHub Actions script-injection class. |
+| SEC-003 | Auto-merge cannot silently widen beyond the approved bump classes (patch, any dependency; minor, dev-only or transitive). | The eligibility condition is a single `jq` filter in the `eligibility` step, reviewed in this spec; any change to it is a Change-Management-tracked edit to this document. |
+| SEC-004 | Dependency/package names and the PR title cannot be used to inject shell commands into this workflow. | `updated-dependencies-json` and the PR title are passed into the `eligibility` step via `env: DEPENDENCIES_JSON` / `env: PR_TITLE`, never interpolated directly into the `run:` script body via `${{ }}` — the standard mitigation for the GitHub Actions script-injection class. |
 | SEC-006 | Auto-merge is enabled with a PAT so the resulting merge triggers `release.yml`/`ci.yml` (ADR-0006), and that PAT stays narrowly scoped and confined. | `gh pr merge` runs with the Dependabot secret `AUTO_MERGE_TOKEN`: a fine-grained PAT limited to this repository, with Contents, Pull requests and Workflows read/write only. It is exposed only to the merge step, via `env:`, never interpolated into the script body, and the job never checks out or runs PR code. If the secret is empty, the step warns and falls back to `GITHUB_TOKEN` (merge still queued; no downstream workflow runs). |
 | SEC-005 | Auto-merge only ever acts on PRs targeting the one branch branch protection actually covers. | `on: pull_request: branches: [main]`, matching `ci.yml`'s scoping (`spec/spec-process-cicd-ci.md`'s "Branch protection on `main`" section) — a PR targeting any other branch never triggers this job at all. |
 
@@ -79,7 +80,8 @@ graph TD
 |-----------|----------|-------------------|
 | `dependabot/fetch-metadata` cannot parse the PR (unexpected title/branch format), returns `updated-dependencies-json` as an empty array (`[]`), or returns unparseable JSON | The `eligibility` filter opens with `(. != []) and ...` specifically so an empty array is treated as ineligible rather than vacuously satisfying `all(.[]; ...)` (which is `true` on zero elements — the initial draft got this wrong; caught in code review); unparseable JSON makes `jq -e` itself fail. Either way `continue-on-error: true` keeps the job green but the step's `outcome` is `failure`. | PR is left for manual review, same as any ineligible bump — fails safe, never fails open. |
 | Required checks fail after auto-merge is enabled | GitHub holds the merge queued, does not merge | Maintainer investigates like any other red PR; fixing the check (or the offending bump) lets the queued auto-merge proceed, or the maintainer closes/edits the PR to cancel it. |
-| A grouped PR (`dev-dependencies` / `prod-patch` / `prod-minor` / `actions`, per `.github/dependabot.yml`) mixes bump levels across its member dependencies | **Rejected design**: `dependabot/fetch-metadata`'s top-level `update-type` and `dependency-type` outputs are each computed independently across the *whole* PR (highest semver level; highest-priority dependency type) — they do not describe the same dependency, so a group containing (say) an indirect minor bump alongside a direct-dev patch bump would read as `update-type: minor` + `dependency-type: direct:development` and wrongly pass a single combined check. **Actual design**: the `eligibility` step evaluates `updated-dependencies-json`, which carries one entry per updated dependency, and requires (via `jq`'s `all(.[]; ...)`) that *every* entry independently satisfies patch-any-or-minor-dev — so one ineligible member anywhere in the group blocks the whole PR's auto-merge. | Working as intended; this is REQ-003/REQ-004's actual enforcement mechanism, not a residual gap. Covered by VLD-007 below. |
+| A grouped PR (`dev-dependencies` / `prod-patch` / `prod-minor` / `actions`, per `.github/dependabot.yml`) mixes bump levels across its member dependencies | **Rejected design**: `dependabot/fetch-metadata`'s top-level `update-type` and `dependency-type` outputs are each computed independently across the *whole* PR (highest semver level; highest-priority dependency type) — they do not describe the same dependency, so a group containing (say) an indirect minor bump alongside a direct-dev patch bump would read as `update-type: minor` + `dependency-type: direct:development` and wrongly pass a single combined check. **Actual design**: the `eligibility` step evaluates `updated-dependencies-json`, which carries one entry per updated dependency, and requires (via `jq`'s `all(.[]; ...)`) that *every* entry independently satisfies patch-any-or-minor-dev-or-indirect — so one ineligible member anywhere in the group blocks the whole PR's auto-merge. | Working as intended; this is REQ-003/REQ-004's actual enforcement mechanism, not a residual gap. Covered by VLD-007 below. |
+| An `indirect` security update arrives with an empty `updateType` (Dependabot's commit message carries only the new version; the sibling repo hit this on its PR #113) | Single-dependency PR: the type is derived from the title (REQ-008). Grouped PR, or a title without `from X to Y`: the entry stays empty, matches no rule, and the PR is refused. | Fails safe. A refused PR is merged by hand. |
 | The repo's "Allow auto-merge" setting is off | `gh pr merge --auto` fails outright (the run shows red), and no merge is queued | One-time repo-setting prerequisite — see REQ-007 / VLD-006. Until it is enabled, every eligible PR still ends up needing a manual merge, silently defeating the point of this workflow without failing any required check. |
 | Dependabot secret `AUTO_MERGE_TOKEN` missing, empty or expired | Missing/empty: the merge step emits a `::warning::` and uses `GITHUB_TOKEN` — the PR still auto-merges, but its push to `main` triggers no workflow, so the release PR is not refreshed until the next by-hand push. Expired/revoked: `gh pr merge` fails and the run shows red; the PR is not merged. | Create or rotate the fine-grained PAT (ADR-0006 lists its permissions) and store it under Settings -> Secrets and variables -> Dependabot. Re-run the failed job, or merge the PR by hand. |
 | `main`'s branch protection keeps `required_status_checks.strict: false` (a deliberate, pre-existing posture — see `spec/spec-process-cicd-ci.md`'s "Branch protection on `main`" section) | An auto-merged PR can land without ever having been re-tested against commits that merged to `main` after its own checks went green (e.g. another auto-merged PR in between) | Accepted residual risk, not mitigated by this workflow: the same gap already existed for by-hand merges under `strict: false`, and this spec does not change branch protection. If a stale-base merge from this path ever breaks `main`, `ci.yml`'s next run on `main` surfaces it immediately; revisit `strict` in `spec/spec-process-cicd-ci.md` if that happens more than once. |
@@ -89,14 +91,14 @@ graph TD
 | Gate | Criteria | Bypass Conditions |
 |------|----------|----------------------|
 | `main` ruleset | `CI status`, `dependency-review`, `dco`, `commitlint` all pass | None — `gh pr merge --auto` requests a merge GitHub will only perform once these pass; it grants no bypass. |
-| Classification correctness | Only patch (any) and minor+dev-only PRs get `gh pr merge --auto` called on them | None — this is what the workflow exists to gate; see Validation Criteria. |
+| Classification correctness | Only patch (any) and minor+dev-only/transitive PRs get `gh pr merge --auto` called on them | None — this is what the workflow exists to gate; see Validation Criteria. |
 
 ## Integration Points
 
 | Component | Relationship | Mechanism |
 |-----------|---------------|--------------|
 | `spec/spec-process-cicd-dependabot.md` | Upstream PR producer for scheduled version-update PRs | Triggers on `pull_request`, filtered to `dependabot[bot]` |
-| Repo "Dependabot security updates" setting | Also an upstream PR producer — on-demand security-fix PRs are authored by `dependabot[bot]` too, independent of `.github/dependabot.yml`'s schedule/grouping, and pass this workflow's actor filter the same way | Same trigger/filter as above; classification (REQ-001..REQ-004) applies identically — a patch-level security fix auto-merges, a minor-to-production one still waits for review |
+| Repo "Dependabot security updates" setting | Also an upstream PR producer — on-demand security-fix PRs are authored by `dependabot[bot]` too, independent of `.github/dependabot.yml`'s schedule/grouping, and pass this workflow's actor filter the same way | Same trigger/filter as above; classification (REQ-001..REQ-004) applies identically — a patch-level or transitive minor security fix auto-merges, a minor to a direct production dependency still waits for review |
 | `spec/spec-process-cicd-ci.md` / `spec/spec-process-cicd-dependency-review.md` | The required status checks that gate the actual merge | `main` ruleset required checks (`CI status`, `dependency-review`, `dco`, `commitlint`) |
 | `dependabot/fetch-metadata@v3` (third-party Action) | Supplies `updated-dependencies-json` (one entry per dependency updated by the triggering PR), which the `eligibility` step evaluates per-dependency | `uses: dependabot/fetch-metadata@v3` step, no inputs needed (reads the PR from the triggering event) |
 | `docs/adr/0003-dependabot-auto-merge-policy.md` | Records the decision this workflow implements | Referenced in the workflow file's header comment |
@@ -108,7 +110,8 @@ graph TD
   updated dependency is a patch-level bump and confirm the workflow calls `gh pr merge --auto --rebase`
   on it.
 - **VLD-002**: Observe/simulate a Dependabot PR whose only updated dependency is a minor-level bump to a
-  dev-only dependency (`dependencyType: direct:development`) and confirm the same.
+  dev-only dependency (`dependencyType: direct:development`) or to a transitive one
+  (`dependencyType: indirect`, e.g. PR #112, certifi 2026.7.22 → 2026.10.19) and confirm the same.
 - **VLD-003**: Observe/simulate a Dependabot PR containing a major-level bump and confirm the workflow
   does **not** call `gh pr merge --auto` on it.
 - **VLD-004**: Observe/simulate a Dependabot PR containing a minor-level bump to a production dependency
@@ -119,7 +122,7 @@ graph TD
 - **VLD-006**: `gh api repos/davidouagne/datahub-yaml-source -q '.allow_auto_merge'` returns `true`
   before relying on this workflow; VLD-001/VLD-002 above only pass end-to-end (PR actually merges, not
   just "auto-merge enabled") if this prerequisite holds.
-- **VLD-007**: Observe/simulate a grouped PR that mixes an ineligible dependency (e.g. an indirect or
+- **VLD-007**: Observe/simulate a grouped PR that mixes an ineligible dependency (e.g. a direct
   production minor bump) alongside an otherwise-eligible one (e.g. a direct-dev patch bump) and confirm
   the workflow does **not** call `gh pr merge --auto` on it — the case the aggregated `update-type`/
   `dependency-type` outputs cannot distinguish, and the reason the `eligibility` step evaluates
@@ -136,6 +139,11 @@ graph TD
 - **VLD-010**: After an eligible Dependabot PR auto-merges, `gh run list --workflow release.yml` shows a
   run for the resulting `main` commit, and the open release PR (if any) lists that commit. The
   auto-merge run log has no `AUTO_MERGE_TOKEN is not set` warning.
+
+- **VLD-011**: Pipe a single-entry `updated-dependencies-json` whose `updateType` is `null` through the
+  `eligibility` step with a title `Bump x from 3.14.3 to 3.14.4` (patch → eligible), `from 6.7.1 to 6.9.1`
+  (minor, `indirect` → eligible), `from 1.2.3 to 2.0.0` (major → refused) and a title without
+  `from X to Y` (refused). A two-entry array with one `null` `updateType` is refused whatever the title.
 
 ## Change Management
 
@@ -160,6 +168,7 @@ this spec and `docs/adr/0003-dependabot-auto-merge-policy.md` first.
 | 1.3 | 2026-09-20 | Documentation-accuracy correction, no workflow-file change: `main` is now protected by a repository ruleset requiring `CI status`, `dependency-review`, `dco`, `commitlint` and `pr-title` (`spec/spec-process-cicd-ci.md` v1.13); updated the flow diagram, REQ-006, Quality Gates and Integration Points. Dependabot's commits carry `Signed-off-by: dependabot[bot]`, so the newly-required `dco` does not block auto-merge (`spec/spec-process-cicd-commit-policy.md` v1.2). | David Ouagne |
 | 1.4 | 2026-10-05 | **Merge method `--merge` -> `--rebase`**: `main` now accepts rebase merge only (`docs/adr/0005-rebase-merge-only.md`), so `gh pr merge --auto --merge` would no longer be allowed. `pr-title` dropped from the required checks listed in the flow diagram, REQ-006, Quality Gates and Integration Points. Eligibility rules unchanged. | David Ouagne |
 | 1.5 | 2026-10-05 | **Auto-merge enabled with a PAT** (`docs/adr/0006-pat-for-dependabot-auto-merge.md`): with `GITHUB_TOKEN`, the push to `main` an auto-merged PR produced triggered no workflow, so release-please never refreshed the release PR (observed with release PR #92). The merge step now uses the Dependabot secret `AUTO_MERGE_TOKEN`, falling back to `GITHUB_TOKEN` with a warning when it is unset. Added SEC-006, an Error Handling row, an Integration Points row and VLD-010; SEC-001 reworded. | David Ouagne |
+| 1.6 | 2026-10-26 | **Policy widened, aligned with the sibling repo** (its #110 and #113). PR #112 (certifi 2026.7.22 → 2026.10.19, `indirect`, classified `semver-minor` because certifi uses CalVer) stayed open with green checks, while the same bump auto-merged on the sibling. (1) Minor bumps to `indirect` dependencies are now eligible (REQ-002/REQ-004, SEC-003). Unlike the sibling, `.github/dependabot.yml` has `allow: all`, so indirect PRs here are also weekly version updates, not only security updates: accepted, since `uv.lock` is not shipped in the wheel and the bump only reaches the CI/dev environment the required checks validate. (2) An empty `updateType` on a single-dependency PR is derived from the title (REQ-008, VLD-011, new Error Handling row); `PR_TITLE` enters the step through `env:` (SEC-004). Direct production minors and all majors still wait for review. | David Ouagne |
 
 ## Related Specifications
 

@@ -14,16 +14,16 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Database",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-# acryl-datahub>=1.7.0 itself requires Python >=3.10 (its PyPI
-# classifiers list only 3.10/3.11/3.12) -- this floor tracks that,
-# not an independent choice; CI matrices 3.10-3.12 accordingly.
-requires-python = ">=3.10"
+# acryl-datahub>=1.7.0 itself requires Python >=3.10, but the floor is
+# 3.11 since 2026-10-26 (issue #111): filelock, pulled in by the dev
+# tool pip-audit, ships its security fixes only for >=3.11, and Python
+# 3.10 reaches end of life in October 2026. CI matrices 3.11-3.12.
+requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
     # >=1.6.0 for the SDK V2 constructor kwargs the cross-cutting aspect
@@ -158,7 +158,7 @@ exclude = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 src = ["src", "tests", "scripts"]
 # Ruff's scope here is first-party Python only. Since 0.16 `ruff format` also
 # reformats ```python blocks inside Markdown; the illustrative snippets in
@@ -196,7 +196,7 @@ known-first-party = ["datahub_yaml_source"]
 # (mirroring the sibling repo) so `files` can later be widened to include
 # tests/ without silently demanding full annotation coverage there too.
 files = ["src"]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 
 [[tool.mypy.overrides]]

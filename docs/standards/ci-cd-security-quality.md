@@ -71,7 +71,7 @@ aggregate gate named exactly `CI status` (the required-status-check context stri
 - **`typecheck`**: `mypy`, `strict = true`, scoped to `src/` only (`pyproject.toml` `[tool.mypy] files =
   ["src"]`). The baseline was driven to **zero** when strict mode was adopted (issue #55) -- there is no
   grandfathered ignore list; every new type error fails the build.
-- **`test`**: full unit + integration test suite across Python 3.10-3.12, enforces a coverage floor
+- **`test`**: full unit + integration test suite across Python 3.11-3.12, enforces a coverage floor
   (`--cov-fail-under=80`).
 - **`build`**: verifies a base-only (no optional-extras) install still registers the `yaml` DataHub
   ingestion source plugin.

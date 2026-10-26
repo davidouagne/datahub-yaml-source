@@ -101,10 +101,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # acryl-datahub>=1.7.0 requires Python >=3.10 (its own PyPI
-        # classifiers list only 3.10/3.11/3.12) -- this matrix mirrors
-        # pyproject.toml's requires-python floor, it does not set it.
-        python-version: ["3.10", "3.11", "3.12"]
+        # Mirrors pyproject.toml's requires-python floor (3.11 since
+        # issue #111), it does not set it.
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v7
         # Full history + tags so hatch-vcs derives the real version
@@ -169,7 +168,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-          python-version: "3.10"
+          python-version: "3.11"
 
       # Build the wheel and install it fresh, base dependencies only --
       # no `git` or `s3` extra, and no dev group. This is what an actual

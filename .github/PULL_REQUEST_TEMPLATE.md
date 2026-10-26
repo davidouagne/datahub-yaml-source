@@ -11,7 +11,7 @@ as-is and feeds the changelog. The PR title never reaches history.
 
 - [ ] Every commit is a signed-off (`git commit -s`), valid Conventional Commit
       (`feat` / `fix` / `docs` / `build` / `ci` / `refactor` / `style` /
-      `test` / `chore` / `perf` / `revert`).
+      `test` / `chore` / `perf` / `revert` / `deps`).
 - [ ] Clean branch history with no merge commit (interactive rebase before
       opening, update by rebase) — every commit lands on `main` as-is.
 - [ ] `uv run pytest tests/unit tests/integration` passes.

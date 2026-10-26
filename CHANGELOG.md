@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.3.0...v0.3.1) (2026-10-26)
+
+
+### Dependencies
+
+* bump certifi from 2026.10.19 to 2026.10.23 in the prod-patch group ([5dd8c1b](https://github.com/davidouagne/datahub-yaml-source/commit/5dd8c1b162166478a2dd5b9469d7962a8d0dea8a))
+
 ## [0.3.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.8...v0.3.0) (2026-10-26)
 
 

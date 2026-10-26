@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.8...v0.3.0) (2026-10-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* Python 3.10 is no longer supported; the minimum is 3.11.
+
+### Dependencies
+
+* bump acryl-datahub from 1.7.0.14 to 1.7.0.17 ([0dc2d9d](https://github.com/davidouagne/datahub-yaml-source/commit/0dc2d9d07983458c38fec7e83f93a70d998362c0))
+* bump multidict from 6.9.1 to 7.1.0 ([b9e9e29](https://github.com/davidouagne/datahub-yaml-source/commit/b9e9e29ff72fcf89da8c6e5d84a533ebcba02969))
+* bump the prod-minor group across 1 directory with 6 updates ([3f62a1e](https://github.com/davidouagne/datahub-yaml-source/commit/3f62a1ec6cd8903bb2e8d5e1dc82d9fb1a9bab52))
+* Bump the prod-patch group with 5 updates ([21ba4df](https://github.com/davidouagne/datahub-yaml-source/commit/21ba4dfd66c61a96c493601f0b56959dab1a3947))
+
+
+### Build System
+
+* Bump the dev-dependencies group with 2 updates ([848d313](https://github.com/davidouagne/datahub-yaml-source/commit/848d313a3e89c70760c894296f246bc1e26b3efb))
+* **deps:** Bump certifi from 2026.7.22 to 2026.10.19 ([7f7a314](https://github.com/davidouagne/datahub-yaml-source/commit/7f7a3147092ddd1ea89e28374b715b4d01ca665c))
+* drop Python 3.10 to take filelock security fixes ([941a7eb](https://github.com/davidouagne/datahub-yaml-source/commit/941a7ebadae8edebd259c97711a0a78757d66126)), closes [#111](https://github.com/davidouagne/datahub-yaml-source/issues/111)
+
+
+### Continuous Integration
+
+* align Dependabot auto-merge and prefixes with the exporter repo ([9aeb1c7](https://github.com/davidouagne/datahub-yaml-source/commit/9aeb1c7547550353e8470b8f15b70176f54c6488))
+
 ## [0.2.8](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.7...v0.2.8) (2026-10-19)
 
 

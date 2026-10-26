@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - Coverage Reporting (Codecov)
-version: 1.4
+version: 1.5
 date_created: 2026-09-07
-last_updated: 2026-09-20
+last_updated: 2026-10-26
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, coverage, codecov]
 ---
@@ -34,7 +34,7 @@ request targeting `main`; manual dispatch).
 
 ```mermaid
 graph TD
-    A[test job: matrix py3.10-3.12] --> B["pytest ... --cov-report=xml --cov-fail-under=80"]
+    A[test job: matrix py3.11-3.12] --> B["pytest ... --cov-report=xml --cov-fail-under=80"]
     B --> C{coverage.xml produced}
     C --> D["codecov/codecov-action@v5<br/>use_oidc: true, flags: py3.xx<br/>fail_ci_if_error: false"]
     D -->|success| E[Codecov merges per-flag reports]
@@ -103,7 +103,7 @@ listed in `.gitignore`.
 |---------|-------|-----------|
 | action | `codecov/codecov-action@v5` | v5 is the current major. Pinned by **major-version tag**, consistent with `actions/checkout@v7` / `actions/setup-python@v7` in the same file; Dependabot's `github-actions` ecosystem (`spec/spec-process-cicd-dependabot.md`) keeps it current. |
 | `use_oidc` | `true` | GitHub OIDC exchange instead of an upload token — no `CODECOV_TOKEN` to store or rotate. Any token input is ignored when this is set. |
-| `flags` | `py${{ matrix.python-version }}` → `py3.10` / `py3.11` / `py3.12` | All three matrix legs upload; Codecov merges them into one report and keeps per-flag breakdowns. Cheapest correct option — no extra job, no re-run of the suite. |
+| `flags` | `py${{ matrix.python-version }}` → `py3.11` / `py3.12` | Both matrix legs upload; Codecov merges them into one report and keeps per-flag breakdowns. Cheapest correct option — no extra job, no re-run of the suite. |
 | `fail_ci_if_error` | `false` | A Codecov outage, a rate-limit, a missing report, or a fork-PR run with no OIDC token must never fail the `test` job or `CI status`. This is what "reporting only" means in practice. |
 | `if` | `always()` | Upload even when a test leg fails, so the coverage of a red PR is still visible. |
 | `files` | implicit | `coverage.xml` at the repo root is auto-discovered by the action. |
@@ -127,7 +127,7 @@ coverage:
 comment:
   layout: "reach, diff, flags, files"
   require_changes: true
-  after_n_builds: 3
+  after_n_builds: 2
 
 github_checks:
   annotations: false
@@ -137,9 +137,9 @@ github_checks:
 |-----|-------|-----------|
 | `coverage.status.project.default.informational` | `true` | Codecov still posts a `codecov/project` commit status, but `informational` makes it always succeed — signal, never a gate. `main` branch protection does not list it (see Integration Points). |
 | `coverage.status.patch.default.informational` | `true` | Same for `codecov/patch`. Patch coverage is the number worth watching on a PR, but it advises; it does not block. |
-| `comment.after_n_builds` | `3` | Wait for all three matrix legs to upload before settling the PR comment, so the number does not flap as legs report in. |
+| `comment.after_n_builds` | `2` | Wait for both matrix legs to upload before settling the PR comment, so the number does not flap as legs report in. |
 | `comment.require_changes` | `true` | Only comment when coverage actually moved — keeps no-op PRs quiet. |
-| `comment.layout` | `reach, diff, flags, files` | Includes the per-Python-version `flags` block, which is the reason all three legs upload. |
+| `comment.layout` | `reach, diff, flags, files` | Includes the per-Python-version `flags` block, which is the reason both legs upload. |
 | `github_checks.annotations` | `false` | No inline "line not covered" annotations on the diff — noisy; the PR comment is enough. |
 | `codecov.require_ci_to_pass` | `true` | Codecov holds its status and comment until the repo's CI concludes, so it never reports on a half-finished run. |
 
@@ -149,7 +149,7 @@ github_checks:
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
-| REQ-001 | Coverage from every `test` matrix leg reaches Codecov. | High | After a push to `main`, `app.codecov.io/gh/davidouagne/datahub-yaml-source` shows an upload for each of `py3.10`, `py3.11`, `py3.12`. |
+| REQ-001 | Coverage from every `test` matrix leg reaches Codecov. | High | After a push to `main`, `app.codecov.io/gh/davidouagne/datahub-yaml-source` shows an upload for each of `py3.11`, `py3.12`. |
 | REQ-002 | Pull requests get an automated coverage comment. | Medium | A PR that changes covered code gets one Codecov comment, posted after the third leg uploads, showing patch coverage. |
 | REQ-003 | The repository shows a coverage badge. | Low | The README badge row renders a Codecov badge resolving a real percentage (not "unknown") for `main`. |
 | REQ-004 | Codecov never blocks a merge. | High | `codecov/project` and `codecov/patch` are `informational` and are not in `main`'s required status checks; `pytest --cov-fail-under=80` remains the only coverage gate (`spec/spec-process-cicd-ci.md` REQ-004). |
@@ -218,7 +218,7 @@ spec (drop `informational`) **and** a `main` branch-protection change
 
 - **VLD-001**: `.github/workflows/ci.yml`'s `test` job contains a `codecov/codecov-action@v5` step with `use_oidc: true`, `flags: py${{ matrix.python-version }}`, `fail_ci_if_error: false`, and a job-level `permissions` block granting `contents: read` **and** `id-token: write`.
 - **VLD-002**: The pytest command in the `test` job passes `--cov-report=xml` alongside the existing `--cov-report=term-missing` and `--cov-fail-under=80`.
-- **VLD-003**: `codecov.yml` at the repo root sets `project` and `patch` statuses to `informational: true`, `comment.after_n_builds: 3`, `comment.require_changes: true`, `github_checks.annotations: false`.
+- **VLD-003**: `codecov.yml` at the repo root sets `project` and `patch` statuses to `informational: true`, `comment.after_n_builds: 2`, `comment.require_changes: true`, `github_checks.annotations: false`.
 - **VLD-004**: `gh api repos/davidouagne/datahub-yaml-source/rules/branches/main` (the `required_status_checks` rule of `main`'s ruleset; classic branch protection no longer exists) does not list any `codecov/*` context.
 - **VLD-005**: `gh secret list --repo davidouagne/datahub-yaml-source` contains no `CODECOV_TOKEN`.
 - **VLD-006**: On a trial PR, the Codecov comment appears after the third matrix leg and `CI status` is green regardless of the Codecov upload's outcome.
@@ -250,6 +250,7 @@ branch-protection change:
 | 1.2 | 2026-09-07 | README badge row now carries the Codecov badge (`branch/main/graph/badge.svg`); verified rendering ~97% off the first `main` upload. Status banner updated — the whole destination on wayfinder map issue #40 is now reached. | David Ouagne |
 | 1.3 | 2026-09-15 | Cross-reference update, no workflow-file change: `spec/spec-process-cicd-quality.md` was retired and merged into `spec/spec-process-cicd-ci.md` v1.12 (`ruff`/`mypy` renamed `lint`/`typecheck`). Updated the two mentions of it here to point at the current location. | David Ouagne |
 | 1.4 | 2026-09-20 | Documentation-accuracy correction, no config change: VLD-004 now checks `gh api .../rules/branches/main` instead of the classic branch-protection endpoint, which returns 404 since `main` moved to a repository ruleset (`spec/spec-process-cicd-ci.md` v1.13). Codecov statuses remain informational and are not required. | David Ouagne |
+| 1.5 | 2026-10-26 | Python 3.10 dropped (issue #111, `spec/spec-process-cicd-ci.md` v1.15): the `test` matrix is now 3.11/3.12, so two flags upload and `comment.after_n_builds` goes from 3 to 2. | David Ouagne |
 
 ## Related Specifications
 

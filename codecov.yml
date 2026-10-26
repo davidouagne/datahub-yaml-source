@@ -20,10 +20,10 @@ coverage:
         informational: true
 
 comment:
-  # `flags` in the layout is why all three Python matrix legs upload.
+  # `flags` in the layout is why both Python matrix legs upload.
   layout: "reach, diff, flags, files"
   require_changes: true       # stay quiet on PRs that don't move coverage
-  after_n_builds: 3           # wait for py3.10 + py3.11 + py3.12 before settling
+  after_n_builds: 2           # wait for py3.11 + py3.12 before settling
 
 github_checks:
   annotations: false          # no inline "line not covered" marks on the diff

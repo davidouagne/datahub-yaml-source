@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.sdk.document import Document
@@ -21,7 +21,7 @@ _DOCUMENT_NATIVE_KWARGS: frozenset[str] = frozenset(
 # `datetime.now()` on `created`/`lastModified` -- unlike every other SDK V2
 # entity in this connector, which default to a deterministic `time=0`. Pin
 # to the epoch for a stable golden file.
-_EPOCH = datetime.fromtimestamp(0, tz=timezone.utc)
+_EPOCH = datetime.fromtimestamp(0, tz=UTC)
 
 
 def build_document(

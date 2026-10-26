@@ -115,9 +115,10 @@ with a real annotation/guard; a `# type: ignore[<code>]` (mypy) or
    containers`) for every commit. `commit-policy.yml` checks each one in CI
    (`commitlint`, a required check on `main`)
    (`spec/spec-process-cicd-commit-policy.md`); `commitlint.config.mjs`
-   configures the accepted types via `@commitlint/config-conventional`'s
+   configures the accepted types: `@commitlint/config-conventional`'s
    standard list (`build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`,
-   `refactor`, `revert`, `style`, `test`). The PR title is not checked: it
+   `refactor`, `revert`, `style`, `test`) plus `deps`, reserved for
+   Dependabot's production dependency bumps. The PR title is not checked: it
    never reaches `main`'s history (next point).
 6. Keep the branch history clean. `main` only accepts **rebase merge** (no
    merge commit, no squash; linear history required — ADR-0005): every

@@ -9,6 +9,13 @@
 export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
+    // config-conventional's standard list, plus `deps`: Dependabot's
+    // prefix for production `uv` bumps (.github/dependabot.yml).
+    'type-enum': [
+      2,
+      'always',
+      ['build', 'chore', 'ci', 'deps', 'docs', 'feat', 'fix', 'perf', 'refactor', 'revert', 'style', 'test'],
+    ],
     // Dependabot's own commit subjects are capitalized ("Bump X from Y to
     // Z", "Update ... requirement" -- see this repo's actual merged
     // Dependabot commits), and this repo's own history already mixes

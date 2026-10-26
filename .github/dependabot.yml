@@ -1,8 +1,8 @@
 # Dependency updates for a single-maintainer repo. Patch-level bumps (any
-# dependency) and minor-level bumps to dev-only dependencies auto-merge
-# once required checks are green (ADR-0003, issue #51,
+# dependency) and minor-level bumps to dev-only and transitive dependencies
+# auto-merge once required checks are green (ADR-0003, issue #51,
 # .github/workflows/dependabot-auto-merge.yml); majors and minor bumps to
-# production dependencies still require manual review.
+# direct production dependencies still require manual review.
 #
 # Grouping (matches the sibling repo datahub-healthdcat-ap-exporter's
 # dependabot.yml as of 2026-09-15, after the maintainer compared the two
@@ -11,9 +11,9 @@
 # grouped at minor/patch, so a production major still arrives as its own
 # individually-reviewed PR. Unlike the sibling, production patch and minor
 # bumps go into separate groups (`prod-patch` / `prod-minor`, spec v1.8):
-# indirect deps (`allow: all` below) are grouped as production, and an
-# indirect minor bump is never auto-merge-eligible -- in a combined group
-# it held every patch hostage to manual review (PR #107). On `github-actions`, every
+# a minor bump to a direct production dependency is never
+# auto-merge-eligible, and in a combined group it would hold every patch
+# hostage to manual review (PR #107). On `github-actions`, every
 # bump of any level is grouped into one PR (`actions`) -- unlike `uv`,
 # there is no separate "majors stand alone" carve-out here, mirroring the
 # sibling exactly. A dev-dependencies group that happens to bundle a major
@@ -49,9 +49,14 @@ updates:
       - "dependencies"
     assignees:
       - "davidouagne"
+    # `deps` for production (transitives included), `build` for dev --
+    # matches the sibling repo since 2026-10-26. `deps` gets its own
+    # "Dependencies" changelog section (release-please-config.json), so
+    # runtime bumps no longer blend into dev tooling under "Build System".
+    # No scope: the type already tells production from dev.
     commit-message:
-      prefix: "build"
-      include: "scope"
+      prefix: "deps"
+      prefix-development: "build"
     groups:
       dev-dependencies:
         dependency-type: "development"

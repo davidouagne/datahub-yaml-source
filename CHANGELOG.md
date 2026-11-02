@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.3.0...v0.3.1) (2026-11-02)
+
+
+### Dependencies
+
+* bump acryl-datahub from 1.7.0.17 to 1.7.0.19 ([66a8337](https://github.com/davidouagne/datahub-yaml-source/commit/66a8337cf5ed05e3156035c927df755756ba2fe2))
+* bump certifi from 2026.10.19 to 2026.10.23 in the prod-patch group ([5dd8c1b](https://github.com/davidouagne/datahub-yaml-source/commit/5dd8c1b162166478a2dd5b9469d7962a8d0dea8a))
+* bump the prod-minor group with 2 updates ([cce00ae](https://github.com/davidouagne/datahub-yaml-source/commit/cce00ae431467c7752475129cc7efaa762f18df9))
+* bump the prod-patch group across 1 directory with 5 updates ([46ef4b4](https://github.com/davidouagne/datahub-yaml-source/commit/46ef4b4db613005923c8d5a0ad3cae0fc68985f2))
+
+
+### Build System
+
+* bump the dev-dependencies group with 5 updates ([ff0db30](https://github.com/davidouagne/datahub-yaml-source/commit/ff0db3003e5930ab87bebd362859052f4603ef91))
+
 ## [0.3.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.2.8...v0.3.0) (2026-10-26)
 
 

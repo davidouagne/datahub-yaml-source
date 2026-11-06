@@ -8614,6 +8614,7 @@
             }
           ],
           "default": null,
+          "description": "Not emitted yet: DataHub 1.7 servers can't store a service's custom properties, so setting this only raises a warning.",
           "title": "Properties"
         },
         "platform": {

@@ -34,7 +34,6 @@ from datahub_yaml_source.builders.common import (
     build_data_platform_instance_aspect,
     common_aspect_mcps,
     mcp_workunit,
-    stringify_custom_properties,
 )
 from datahub_yaml_source.models import AgentSkillDoc, AIAgentDoc, ApiDoc, RepositoryDoc, ServiceDoc
 from datahub_yaml_source.urns import (
@@ -214,11 +213,22 @@ def build_service(
     context = f"SERVICE '{doc.id}'"
     entity_urn = service_urn(doc.id)
 
+    # DataHub 1.7's serviceProperties has no customProperties (added after
+    # v1.7.0.1): the server silently drops them. Per ADR-0007 §5 a field is
+    # never gated by server version -- it enters once every supported minor
+    # keeps it -- so `properties` stay unemitted while 1.7 is in the range.
+    if doc.properties:
+        report.warning(
+            title="SERVICE properties not emitted",
+            message="The supported DataHub servers can't store a service's custom "
+            "properties yet; they were not emitted.",
+            context=f"{context}: {', '.join(sorted(doc.properties))}",
+        )
+
     yield mcp_workunit(
         entity_urn,
         ServicePropertiesClass(
             displayName=doc.displayName,
-            customProperties=stringify_custom_properties(doc.properties),
             description=doc.description,
             lifecycle=doc.lifecycle,
             apis=[api_urn(a) for a in doc.apis] if doc.apis else None,

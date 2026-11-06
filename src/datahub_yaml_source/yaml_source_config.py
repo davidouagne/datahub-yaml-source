@@ -169,6 +169,15 @@ class YamlSourceConfig(StatefulIngestionConfigBase[StatefulStaleMetadataRemovalC
         "instead of a warning.",
     )
 
+    strict_version: bool = Field(
+        default=False,
+        description="If true, fail at start-up -- before anything is emitted -- "
+        "instead of warning when the target DataHub server is outside the "
+        "supported range (compared per minor), when its version can't be read or "
+        "it is DataHub Cloud, or when the run has no DataHub graph to read it "
+        "from (e.g. a 'file' sink without a top-level 'datahub_api' block).",
+    )
+
     stateful_ingestion: StatefulStaleMetadataRemovalConfig | None = Field(
         default=None,
         description="Stateful ingestion configuration for stale entity removal. "

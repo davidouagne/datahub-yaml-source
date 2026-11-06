@@ -1004,6 +1004,7 @@ name = "datahub-yaml-source"
 source = { editable = "." }
 dependencies = [
     { name = "acryl-datahub" },
+    { name = "packaging" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1036,6 +1037,7 @@ requires-dist = [
     { name = "acryl-datahub", specifier = ">=1.7.0.11,<1.8" },
     { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.0,<2" },
     { name = "gitpython", marker = "extra == 'git'", specifier = ">=3.1.37,<4" },
+    { name = "packaging", specifier = ">=22.0" },
     { name = "pydantic", specifier = ">=2.4.0,<3.0.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.28.0,<3" },

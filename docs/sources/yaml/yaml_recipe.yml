@@ -94,6 +94,12 @@ source:
     # a hard failure instead of a warning. Default: false.
     fail_on_unresolved_reference: false
 
+    # Optional: fail at start-up instead of warning when the target DataHub
+    # server is outside the supported range (compared per minor), when its
+    # version can't be read or it is DataHub Cloud, or when the run has no
+    # DataHub graph to read it from (e.g. a 'file' sink). Default: false.
+    # strict_version: true
+
     # Optional: stateful ingestion for stale entity removal. When enabled,
     # entities that disappear from the YAML files between runs are soft-deleted.
     # stateful_ingestion:

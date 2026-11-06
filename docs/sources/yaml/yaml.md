@@ -151,21 +151,49 @@ permissions to configure.
   authenticated endpoint — the bearer token or basic-auth credentials set in
   `http_connection`.
 
-### Target GMS compatibility
+### Supported DataHub versions
 
-This source only *emits* metadata change proposals; whether the target
-DataHub GMS accepts and surfaces every aspect depends on that deployment's
-version. Two aspects to be aware of on an older GMS:
+This source is verified against DataHub **server** (GMS) minors. The
+supported range is the `acryl-datahub` requirement in
+[`pyproject.toml`](https://github.com/davidouagne/datahub-yaml-source/blob/main/pyproject.toml),
+which is authoritative and compared per minor: today `>=1.7.0.11,<1.8`, so
+every DataHub 1.7.x server. The patch-level floor is a constraint on the
+client library only. The range only ever contains minors that passed the
+maintainers' *Version check*: ingest the integration fixture into that
+server, then read every aspect back
+([`docs/adr/0007-datahub-version-support-policy.md`](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/adr/0007-datahub-version-support-policy.md)).
+A newer minor joins it through the widening procedure in `CONTRIBUTING.md`.
 
-- **`DOCUMENT`** (`kind: document`) MCPs are rejected outright by a GMS that
-  predates native document support.
-- **`schemaField`-level annotations** (e.g. a column tagged PII) are accepted
-  but may not surface in the UI unless the target GMS indexes `schemaField`
-  entities.
+At start-up the source reads the target server's version from the run's
+DataHub graph (`datahub-rest` sink, or a top-level `datahub_api:` block):
 
-Neither is a connector defect — the MCPs are well-formed — and neither blocks
-ingestion of the rest of a run. If you target an older GMS, treat these two
-as known gaps and verify them against your own deployment.
+- **In range**: nothing is reported.
+- **Out of range**: a warning in the ingestion report names the server version
+  and the supported range, and ingestion continues.
+- **Version unreadable, or DataHub Cloud** (its own version line): a "not
+  recognised" warning, and ingestion continues.
+- **No graph** (e.g. a `file` or `console` sink): an info log only.
+
+Set `strict_version: true` to turn each of these warnings, and the no-graph
+case, into a start-up failure, before anything is emitted.
+
+**Minimum server version.** A kind or aspect added later may need a newer
+server than the range floor. On an older supported server, those MCPs are not
+emitted, and a warning per kind or aspect gives the number skipped and the
+server version required. When the server version can't be known, everything
+is emitted. Today every kind's minimum is the range floor, so nothing is ever
+skipped.
+
+**Fields not emitted yet.** A field is never filtered by server version.
+A field enters only once every supported minor keeps it. Until then it is not
+emitted, and a warning names it:
+
+- `SERVICE.properties`: DataHub 1.7 servers have no custom properties on a
+  service.
+
+**Deployment note.** `schemaField`-level annotations (e.g. a column tagged
+PII) are kept by the server, but whether they surface in the UI depends on
+the deployment indexing `schemaField` entities, not on its version.
 
 ## Document Format
 

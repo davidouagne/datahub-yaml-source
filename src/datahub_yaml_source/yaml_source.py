@@ -65,6 +65,7 @@ from datahub_yaml_source.loader import (
     is_http_uri,
     load_repository,
 )
+from datahub_yaml_source.server_version import check_server_version
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_config import YamlSourceConfig
 from datahub_yaml_source.yaml_source_report import YamlSourceReport
@@ -159,6 +160,11 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         super().__init__(config, ctx)  # type: ignore[arg-type]
         self.config = config
         self.report = YamlSourceReport()
+        check_server_version(
+            ctx.graph.server_config if ctx.graph is not None else None,
+            self.report,
+            strict=config.strict_version,
+        )
 
     @classmethod
     def create(cls, config_dict: dict[str, Any], ctx: PipelineContext) -> "YamlSource":

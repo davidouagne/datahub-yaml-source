@@ -2719,7 +2719,7 @@
             "description": "Age of the patient at admission time",
             "dataType": "CONTINUOUS",
             "sources": [
-                "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),date_naissance)"
+                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
             ]
         }
     },
@@ -2740,7 +2740,7 @@
             "description": "Patient identifier",
             "dataType": "ORDINAL",
             "sources": [
-                "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),patient_id)"
+                "urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"
             ]
         }
     },

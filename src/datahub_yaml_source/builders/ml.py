@@ -9,7 +9,6 @@ primary keys, a model references its model group and its features.
 from collections.abc import Iterable
 from typing import Any
 
-from datahub.emitter.mce_builder import make_schema_field_urn
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 from datahub.metadata.schema_classes import (
     BaseDataClass,
@@ -67,11 +66,32 @@ from datahub_yaml_source.yaml_source_report import YamlSourceReport
 _ML_ENTITY_NATIVE_KWARGS: frozenset[str] = frozenset({"owners", "tags", "terms", "domain", "links"})
 
 
-def _dataset_or_field_urn(ref: QuerySubjectRef) -> str:
-    """A QuerySubjectRef's target: a dataset, or one of its columns if `fieldPath` is set.
-    Same shape as `build_query()`'s subject resolution."""
-    entity_urn = dataset_urn(ref)
-    return make_schema_field_urn(entity_urn, ref.fieldPath) if ref.fieldPath else entity_urn
+def _source_dataset_urns(
+    refs: list[QuerySubjectRef], report: YamlSourceReport, context: str
+) -> list[str]:
+    """The dataset URNs of an ML feature's / primary key's `sources`.
+
+    GMS only accepts dataset URNs there (the `DerivedFrom` relationship is
+    dataset-only on every server version), and rejects a schemaField URN with
+    a 422 that loses the whole aspect. A column source (`fieldPath`) is
+    therefore narrowed to its dataset, with one warning naming the columns.
+    """
+    urns: list[str] = []
+    columns: list[str] = []
+    for ref in refs:
+        urn = dataset_urn(ref)
+        if ref.fieldPath:
+            columns.append(f"{ref.name}.{ref.fieldPath}")
+        if urn not in urns:
+            urns.append(urn)
+    if columns:
+        report.warning(
+            title="ML source column narrowed to its dataset",
+            message="DataHub only links an ML feature or primary key to whole datasets; "
+            "the column of each source was dropped.",
+            context=f"{context}: {', '.join(columns)}",
+        )
+    return urns
 
 
 def build_ml_feature_table(
@@ -106,7 +126,7 @@ def build_ml_feature(
             customProperties=stringify_custom_properties(doc.properties),
             description=doc.description,
             dataType=doc.dataType,
-            sources=[_dataset_or_field_urn(s) for s in doc.sources] if doc.sources else None,
+            sources=_source_dataset_urns(doc.sources, report, context) if doc.sources else None,
         ),
     )
     yield from common_aspect_mcps(entity_urn, doc, index, report, context)
@@ -121,7 +141,7 @@ def build_ml_primary_key(
     yield mcp_workunit(
         entity_urn,
         MLPrimaryKeyPropertiesClass(
-            sources=[_dataset_or_field_urn(s) for s in doc.sources],
+            sources=_source_dataset_urns(doc.sources, report, context),
             customProperties=stringify_custom_properties(doc.properties),
             description=doc.description,
             dataType=doc.dataType,

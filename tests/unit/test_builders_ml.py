@@ -74,9 +74,13 @@ def test_build_ml_feature_emits_properties_and_sources():
         if wu.metadata.aspect.__class__.__name__ == "MLFeaturePropertiesClass"
     )
     assert props.dataType == "CONTINUOUS"
-    assert props.sources == [
-        "urn:li:schemaField:(urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD),date_naissance)"
-    ]
+    # GMS only accepts dataset URNs in `sources` (DerivedFrom -> dataset):
+    # a column source is narrowed to its dataset, with a warning, instead
+    # of a schemaField URN the server rejects with 422.
+    assert props.sources == ["urn:li:dataset:(urn:li:dataPlatform:postgres,ehr_public_patient,PROD)"]
+    warnings = [str(w) for w in report.warnings]
+    assert len(warnings) == 1
+    assert "date_naissance" in warnings[0]
     assert any(wu.metadata.aspect.__class__.__name__ == "GlobalTagsClass" for wu in wus)
 
 

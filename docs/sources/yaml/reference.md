@@ -441,7 +441,7 @@ A single feature in a feature store.
 | `description` | string | no | - |  |
 | `dataType` | string | no | - | One of DataHub's MLFeatureDataType values, e.g. CONTINUOUS, NOMINAL, TEXT. |
 | `properties` | map | no | - |  |
-| `sources` | list of [QuerySubjectRef](#querysubjectref) | no | - | Dataset(s)/column(s) this feature is derived from. |
+| `sources` | list of [QuerySubjectRef](#querysubjectref) | no | - | Dataset(s) this feature is derived from. DataHub links ML features to whole datasets only: a 'fieldPath' is dropped, with a warning. |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 
@@ -469,7 +469,7 @@ A feature table's primary key.
 | `description` | string | no | - |  |
 | `dataType` | string | no | - |  |
 | `properties` | map | no | - |  |
-| `sources` | list of [QuerySubjectRef](#querysubjectref) | **yes** | - | Dataset(s)/column(s) this primary key is derived from. |
+| `sources` | list of [QuerySubjectRef](#querysubjectref) | **yes** | - | Dataset(s) this primary key is derived from. DataHub links ML primary keys to whole datasets only: a 'fieldPath' is dropped, with a warning. |
 
 Plus these [common metadata fields](#common-metadata-fields), which every kind accepts a subset of depending on what DataHub's entity registry permits:
 

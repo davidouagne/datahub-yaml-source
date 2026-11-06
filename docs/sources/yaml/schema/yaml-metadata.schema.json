@@ -5485,7 +5485,7 @@
             }
           ],
           "default": null,
-          "description": "Dataset(s)/column(s) this feature is derived from.",
+          "description": "Dataset(s) this feature is derived from. DataHub links ML features to whole datasets only: a 'fieldPath' is dropped, with a warning.",
           "title": "Sources"
         }
       },
@@ -6816,7 +6816,7 @@
           "title": "Properties"
         },
         "sources": {
-          "description": "Dataset(s)/column(s) this primary key is derived from.",
+          "description": "Dataset(s) this primary key is derived from. DataHub links ML primary keys to whole datasets only: a 'fieldPath' is dropped, with a warning.",
           "items": {
             "$ref": "#/$defs/QuerySubjectRef"
           },

@@ -8,7 +8,6 @@ sources:
   - platform: postgres
     name: ehr_public_patient
     env: PROD
-    fieldPath: date_naissance
 ---
 kind: MLPRIMARY_KEY
 featureNamespace: patient_features
@@ -19,7 +18,6 @@ sources:
   - platform: postgres
     name: ehr_public_patient
     env: PROD
-    fieldPath: patient_id
 ---
 kind: MLFEATURE_TABLE
 name: patient_features

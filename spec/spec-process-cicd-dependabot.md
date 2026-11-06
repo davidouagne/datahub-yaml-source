@@ -73,7 +73,7 @@ This section records the decisions and their rationale; the file is the source o
 
 ### No `ignore` for `acryl-datahub` majors
 
-`pyproject.toml` pins `acryl-datahub>=1.7.0.9,<1.8` on purpose — the `1.7.0.x` series takes undeprecated
+`pyproject.toml` pins `acryl-datahub>=1.7.0.11,<1.8` on purpose — the `1.7.0.x` series takes undeprecated
 breaks in the experimental `datahub.sdk.*` surface this connector builds on (documented inline in
 `pyproject.toml`). Dependabot will open a PR proposing to lift that ceiling. That PR is **wanted**: the
 by-hand review it gets (like every dependency PR) is the gate, and lifting the cap is tracked as its

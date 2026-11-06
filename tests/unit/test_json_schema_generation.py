@@ -2,14 +2,28 @@ import json
 import sys
 from pathlib import Path
 
+import pydantic
+import pytest
 from jsonschema import Draft202012Validator
+from packaging.version import Version
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from generate_json_schema import OUTPUT_PATH, build_schema  # noqa: E402
 
+# The checked-in schema is generated with the locked pydantic. Its JSON
+# Schema generator changed shape before 2.11 (`allOf` around `$ref`,
+# `type` next to `const`), so on the `lowest` CI leg (pydantic at the
+# 2.4.0 runtime floor) the drift check would only compare generator
+# versions, not models. The `highest` legs still run it.
+_SCHEMA_GENERATOR_STABLE = Version(pydantic.VERSION) >= Version("2.11")
 
+
+@pytest.mark.skipif(
+    not _SCHEMA_GENERATOR_STABLE,
+    reason="pydantic < 2.11 generates a differently shaped JSON Schema",
+)
 def test_checked_in_schema_is_up_to_date_with_models():
     """If this fails, someone changed a Pydantic model in models.py without
     regenerating the schema. Run `python scripts/generate_json_schema.py`."""

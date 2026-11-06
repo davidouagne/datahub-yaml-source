@@ -1,8 +1,8 @@
 ---
 title: CI/CD Workflow Specification - CI
-version: 1.15
+version: 1.16
 date_created: 2026-08-16
-last_updated: 2026-10-26
+last_updated: 2026-11-06
 owner: David Ouagne
 tags: [process, cicd, github-actions, automation, python, datahub, pytest]
 ---
@@ -49,7 +49,7 @@ breakdown) is reproduced in this document's "Lint & Type-Check Configuration" se
 graph TD
     A[Trigger: push / PR to main / manual] --> B[lint: ruff check + format --check]
     A --> C[typecheck: mypy --strict over src/]
-    A --> D[test: matrix py3.11-3.12]
+    A --> D[test: highest py3.11-3.12 + lowest py3.11]
     A --> E[build: minimal install, no extras]
     B --> F[ci-status]
     C --> F[ci-status]
@@ -66,7 +66,7 @@ graph TD
 |----------|---------|--------------|-------------------|
 | `lint` | `ruff check` (lint) + `ruff format --check` (format) over first-party Python (`src/`, `tests/`, `scripts/`). Absorbed from the retired `quality.yml`'s `ruff` job (renamed, v1.12); no longer individually required — feeds `ci-status`. | None | Linux runner, Python 3.12 |
 | `typecheck` | `mypy` over `src/` per `[tool.mypy]` in `pyproject.toml` (`strict = true`). Absorbed from the retired `quality.yml`'s `mypy` job (renamed, v1.12); no longer individually required — feeds `ci-status`. | None | Linux runner, Python 3.12 |
-| `test` | Install with dev extras; run unit + integration tests with coverage across the supported Python matrix. Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner, matrix over Python 3.11–3.12 |
+| `test` | Install with dev extras; run unit + integration tests across two axes: Python version and dependency resolution. `test (highest, 3.11)` / `test (highest, 3.12)` install the committed lock and run with coverage; `test (lowest, 3.11)` installs every direct and dev dependency at its declared floor (`uv pip install --resolution lowest-direct`, outside the lock) and runs `uv run --no-sync pytest` without coverage (REQ-017). Transitively verifies generated-artifact freshness and golden-file stability (see REQ-002, REQ-003). | None | Linux runner; legs `(highest, 3.11)`, `(highest, 3.12)`, `(lowest, 3.11)` |
 | `build` | Install with base dependencies only (no optional extras); confirm the package imports and the `yaml` source plugin registers. Renamed from `minimal-install-check` (v1.12) to match the sibling repo's job id for the analogous (though not identical-content) step, for easier cross-repo diffing. | None | Linux runner, single Python version |
 | `ci-status` (job id; **check-run name `CI status`**) | Aggregate gate: succeeds only if `lint`, `typecheck`, `test` (all matrix legs), and `build` succeed. Its `name:` — `CI status`, *with a space* — is the exact context string `main`'s ruleset requires (not the job id `ci-status`). | `lint`, `typecheck`, `test`, `build` | Linux runner, no build steps |
 
@@ -76,7 +76,8 @@ graph TD
 
 | ID | Requirement | Priority | Acceptance Criteria |
 |----|-------------|----------|---------------------|
-| REQ-001 | Install the package with its development extra on every supported Python version. | High | Install command completes with exit code 0 on each matrix leg. |
+| REQ-001 | Install the package with its development extra on every supported Python version, and at both resolution bounds. | High | Install command completes with exit code 0 on each matrix leg: `test (highest, 3.11)`, `test (highest, 3.12)`, `test (lowest, 3.11)`. |
+| REQ-017 | Test the declared floors of the direct dependencies, not just the lock (`docs/adr/0007-datahub-version-support-policy.md` §6). | High | `test (lowest, 3.11)` passes the full suite, golden file included, with direct and dev dependencies at their floors. A floor that fails there is raised, never worked around with a second golden; the only floor-dependent skip is the JSON Schema drift test below pydantic 2.11 (generator shape, re-checked on the highest legs). Codecov receives only the highest legs. |
 | REQ-002 | Run the full test suite (unit + integration). | High | All tests pass; suite includes tests that fail if generated docs/schema (`docs/sources/yaml/reference.md`, `docs/sources/yaml/schema/yaml-metadata.schema.json`) are stale relative to the Pydantic models in `models.py`. |
 | REQ-003 | Verify the golden-file integration fixture is stable. | High | The golden-file comparison test passes without invoking any golden-file *update* mode. |
 | REQ-004 | Enforce the documented coverage bar. | Medium | Coverage run reports ≥80% overall; build fails below threshold. |
@@ -433,7 +434,7 @@ switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 | PR modifies `models.py` and regenerates docs/schema correctly | `test` job passes | Standard test run |
 | Optional extra (`git`, `s3`) dependency accidentally imported at module level in core code | `build` fails at import time | Confirmed empirically: a base-only install (no extras) imports the plugin entry point successfully today |
 | Contributor runs `--update-golden-files` locally and commits an unintended change | Not caught by this workflow directly — CI compares against whatever golden file is committed | Relies on human review of the golden-file diff, as instructed in `CONTRIBUTING.md` |
-| A new `acryl-datahub` release within the pinned range (`>=1.7.0.9,<1.8`) breaks the experimental `datahub.sdk.*` surface this connector builds on | `test` job fails on the affected leg | The `<1.8` upper bound (issue #12) contains the blast radius to a minor; Dependabot opens the bump as its own PR (`spec/spec-process-cicd-dependabot.md`), reviewed by hand. A break inside the patch range still needs a fix + a tighter pin, as in #11/#12. |
+| A new `acryl-datahub` release within the pinned range (`>=1.7.0.11,<1.8`) breaks the experimental `datahub.sdk.*` surface this connector builds on | `test` job fails on the affected leg | The `<1.8` upper bound (issue #12) contains the blast radius to a minor; Dependabot opens the bump as its own PR (`spec/spec-process-cicd-dependabot.md`), reviewed by hand. A break inside the patch range still needs a fix + a tighter pin, as in #11/#12. Since v1.16 the `test (lowest, 3.11)` leg also catches a floor that has silently become wrong (issue #140 raised it to 1.7.0.11). |
 | Codecov upload fails, is rate-limited, or runs from a fork PR (no OIDC token) | The `codecov/codecov-action` step is non-fatal (`fail_ci_if_error: false`); the `test` job and `CI status` stay green. Coverage history simply has a gap for that commit. | Confirmed by design; `spec/spec-process-cicd-codecov.md` REQ-005 / VLD-006. |
 
 ## Validation Criteria
@@ -495,6 +496,7 @@ switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 | 1.13 | 2026-09-20 | **Documentation-accuracy correction, no workflow-file change: `main` is protected by a repository ruleset, not classic branch protection.** Rewrote "Branch protection on `main`" from the live ruleset (`gh api .../rules/branches/main`, `.../rulesets`): required checks are now `CI status`, `dependency-review`, `dco`, `commitlint`, `pr-title` (was `["CI status", "dependency-review"]`); a PR is required with zero approvals and resolved review threads; deletion and force-push are blocked; the Admin role bypasses the ruleset (replacing `enforce_admins: false`); a `tags-v` ruleset protects `v*` tags. `strict` remains off. Updated the `CI status` row ("`main`'s ruleset requires"). | David Ouagne |
 | 1.14 | 2026-10-05 | **`main` accepts rebase merge only; `pr-title` no longer required** (`docs/adr/0005-rebase-merge-only.md`, `spec/spec-process-cicd-commit-policy.md` v1.3). Ruleset `main`: `allowed_merge_methods` narrowed to `rebase`, `required_linear_history` added, `pr-title` removed from `required_status_checks` (four checks remain). Repo settings: `allow_rebase_merge: true`, `allow_merge_commit: false`. No change to this workflow file. | David Ouagne |
 | 1.15 | 2026-10-26 | **Python 3.10 dropped** (issue #111): filelock, a transitive of the dev tool `pip-audit`, ships its security fixes only for Python >=3.11 (4.1.1 onwards), so a single lock could not fix it while 3.10 stayed supported. Python 3.10 reaches end of life in October 2026. `requires-python` is now `>=3.11`; `test` matrix 3.11/3.12; install-smoke job on the 3.11 floor; ruff `target-version = py311`; mypy `python_version = 3.11`. | David Ouagne |
+| 1.16 | 2026-11-06 | **Lowest/highest resolution axis on `test`** (issue #140, `docs/adr/0007-datahub-version-support-policy.md` §6): three legs `test (highest, 3.11)`, `test (highest, 3.12)`, `test (lowest, 3.11)`; the lowest leg installs outside the lock with `--resolution lowest-direct` and runs without coverage or Codecov upload. New REQ-017. It immediately proved the `acryl-datahub` floor wrong (golden diff in a DataJob's `browsePathsV2` up to 1.7.0.10), raised to `>=1.7.0.11`. No ruleset change: `CI status` already needs every `test` leg. | David Ouagne |
 
 ## Related Specifications
 

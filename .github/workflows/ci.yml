@@ -87,7 +87,16 @@ jobs:
         run: uv run mypy
 
   test:
-    name: test (py${{ matrix.python-version }})
+    # Two axes (docs/adr/0007-datahub-version-support-policy.md §6): the
+    # supported Python versions, and the resolution of the direct
+    # dependencies -- `highest` is the committed lock (kept current by
+    # Dependabot), `lowest` is every direct and dev dependency at the floor
+    # its specifier declares (`--resolution lowest-direct`), so the floors
+    # in pyproject.toml are tested, not just declared. Three legs, not
+    # four: the oldest combination of each axis is the one that breaks
+    # first, so `lowest` runs on the 3.11 floor only (as in the sibling
+    # repo datahub-healthdcat-ap-exporter, its ADR-0003 §1).
+    name: test (${{ matrix.resolution }}, ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Job-level permissions REPLACE the workflow-level grant, they do not
@@ -104,6 +113,10 @@ jobs:
         # Mirrors pyproject.toml's requires-python floor (3.11 since
         # issue #111), it does not set it.
         python-version: ["3.11", "3.12"]
+        resolution: [highest]
+        include:
+          - python-version: "3.11"
+            resolution: lowest
     steps:
       - uses: actions/checkout@v7
         # Full history + tags so hatch-vcs derives the real version
@@ -118,8 +131,18 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
 
-      - name: Install (dev group + all extras)
+      - name: Install (dev group + all extras, from the lock)
+        if: matrix.resolution == 'highest'
         run: uv sync --frozen --group dev --extra git --extra s3
+
+      # Outside the lock, which is never rewritten. lowest-direct lowers
+      # only direct and dev-group dependencies; transitive ones resolve
+      # to their newest compatible version.
+      - name: Install (dev group + all extras, direct deps at their floor)
+        if: matrix.resolution == 'lowest'
+        run: |
+          uv venv
+          uv pip install --resolution lowest-direct -e '.[git,s3]' --group dev
 
       # Unit + integration in one run: tests/unit includes
       # test_json_schema_generation.py / test_markdown_docs_generation.py,
@@ -128,19 +151,25 @@ jobs:
       # --update-golden-files here -- that would make the golden gate
       # self-approving.
       - name: Run tests with coverage
+        if: matrix.resolution == 'highest'
         run: |
-          uv run pytest tests/unit tests/integration \
-            --cov=datahub_yaml_source --cov-report=term-missing --cov-report=xml \
-            --cov-fail-under=80
+          uv run pytest tests/unit tests/integration             --cov=datahub_yaml_source --cov-report=term-missing --cov-report=xml             --cov-fail-under=80
+
+      # Same tests, no coverage: the code measured is the same as on the
+      # highest legs. --no-sync is load-bearing -- a plain `uv run` would
+      # sync the environment back to the lock and undo the floors.
+      - name: Run tests (direct deps at their floor)
+        if: matrix.resolution == 'lowest'
+        run: uv run --no-sync pytest tests/unit tests/integration
 
       # Reporting only -- Codecov never gates `main`; --cov-fail-under=80
-      # above is the coverage gate. All three matrix legs upload, tagged by
+      # above is the coverage gate. The highest legs upload, tagged by
       # Python version; Codecov merges them. OIDC auth (no CODECOV_TOKEN).
       # `fail_ci_if_error: false` + `if: always()`: a Codecov outage, or a
       # fork PR with no OIDC token, must never fail this job or `CI status`.
       # Contract: spec/spec-process-cicd-codecov.md
       - name: Upload coverage to Codecov
-        if: ${{ always() }}
+        if: ${{ always() && matrix.resolution == 'highest' }}
         uses: codecov/codecov-action@v7
         with:
           use_oidc: true

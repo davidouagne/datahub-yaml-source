@@ -39,9 +39,19 @@ dependencies = [
     #   * 1.7.0.8: the SupportStatus enum was renamed
     #     (CERTIFIED/INCUBATING/TESTING -> ALPHA/BETA/GA);
     #     yaml_source.py's @support_status now uses ALPHA.
+    #
+    # Floor >=1.7.0.11, found by the `lowest` CI leg (issue #140): up to
+    # 1.7.0.10 the SDK V2 DataJob wrote its flow's browsePathsV2 entry
+    # with `id` = the flow name instead of the flow URN, so the golden
+    # file only reproduces from 1.7.0.11.
+    #
+    # This range is also the range of *Supported DataHub versions* (the
+    # server, compared per minor -- docs/adr/0007): the patch-level floor
+    # is a client SDK constraint, not a server promise.
     # Upper bound <1.8: the datahub.sdk.* surface is still
-    # ExperimentalWarning-flagged, so a minor bump can break again.
-    "acryl-datahub>=1.7.0.9,<1.8",
+    # ExperimentalWarning-flagged, so a minor bump can break again, and
+    # the ceiling is the last *verified* server minor (ADR-0007 §1).
+    "acryl-datahub>=1.7.0.11,<1.8",
     "pyyaml>=6.0",
     # models.py/loader.py/yaml_source_config.py import pydantic directly
     # for the config schema and validation. Only ever a transitive dep

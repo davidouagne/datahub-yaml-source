@@ -57,8 +57,11 @@ def _server_minor(server_config: RestServiceConfig) -> tuple[int, int] | None:
 
 def check_server_version(
     server_config: RestServiceConfig | None, report: SourceReport, *, strict: bool = False
-) -> None:
+) -> tuple[int, int] | None:
     """Warn on `report` when the server's minor is outside the supported range.
+
+    Returns the server's (major, minor), or None when it is unknowable -- the
+    input of the Minimum server version filter.
 
     `server_config` is None when the run has no graph (a `file` / `console`
     sink, `datahub-kafka` without `rest_fallback`, no `datahub_api`): there is
@@ -80,7 +83,7 @@ def check_server_version(
             "checked against the %s.",
             supported,
         )
-        return
+        return None
 
     server_minor = _server_minor(server_config)
     if server_minor is None:
@@ -94,7 +97,8 @@ def check_server_version(
             "the range this source is verified against; ingestion continues.",
             context=context,
         )
-    elif not _minor_is_supported(*server_minor, specifier):
+        return None
+    if not _minor_is_supported(*server_minor, specifier):
         context = f"server {server_config.service_version}, {supported}"
         if strict:
             raise ConfigurationError(f"DataHub server version not supported: {context}")
@@ -104,3 +108,4 @@ def check_server_version(
             "verified against; ingestion continues.",
             context=context,
         )
+    return server_minor

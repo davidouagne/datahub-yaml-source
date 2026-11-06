@@ -22,7 +22,10 @@ from collections.abc import Iterable, Iterator, Mapping
 from datahub.ingestion.api.source import SourceReport
 from datahub.ingestion.api.workunit import MetadataWorkUnit
 
-ServerMinor = tuple[int, int]
+from datahub_yaml_source.server_version import ServerMinor
+
+# Report title of a skip; the Version check tolerates exactly these warnings.
+SKIP_WARNING_TITLE = "Skipped: needs a newer DataHub server"
 
 # entity type (as in the URN, e.g. "document") -> minimum server minor
 MINIMUM_SERVER_MINOR_BY_ENTITY: dict[str, ServerMinor] = {}
@@ -79,7 +82,7 @@ def filter_by_minimum_server_version(
 
     for (name, (major, minor)), count in sorted(skipped.items()):
         report.warning(
-            title="Skipped: needs a newer DataHub server",
+            title=SKIP_WARNING_TITLE,
             message="Metadata this DataHub server version can't accept was not "
             "emitted; it will be once the server is upgraded.",
             context=f"{name}: {count} skipped, needs server {major}.{minor} or newer",

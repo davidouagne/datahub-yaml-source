@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.4.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.3.1...v0.4.0) (2026-11-06)
+
+
+### Features
+
+* skip what an older supported DataHub server can't accept ([6702547](https://github.com/davidouagne/datahub-yaml-source/commit/6702547d1d7b3ec50792a3ff686cd8dd41e61f2f)), closes [#142](https://github.com/davidouagne/datahub-yaml-source/issues/142)
+* warn when the DataHub server is outside the supported range ([4ee041e](https://github.com/davidouagne/datahub-yaml-source/commit/4ee041ee9213d3c47c42ac6fa752f43b739e1e4f)), closes [#141](https://github.com/davidouagne/datahub-yaml-source/issues/141)
+
+
+### Bug Fixes
+
+* link ML features and primary keys to datasets, not columns ([fa5c5f1](https://github.com/davidouagne/datahub-yaml-source/commit/fa5c5f1d1021a129e540fb3f336b6e2040a5e3a2))
+* stop emitting SERVICE properties DataHub 1.7 silently drops ([18df991](https://github.com/davidouagne/datahub-yaml-source/commit/18df99151b64c10bb577da588f8159773a40f7d6))
+
+
+### Documentation
+
+* add ADR-0007 DataHub version support policy ([9ed415b](https://github.com/davidouagne/datahub-yaml-source/commit/9ed415b81fd9a3fdcf6b703297f3feab5bf63e86))
+* align ADR-0007 and the CI docs with the lowest leg ([f157b49](https://github.com/davidouagne/datahub-yaml-source/commit/f157b49307ec3600201c3e9c17198c87ecebe497))
+* document the supported DataHub versions ([ca7bd26](https://github.com/davidouagne/datahub-yaml-source/commit/ca7bd26f646dd4e4bacec0ce17e4424c0fdd275c)), closes [#143](https://github.com/davidouagne/datahub-yaml-source/issues/143) [#146](https://github.com/davidouagne/datahub-yaml-source/issues/146)
+* document the Version check and the range-widening procedure ([7d94b19](https://github.com/davidouagne/datahub-yaml-source/commit/7d94b194ff6a870c1adcffcacf61f025c8c7e60f)), closes [#145](https://github.com/davidouagne/datahub-yaml-source/issues/145)
+
+
+### Build System
+
+* raise the acryl-datahub floor to 1.7.0.11 ([49e7763](https://github.com/davidouagne/datahub-yaml-source/commit/49e77630f1b3558a95fb44f6a4e1081c55d37c64))
+
+
+### Continuous Integration
+
+* test direct dependencies at their declared floors ([3e82c9d](https://github.com/davidouagne/datahub-yaml-source/commit/3e82c9dd030756a275b8f5dd9e30a0e09a2740fc)), closes [#140](https://github.com/davidouagne/datahub-yaml-source/issues/140)
+
 ## [0.3.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.3.0...v0.3.1) (2026-11-02)
 
 

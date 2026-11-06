@@ -23,3 +23,6 @@ as-is and feeds the changelog. The PR title never reaches history.
       file was refreshed (`--update-golden-files`) and the diff reviewed by hand.
 - [ ] `uv run ruff check .`, `uv run ruff format --check .`, and `uv run mypy`
       are all clean.
+- [ ] Version check passed on X.Y (`scripts/verify-datahub-version.sh X.Y.Z`),
+      required when widening the DataHub range — see CONTRIBUTING.md,
+      "Widening the supported DataHub range".

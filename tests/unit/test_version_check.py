@@ -58,3 +58,21 @@ def test_a_patch_add_is_checked_against_the_resulting_state():
 
     assert patch_diffs(ops, {"name": "x", "lastModified": {"time": 5}}) == []
     assert patch_diffs(ops, {"name": "x"}) == ["/lastModified: missing"]
+
+
+def test_a_patch_path_keyed_by_urn_is_found_in_the_stored_array():
+    # Patch builders key array elements by URN; the stored aspect is a list.
+    ops = [
+        {"op": "add", "path": "/tags/urn:li:tag:pii", "value": {"tag": "urn:li:tag:pii"}},
+    ]
+
+    assert patch_diffs(ops, {"tags": [{"tag": "urn:li:tag:pii"}]}) == []
+    assert patch_diffs(ops, {"tags": [{"tag": "urn:li:tag:phi"}]}) == [
+        "/tags/urn:li:tag:pii: missing"
+    ]
+
+
+def test_a_patch_path_with_json_pointer_escapes_is_decoded():
+    ops = [{"op": "add", "path": "/customProperties/a~1b~0c", "value": "x"}]
+
+    assert patch_diffs(ops, {"customProperties": {"a/b~c": "x"}}) == []

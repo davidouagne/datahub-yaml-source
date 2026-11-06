@@ -6,10 +6,13 @@ Called by scripts/verify-datahub-version.sh against an isolated Docker GMS
 1. ingesting tests/integration/yaml_source/resources through `datahub-rest`
    in `mode: SYNC` reports no failure and no warning, source or sink, apart
    from the skips the Minimum server version table predicts;
-2. every aspect emitted, read back from the server, still contains what was
-   sent -- the server may add values, never drop or change them.
+2. every aspect the sink sent, read back from the server, still contains
+   what was sent -- the server may add values, never drop or change them.
 
-The baseline is the run's own emitted MCPs, not a committed reference.
+The baseline is the MCPs this very run sent, recorded at the sink, not a
+committed reference. Skipped MCPs are never sent, so they are never read
+back; their warnings are tolerated only for names the Minimum server
+version table gates.
 Never run in CI.
 """
 
@@ -23,7 +26,6 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = REPO_ROOT / "tests" / "integration" / "yaml_source" / "resources"
-SKIP_WARNING_TITLE = "Skipped: needs a newer DataHub server"
 
 
 # --- verdict logic (unit-tested in tests/unit/test_version_check.py) --------
@@ -61,6 +63,29 @@ def containment_diffs(sent: Any, read_back: Any, path: str = "") -> list[str]:
     return []
 
 
+def _pointer_parts(path: str) -> list[str]:
+    """A JSON Pointer's reference tokens, escapes decoded (RFC 6901)."""
+    return [part.replace("~1", "/").replace("~0", "~") for part in path.split("/")[1:]]
+
+
+def _step(node: Any, part: str) -> Any:
+    """One pointer step; None when it leads nowhere.
+
+    DataHub patch builders key array elements by an identifying value (e.g.
+    `/tags/urn:li:tag:pii`), so in a list a non-index token selects the
+    element holding that value.
+    """
+    if isinstance(node, dict):
+        return node.get(part)
+    if isinstance(node, list):
+        if part.isdigit():
+            return node[int(part)] if int(part) < len(node) else None
+        for element in node:
+            if element == part or (isinstance(element, dict) and part in element.values()):
+                return element
+    return None
+
+
 def patch_diffs(ops: Iterable[dict[str, Any]], read_back: Any) -> list[str]:
     """Where the state read back does not reflect a JSON Patch's `add` ops."""
     if read_back is None:
@@ -70,11 +95,10 @@ def patch_diffs(ops: Iterable[dict[str, Any]], read_back: Any) -> list[str]:
         if op.get("op") != "add":
             continue
         node = read_back
-        for part in op["path"].strip("/").split("/"):
-            if not isinstance(node, dict) or part not in node:
-                node = None
+        for part in _pointer_parts(op["path"]):
+            node = _step(node, part)
+            if node is None:
                 break
-            node = node[part]
         if node is None:
             diffs.append(f"{op['path']}: missing")
         else:
@@ -107,13 +131,33 @@ class _SinkFailures(logging.Handler):
         self.messages.append(f"{record.getMessage().strip()}: {failure}")
 
 
-def _ingest(server: str) -> list[str]:
-    """Run the real pipeline; return every unexpected report problem."""
+def _tolerated_skip(warning: Any) -> bool:
+    """A skip warning for a name the Minimum server version table gates."""
+    from datahub_yaml_source.minimum_server_version import (
+        MINIMUM_SERVER_MINOR_BY_ASPECT,
+        MINIMUM_SERVER_MINOR_BY_ENTITY,
+        SKIP_WARNING_TITLE,
+    )
+
+    if getattr(warning, "title", None) != SKIP_WARNING_TITLE:
+        return False
+    gated = MINIMUM_SERVER_MINOR_BY_ENTITY.keys() | MINIMUM_SERVER_MINOR_BY_ASPECT.keys()
+    names = [str(c).split(":", 1)[0] for c in getattr(warning, "context", None) or []]
+    return bool(names) and all(name in gated for name in names)
+
+
+def _ingest(server: str) -> tuple[list[str], list[Any]]:
+    """Run the real pipeline.
+
+    Returns every unexpected report problem, and the MCPs the sink actually
+    sent -- the read-back baseline.
+    """
     from datahub.ingestion.run.pipeline import Pipeline
 
     sink_failures = _SinkFailures()
     callback_logger = logging.getLogger("datahub.ingestion.run.sink_callback")
     callback_logger.addHandler(sink_failures)
+    sent: list[Any] = []
     try:
         pipeline = Pipeline.create(
             {
@@ -122,6 +166,15 @@ def _ingest(server: str) -> list[str]:
                 "sink": {"type": "datahub-rest", "config": {"server": server, "mode": "SYNC"}},
             }
         )
+        emitter = pipeline.sink.emitter
+        emit = emitter.emit
+
+        def recording_emit(item: Any, *args: Any, **kwargs: Any) -> Any:
+            result = emit(item, *args, **kwargs)
+            sent.append(item)  # only once the server accepted it
+            return result
+
+        emitter.emit = recording_emit
         pipeline.run()
     finally:
         callback_logger.removeHandler(sink_failures)
@@ -129,31 +182,11 @@ def _ingest(server: str) -> list[str]:
     source_report = pipeline.source.get_report()
     sink_report = pipeline.sink.get_report()
     problems = [f"source failure: {f}" for f in source_report.failures]
-    problems += [
-        f"source warning: {w}"
-        for w in source_report.warnings
-        if getattr(w, "title", None) != SKIP_WARNING_TITLE
-    ]
+    problems += [f"source warning: {w}" for w in source_report.warnings if not _tolerated_skip(w)]
     problems += [f"sink failure: {m}" for m in sink_failures.messages]
     problems += [f"sink failure: {f}" for f in sink_report.failures]
     problems += [f"sink warning: {w}" for w in sink_report.warnings]
-    return problems
-
-
-def _emitted(graph: Any) -> list[Any]:
-    """The MCPs a run emits against this server, minimum-version skips applied."""
-    from datahub.ingestion.api.common import PipelineContext
-    from datahub.sdk._attribution import KnownAttribution, change_default_attribution
-
-    from datahub_yaml_source.yaml_source import YamlSource
-
-    ctx = PipelineContext(run_id="version-check-baseline", graph=graph)
-    source = YamlSource.create({"path": _relpath(FIXTURE)}, ctx)
-    # The pipeline runs sources under the INGESTION attribution, which makes
-    # the SDK write descriptions to e.g. datasetProperties instead of
-    # editableDatasetProperties; the baseline must be built the same way.
-    with change_default_attribution(KnownAttribution.INGESTION):
-        return [wu.metadata for wu in source.get_workunits()]
+    return problems, sent
 
 
 def _read_back(graph: Any, mcps: list[Any]) -> list[str]:
@@ -207,12 +240,8 @@ def main() -> int:
     graph = DataHubGraph(DatahubClientConfig(server=args.server))
     print(f"Server {graph.server_config.service_version} at {args.server}")
 
-    # Baseline first, against the still-empty server: once entities exist,
-    # the default processors emit extra PATCHes (e.g. `status`) that the
-    # ingestion itself never sent.
-    emitted = _emitted(graph)
-    problems = _ingest(args.server)
-    problems += _read_back(graph, emitted)
+    problems, sent = _ingest(args.server)
+    problems += _read_back(graph, sent)
 
     if problems:
         print(f"\nVersion check FAILED: {len(problems)} problem(s)")

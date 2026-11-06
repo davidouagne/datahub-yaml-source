@@ -45,6 +45,12 @@ This registers the `yaml` source type with `acryl-datahub` via a
 datahub check plugins
 ```
 
+Supported DataHub server versions: the `acryl-datahub` range in
+[`pyproject.toml`](pyproject.toml) is authoritative, compared per server
+minor (today: DataHub 1.7.x). See
+[Supported DataHub versions](docs/sources/yaml/yaml.md#supported-datahub-versions)
+for what happens against a server outside that range.
+
 ## Usage
 
 ```bash

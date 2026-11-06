@@ -21,8 +21,13 @@ from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
+ServerMinor = tuple[int, int]
+"""A DataHub server version at the granularity the range is compared: (major, minor)."""
+
 _DISTRIBUTION = "datahub-yaml-source"
 _CLIENT = "acryl-datahub"
+# Stands for "the highest patch of a minor": above any real 1.x.y.z release.
+_LAST_PATCH = "9999.9999"
 
 
 def supported_range() -> SpecifierSet:
@@ -37,11 +42,12 @@ def supported_range() -> SpecifierSet:
 def _minor_is_supported(major: int, minor: int, specifier: SpecifierSet) -> bool:
     # A minor is supported when the range admits any version of it: its
     # first or its last possible one is enough for `>=` / `<` bounds.
-    first, last = Version(f"{major}.{minor}.0"), Version(f"{major}.{minor}.9999.9999")
+    first = Version(f"{major}.{minor}.0")
+    last = Version(f"{major}.{minor}.{_LAST_PATCH}")
     return specifier.contains(first) or specifier.contains(last)
 
 
-def _server_minor(server_config: RestServiceConfig) -> tuple[int, int] | None:
+def _server_minor(server_config: RestServiceConfig) -> ServerMinor | None:
     """The server's (major, minor), or None when it can't be compared."""
     if server_config.is_datahub_cloud or not server_config.service_version:
         return None
@@ -57,7 +63,7 @@ def _server_minor(server_config: RestServiceConfig) -> tuple[int, int] | None:
 
 def check_server_version(
     server_config: RestServiceConfig | None, report: SourceReport, *, strict: bool = False
-) -> tuple[int, int] | None:
+) -> ServerMinor | None:
     """Warn on `report` when the server's minor is outside the supported range.
 
     Returns the server's (major, minor), or None when it is unknowable -- the

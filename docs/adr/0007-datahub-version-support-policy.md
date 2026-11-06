@@ -14,13 +14,13 @@ its reason. Terms (**Supported DataHub version**, **Version check**,
 
 1. **The target is the server.** A Supported DataHub version is a GMS
    version. The aim is 1.7.x → 1.9.x, but the announced range only ever
-   contains verified minors: today `acryl-datahub>=1.7.0.9,<1.8` in
+   contains verified minors: today `acryl-datahub>=1.7.0.11,<1.8` in
    `pyproject.toml`, which is the single source of the range. A minor enters
    only through a widening PR, reviewed by hand, that passed the Version
    check.
 
 2. **Comparison is per minor.** Only the server's `major.minor` is compared
-   with the minors the specifier covers. The patch-level floor `1.7.0.9` is a
+   with the minors the specifier covers. The patch-level floor (`1.7.0.11`) is a
    **client SDK constraint, not a server promise**: GMS 1.7 reports `v1.7.0`
    or `v1.7.0.1`, and every server patch is in range.
    *Deviation*: the exporter's `>=1.7` floor never raised this.
@@ -41,8 +41,9 @@ its reason. Terms (**Supported DataHub version**, **Version check**,
 4. **Out of range: warn, don't block.** `YamlSource.__init__` reads
    `ctx.graph.server_config`, which is already fetched and cached. Out of
    range, unparsable, or DataHub Cloud → `report.warning`. No graph (`file`
-   or `console` sink) → info log only. A recipe field `strict_version: false`
-   turns every warning case, and the no-graph case, into an init failure.
+   or `console` sink) → info log only. A recipe field `strict_version` (default
+   `false`), set to `true`, turns every warning case, and the no-graph case,
+   into an init failure.
    *Deviation*: a recipe field, since a source has no CLI flag like the
    exporter's `--strict-version`.
 

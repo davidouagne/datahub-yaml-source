@@ -865,7 +865,9 @@ class MLFeatureDoc(
     )
     properties: dict[str, Any] | None = None
     sources: list[QuerySubjectRef] | None = Field(
-        default=None, description="Dataset(s)/column(s) this feature is derived from."
+        default=None,
+        description="Dataset(s) this feature is derived from. DataHub links ML "
+        "features to whole datasets only: a 'fieldPath' is dropped, with a warning.",
     )
 
 
@@ -890,7 +892,8 @@ class MLPrimaryKeyDoc(
     dataType: str | None = None
     properties: dict[str, Any] | None = None
     sources: list[QuerySubjectRef] = Field(
-        description="Dataset(s)/column(s) this primary key is derived from."
+        description="Dataset(s) this primary key is derived from. DataHub links ML "
+        "primary keys to whole datasets only: a 'fieldPath' is dropped, with a warning."
     )
 
 

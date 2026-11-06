@@ -441,8 +441,9 @@ switched to rebase merge only and `pr-title` was dropped (ADR-0005).
 
 ### Workflow Validation
 
-- **VLD-001**: `test` job passes on all matrix legs (Python 3.11, 3.12) using
-  `uv sync --frozen --group dev --extra git --extra s3`.
+- **VLD-001**: `test` job passes on all three legs: `(highest, 3.11)` and
+  `(highest, 3.12)` using `uv sync --frozen --group dev --extra git --extra s3`,
+  `(lowest, 3.11)` using `uv pip install --resolution lowest-direct -e '.[git,s3]' --group dev`.
 - **VLD-002**: `build` passes using a base install (a built wheel installed into a fresh
   venv via `uv build --wheel` + `uv pip install`, no extras, no dev group) and confirms the `yaml` source
   is listed among registered ingestion source plugins.

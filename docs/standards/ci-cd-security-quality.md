@@ -71,7 +71,7 @@ aggregate gate named exactly `CI status` (the required-status-check context stri
 - **`typecheck`**: `mypy`, `strict = true`, scoped to `src/` only (`pyproject.toml` `[tool.mypy] files =
   ["src"]`). The baseline was driven to **zero** when strict mode was adopted (issue #55) -- there is no
   grandfathered ignore list; every new type error fails the build.
-- **`test`**: full unit + integration test suite across Python 3.11-3.12, enforces a coverage floor
+- **`test`**: full unit + integration test suite on three legs -- `highest` (the lock) on Python 3.11 and 3.12, and `lowest` (direct dependencies at their declared floors, `--resolution lowest-direct`) on 3.11; the `highest` legs enforce a coverage floor
   (`--cov-fail-under=80`).
 - **`build`**: verifies a base-only (no optional-extras) install still registers the `yaml` DataHub
   ingestion source plugin.
@@ -89,7 +89,7 @@ Full contract: `spec/spec-process-cicd-ci.md`.
 
 ### 2.2 Coverage reporting (Codecov)
 
-Codecov uploads from every `test` matrix leg, but is **informational only** -- `codecov.yml` sets both
+Codecov uploads from the `highest` `test` legs (`py3.11`, `py3.12`; the `lowest` leg runs without coverage), but is **informational only** -- `codecov.yml` sets both
 `project` and `patch` statuses to `informational: true`. It never posts a blocking check; the actual
 coverage gate is `ci.yml`'s own `--cov-fail-under=80`. Full contract: `spec/spec-process-cicd-codecov.md`.
 

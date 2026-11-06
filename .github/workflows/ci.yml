@@ -153,7 +153,9 @@ jobs:
       - name: Run tests with coverage
         if: matrix.resolution == 'highest'
         run: |
-          uv run pytest tests/unit tests/integration             --cov=datahub_yaml_source --cov-report=term-missing --cov-report=xml             --cov-fail-under=80
+          uv run pytest tests/unit tests/integration \
+            --cov=datahub_yaml_source --cov-report=term-missing --cov-report=xml \
+            --cov-fail-under=80
 
       # Same tests, no coverage: the code measured is the same as on the
       # highest legs. --no-sync is load-bearing -- a plain `uv run` would

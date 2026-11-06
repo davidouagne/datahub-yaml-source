@@ -1409,7 +1409,11 @@ class ServiceDoc(HasOwners, HasTags, HasSubTypes, _AllowExtraFields):
     sourceRepository: str | None = Field(default=None, description="id of a REPOSITORY document.")
     mcpServer: McpServerDoc | None = None
     definition: ServiceDefinitionDoc | None = None
-    properties: dict[str, Any] | None = None
+    properties: dict[str, Any] | None = Field(
+        default=None,
+        description="Not emitted yet: DataHub 1.7 servers can't store a service's "
+        "custom properties, so setting this only raises a warning.",
+    )
     platform: str | None = Field(default=None, description="Emits the dataPlatformInstance aspect.")
     instance: str | None = None
 

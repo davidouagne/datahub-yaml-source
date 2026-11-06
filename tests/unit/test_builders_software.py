@@ -243,8 +243,14 @@ def test_build_service_only_permits_tags_owners_subtypes_and_wraps_raw_spec():
     assert props.apis == ["urn:li:api:fhir-patient-search-api"]
     assert props.sourceRepository == "urn:li:repository:aphp-pathling"
     assert props.lifecycle == "PRODUCTION"
-    # `replicas: 3` (int) must be coerced to `"3"` -- customProperties is Dict[str, str].
-    assert props.customProperties == {"cluster": "eds", "replicas": "3"}
+    # DataHub 1.7's serviceProperties has no customProperties: the server
+    # silently drops them, so `properties` are not emitted (ADR-0007 §5:
+    # a field enters once every supported minor keeps it), with a warning.
+    assert props.customProperties == {}
+    warnings = [str(w) for w in report.warnings]
+    assert len(warnings) == 1
+    assert "pathling-fhir-server" in warnings[0]
+    assert "cluster" in warnings[0]
 
     mcp_server = next(
         wu.metadata.aspect

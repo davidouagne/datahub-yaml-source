@@ -758,7 +758,7 @@ A running service (possibly an MCP server). `service` only permits owners/tags/s
 | `sourceRepository` | string | no | - | id of a REPOSITORY document. |
 | `mcpServer` | [McpServerDoc](#mcpserverdoc) | no | - |  |
 | `definition` | [ServiceDefinitionDoc](#servicedefinitiondoc) | no | - |  |
-| `properties` | map | no | - |  |
+| `properties` | map | no | - | Not emitted yet: DataHub 1.7 servers can't store a service's custom properties, so setting this only raises a warning. |
 | `platform` | string | no | - | Emits the dataPlatformInstance aspect. |
 | `instance` | string | no | - |  |
 

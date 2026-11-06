@@ -1,3 +1,4 @@
+import functools
 import logging
 import tempfile
 from collections.abc import Callable, Iterable
@@ -16,6 +17,7 @@ from datahub.ingestion.api.decorators import (
 )
 from datahub.ingestion.api.source import (
     CapabilityReport,
+    MetadataWorkUnitProcessor,
     SourceCapability,
     TestableSource,
     TestConnectionReport,
@@ -65,6 +67,7 @@ from datahub_yaml_source.loader import (
     is_http_uri,
     load_repository,
 )
+from datahub_yaml_source.minimum_server_version import filter_by_minimum_server_version
 from datahub_yaml_source.server_version import check_server_version
 from datahub_yaml_source.urns import ReferenceIndex
 from datahub_yaml_source.yaml_source_config import YamlSourceConfig
@@ -160,7 +163,7 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
         super().__init__(config, ctx)  # type: ignore[arg-type]
         self.config = config
         self.report = YamlSourceReport()
-        check_server_version(
+        self.server_minor = check_server_version(
             ctx.graph.server_config if ctx.graph is not None else None,
             self.report,
             strict=config.strict_version,
@@ -173,6 +176,16 @@ class YamlSource(StatefulIngestionSourceBase, TestableSource):
 
     def get_report(self) -> YamlSourceReport:
         return self.report
+
+    def get_workunit_processors(self) -> list[MetadataWorkUnitProcessor | None]:
+        # First, so the default processors (auto status aspect, workunit
+        # counts, stale entity removal) only ever see what is emitted.
+        minimum_server_version = functools.partial(
+            filter_by_minimum_server_version,
+            server_minor=self.server_minor,
+            report=self.report,
+        )
+        return [minimum_server_version, *super().get_workunit_processors()]
 
     def _resolve_roots(self, checkout_dir: Path | None = None) -> list[str]:
         """Resolve every 'path' entry to a root `load_repository()` can scan.

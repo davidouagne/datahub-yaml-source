@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.4.0...v0.4.1) (2026-11-09)
+
+
+### Dependencies
+
+* Bump the prod-minor group with 7 updates ([910323c](https://github.com/davidouagne/datahub-yaml-source/commit/910323c3c8f0e187ad3b8a0158b20f9c1da92599))
+* Bump the prod-patch group across 1 directory with 6 updates ([606942d](https://github.com/davidouagne/datahub-yaml-source/commit/606942d0bad5f1b761450ccb9faaaa1425ad6989))
+
+
+### Build System
+
+* Bump the dev-dependencies group with 3 updates ([9b6e058](https://github.com/davidouagne/datahub-yaml-source/commit/9b6e058966326703dd799896647d0b470d6c1185))
+
 ## [0.4.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.3.1...v0.4.0) (2026-11-06)
 
 

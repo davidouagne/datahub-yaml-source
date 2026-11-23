@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/davidouagne/datahub-yaml-source/compare/v0.5.0...v0.5.1) (2026-11-23)
+
+
+### Dependencies
+
+* Bump coverage from 7.17.3 to 7.17.4 in the prod-patch group ([3b47da5](https://github.com/davidouagne/datahub-yaml-source/commit/3b47da5fb94e94f747fa0d3aa9f46d79d2148c63))
+* Bump the prod-minor group with 2 updates ([968d374](https://github.com/davidouagne/datahub-yaml-source/commit/968d3747cb8c7aeddd31498acfed175a4ca47b33))
+
 ## [0.5.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.4.2...v0.5.0) (2026-11-23)
 
 

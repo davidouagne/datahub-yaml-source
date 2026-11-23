@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.0](https://github.com/davidouagne/datahub-yaml-source/compare/v0.4.2...v0.5.0) (2026-11-23)
+
+
+### Features
+
+* support DataHub 1.8 servers ([9be4195](https://github.com/davidouagne/datahub-yaml-source/commit/9be41951148d18d6e27e1b3a14b48a3198bf12b1)), closes [#168](https://github.com/davidouagne/datahub-yaml-source/issues/168)
+* support DataHub 1.9 servers ([7f5cc3b](https://github.com/davidouagne/datahub-yaml-source/commit/7f5cc3b8066204bcbcd1378cac9bc7b308207fa4)), closes [#169](https://github.com/davidouagne/datahub-yaml-source/issues/169)
+
+
+### Dependencies
+
+* Bump the prod-patch group across 1 directory with 6 updates ([842d431](https://github.com/davidouagne/datahub-yaml-source/commit/842d4316e287cf2304ce33984e3e270165a0a04a))
+
+
+### Documentation
+
+* align range wording and stale references after the 1.9 widening ([30f6b89](https://github.com/davidouagne/datahub-yaml-source/commit/30f6b89bead5a2853e441c9d541c4a849db4469c)), closes [#139](https://github.com/davidouagne/datahub-yaml-source/issues/139)
+
+
+### Build System
+
+* Bump the dev-dependencies group with 3 updates ([fb1265a](https://github.com/davidouagne/datahub-yaml-source/commit/fb1265a9313b6eae3c81bcb9bb9b2bee87fea790))
+
 ## [0.4.2](https://github.com/davidouagne/datahub-yaml-source/compare/v0.4.1...v0.4.2) (2026-11-16)
 
 

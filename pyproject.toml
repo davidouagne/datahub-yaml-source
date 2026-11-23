@@ -48,10 +48,12 @@ dependencies = [
     # This range is also the range of *Supported DataHub versions* (the
     # server, compared per minor -- docs/adr/0007): the patch-level floor
     # is a client SDK constraint, not a server promise.
-    # Upper bound <1.8: the datahub.sdk.* surface is still
+    # Upper bound <1.9: the datahub.sdk.* surface is still
     # ExperimentalWarning-flagged, so a minor bump can break again, and
     # the ceiling is the last *verified* server minor (ADR-0007 §1).
-    "acryl-datahub>=1.7.0.11,<1.8",
+    # Raised only by the widening procedure in CONTRIBUTING.md, one minor
+    # at a time: 1.8 passed the Version check (issue #168).
+    "acryl-datahub>=1.7.0.11,<1.9",
     "pyyaml>=6.0",
     # models.py/loader.py/yaml_source_config.py import pydantic directly
     # for the config schema and validation. Only ever a transitive dep

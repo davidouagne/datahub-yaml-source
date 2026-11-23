@@ -71,11 +71,12 @@ updates:
         update-types:
           - "minor"
     # No `ignore` entry for acryl-datahub majors. pyproject.toml deliberately
-    # caps it at <1.8 (undeprecated breaks in the still-experimental
-    # datahub.sdk.* surface -- see the comment there). Dependabot will
-    # open a PR to lift that cap; the by-hand review every dependency PR
-    # already gets is the intended gate, and an `ignore` would only hide
-    # a bump the maintainer wants to see queued. `acryl-datahub` is a
+    # caps it at the last verified server minor (undeprecated breaks in
+    # the still-experimental datahub.sdk.* surface -- see the comment
+    # there; ADR-0007 §1). Dependabot will open a PR to lift that cap; the
+    # by-hand review plus the Version check of the widening procedure
+    # (CONTRIBUTING.md) is the intended gate, and an `ignore` would only
+    # hide a bump the maintainer wants to see queued. `acryl-datahub` is a
     # production dependency, so this cap is never swept into a group --
     # `prod-patch` / `prod-minor` only cover patch / minor.
 

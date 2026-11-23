@@ -138,7 +138,8 @@ PR, reviewed by hand, that passed the Version check. Patch bumps
 
 1. In the widening PR (opened by Dependabot or by hand), raise the cap to
    the next minor, e.g. `acryl-datahub>=1.7.0.11,<1.9` to admit 1.8, then
-   run `uv lock`. The cap is always the last verified minor.
+   run `uv lock`. The range always ends at the last verified minor: the
+   cap is the first minor not verified yet.
 2. Run the Version check against the new server:
    `scripts/verify-datahub-version.sh 1.8.0`.
 3. Read the result:

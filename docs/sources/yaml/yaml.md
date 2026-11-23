@@ -157,8 +157,8 @@ This source is verified against DataHub **server** (GMS) minors. The
 supported range is the `acryl-datahub` requirement in
 [`pyproject.toml`](https://github.com/davidouagne/datahub-yaml-source/blob/main/pyproject.toml),
 which is authoritative and compared per minor: today `>=1.7.0.11,<1.10`, so
-every DataHub 1.7.x, 1.8.x and 1.9.x server. The patch-level floor is a constraint on the
-client library only. The range only ever contains minors that passed the
+every DataHub 1.7.x, 1.8.x and 1.9.x server. The patch-level floor is a
+constraint on the client library only. The range only ever contains minors that passed the
 maintainers' *Version check*: ingest the integration fixture into that
 server, then read every aspect back
 ([`docs/adr/0007-datahub-version-support-policy.md`](https://github.com/davidouagne/datahub-yaml-source/blob/main/docs/adr/0007-datahub-version-support-policy.md)).

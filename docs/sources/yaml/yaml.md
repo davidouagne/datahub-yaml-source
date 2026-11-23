@@ -156,8 +156,8 @@ permissions to configure.
 This source is verified against DataHub **server** (GMS) minors. The
 supported range is the `acryl-datahub` requirement in
 [`pyproject.toml`](https://github.com/davidouagne/datahub-yaml-source/blob/main/pyproject.toml),
-which is authoritative and compared per minor: today `>=1.7.0.11,<1.9`, so
-every DataHub 1.7.x and 1.8.x server. The patch-level floor is a constraint on the
+which is authoritative and compared per minor: today `>=1.7.0.11,<1.10`, so
+every DataHub 1.7.x, 1.8.x and 1.9.x server. The patch-level floor is a constraint on the
 client library only. The range only ever contains minors that passed the
 maintainers' *Version check*: ingest the integration fixture into that
 server, then read every aspect back

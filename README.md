@@ -47,7 +47,7 @@ datahub check plugins
 
 Supported DataHub server versions: the `acryl-datahub` range in
 [`pyproject.toml`](pyproject.toml) is authoritative, compared per server
-minor (today: DataHub 1.7.x and 1.8.x). See
+minor (today: DataHub 1.7.x to 1.9.x). See
 [Supported DataHub versions](docs/sources/yaml/yaml.md#supported-datahub-versions)
 for what happens against a server outside that range.
 

@@ -1,8 +1,8 @@
 ---
 title: CI/CD Process Specification - Dependency Updates (Dependabot)
-version: 1.9
+version: 1.10
 date_created: 2026-09-07
-last_updated: 2026-10-26
+last_updated: 2026-11-23
 owner: David Ouagne
 tags: [process, cicd, github, automation, dependencies, dependabot, supply-chain]
 ---
@@ -73,11 +73,11 @@ This section records the decisions and their rationale; the file is the source o
 
 ### No `ignore` for `acryl-datahub` majors
 
-`pyproject.toml` pins `acryl-datahub>=1.7.0.11,<1.8` on purpose — the `1.7.0.x` series takes undeprecated
+`pyproject.toml` caps `acryl-datahub` at the last verified server minor on purpose (`>=1.7.0.11,<1.10` as of v1.10) — the `1.7.0.x` series takes undeprecated
 breaks in the experimental `datahub.sdk.*` surface this connector builds on (documented inline in
 `pyproject.toml`). Dependabot will open a PR proposing to lift that ceiling. That PR is **wanted**: the
-by-hand review it gets (like every dependency PR) is the gate, and lifting the cap is tracked as its
-own migration task elsewhere. An `ignore` rule would only suppress a signal the maintainer wants
+by-hand review it gets (like every dependency PR) is the gate, and lifting the cap follows the widening
+procedure in `CONTRIBUTING.md` (Version check, one minor at a time; ADR-0007 §7). An `ignore` rule would only suppress a signal the maintainer wants
 queued.
 
 ### What Dependabot will not touch
@@ -175,6 +175,7 @@ Configuration table's summary of the policy goes stale.
 | 1.7 | 2026-10-13 | Added `allow: [{dependency-type: all}]` to the `uv` block (issue #96) so scheduled version updates also cover transitive dependencies. Real behavior change: indirect deps in `uv.lock` now get weekly bump PRs, which means more PR volume. Deliberate divergence from the sibling repo (see the Configuration table's `allow` row). Not yet verified: which `uv` group (`dev-dependencies` / `prod-minor-patch`) Dependabot puts indirect bumps in. Check this on the first run after merge (VLD-002). | David Ouagne |
 | 1.8 | 2026-10-19 | Split the `uv` `prod-minor-patch` group into `prod-patch` (`update-types: ["patch"]`) and `prod-minor` (`update-types: ["minor"]`). Answers v1.7's open question: the first run after merge (PR #107) put indirect bumps in `prod-minor-patch`, so Dependabot groups them as `production`. That PR bundled 5 patch bumps with 5 indirect minor bumps; `dependabot-auto-merge.yml` refused it as a whole (indirect minors are ineligible), so the patches waited for review too. With the split, the patch group auto-merges on its own and only minors need review. No auto-merge policy change. Deliberate divergence from the sibling repo, which keeps `prod-minor-patch`. | David Ouagne |
 | 1.9 | 2026-10-26 | Aligned with the sibling repo. (1) `uv` commit prefix: `deps` for production (transitives included), `build` for dev, `include: scope` dropped; `deps` added to `commitlint.config.mjs`'s `type-enum` and to `release-please-config.json` as a `Dependencies` changelog section. (2) Cross-reference: `dependabot-auto-merge.yml` (its spec v1.6) now auto-merges minor bumps to `indirect` dependencies too (PR #112), so the `allow` and `groups` rows no longer describe indirect minors as ineligible. | David Ouagne |
+| 1.10 | 2026-11-23 | Refreshed the "No `ignore` for `acryl-datahub` majors" note after the 1.8 / 1.9 widening (issues #168, #169): the cap is now `<1.10`, and lifting it follows the widening procedure in `CONTRIBUTING.md` rather than an unnamed migration task. No `dependabot.yml` behaviour change (its comment no longer names a concrete cap). | David Ouagne |
 
 ## Related Specifications
 

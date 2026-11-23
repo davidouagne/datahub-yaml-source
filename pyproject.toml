@@ -51,7 +51,7 @@ dependencies = [
     # Upper bound <1.8: the datahub.sdk.* surface is still
     # ExperimentalWarning-flagged, so a minor bump can break again, and
     # the ceiling is the last *verified* server minor (ADR-0007 §1).
-    "acryl-datahub>=1.7.0.11,<1.8",
+    "acryl-datahub>=1.7.0.11,<1.10",
     "pyyaml>=6.0",
     # models.py/loader.py/yaml_source_config.py import pydantic directly
     # for the config schema and validation. Only ever a transitive dep

@@ -50,7 +50,7 @@ dependencies = [
     # is a client SDK constraint, not a server promise.
     # Upper bound <1.10: the datahub.sdk.* surface is still
     # ExperimentalWarning-flagged, so a minor bump can break again, and
-    # the ceiling is the last *verified* server minor (ADR-0007 §1).
+    # the range ends at the last *verified* server minor (ADR-0007 §1).
     # Raised only by the widening procedure in CONTRIBUTING.md, one minor
     # at a time: 1.8 and 1.9 passed the Version check (issues #168, #169).
     "acryl-datahub>=1.7.0.11,<1.10",

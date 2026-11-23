@@ -73,11 +73,13 @@ This section records the decisions and their rationale; the file is the source o
 
 ### No `ignore` for `acryl-datahub` majors
 
-`pyproject.toml` caps `acryl-datahub` at the last verified server minor on purpose (`>=1.7.0.11,<1.10` as of v1.10) — the `1.7.0.x` series takes undeprecated
-breaks in the experimental `datahub.sdk.*` surface this connector builds on (documented inline in
+`pyproject.toml` ends the `acryl-datahub` range at the last verified server minor on purpose
+(`>=1.7.0.11,<1.10` as of v1.10) — the `1.7.0.x` series takes undeprecated breaks in the
+experimental `datahub.sdk.*` surface this connector builds on (documented inline in
 `pyproject.toml`). Dependabot will open a PR proposing to lift that ceiling. That PR is **wanted**: the
-by-hand review it gets (like every dependency PR) is the gate, and lifting the cap follows the widening
-procedure in `CONTRIBUTING.md` (Version check, one minor at a time; ADR-0007 §7). An `ignore` rule would only suppress a signal the maintainer wants
+by-hand review it gets (like every dependency PR) is the gate, and lifting the cap follows the
+widening procedure in `CONTRIBUTING.md` (Version check, one minor at a time; ADR-0007 §7 for the
+procedure's place in the policy). An `ignore` rule would only suppress a signal the maintainer wants
 queued.
 
 ### What Dependabot will not touch

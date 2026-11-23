@@ -14,8 +14,9 @@ its reason. Terms (**Supported DataHub version**, **Version check**,
 
 1. **The target is the server.** A Supported DataHub version is a GMS
    version. The aim is 1.7.x → 1.9.x, but the announced range only ever
-   contains verified minors: today `acryl-datahub>=1.7.0.11,<1.8` in
-   `pyproject.toml`, which is the single source of the range. A minor enters
+   contains verified minors: the `acryl-datahub` requirement in
+   `pyproject.toml`, which is the single source of the range (`<1.8` when
+   accepted, `<1.10` since #168 and #169). A minor enters
    only through a widening PR, reviewed by hand, that passed the Version
    check.
 
@@ -109,4 +110,5 @@ its reason. Terms (**Supported DataHub version**, **Version check**,
   questions 2–3 are realigned. `schemaField` UI surfacing stays a deployment
   note, not a version matter.
 - Widening to 1.8 waits for a non-yanked `acryl-datahub` 1.8 client (none
-  as of 2026-11-06).
+  as of 2026-11-06). Done on 2026-11-23: 1.8 and 1.9 passed the Version
+  check and entered the range (#168, #169).

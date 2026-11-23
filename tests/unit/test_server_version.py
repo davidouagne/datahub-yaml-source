@@ -13,7 +13,9 @@ import pytest
 from datahub.configuration.common import ConfigurationError
 from datahub.ingestion.api.common import PipelineContext
 from datahub.utilities.server_config_util import RestServiceConfig
+from packaging.version import Version
 
+from datahub_yaml_source.server_version import supported_range
 from datahub_yaml_source.yaml_source import YamlSource
 from datahub_yaml_source.yaml_source_config import YamlSourceConfig
 
@@ -38,13 +40,34 @@ def _warning_texts(source: YamlSource) -> list[str]:
     return [str(w) for w in source.report.warnings]
 
 
-def test_server_on_a_newer_minor_is_reported_as_out_of_range(tmp_path: Path):
-    source = _source(tmp_path, _FakeGraph("v1.8.0"))
+def _ceiling() -> tuple[int, int]:
+    """The (major, minor) of the range's `<X.Y` cap: the first unsupported minor.
+
+    Read from the declared requirement so that widening the range (ADR-0007
+    §7) moves these examples with it instead of turning them red.
+    """
+    (cap,) = [s for s in supported_range() if s.operator == "<"]
+    version = Version(cap.version)
+    assert version.minor >= 1, f"cap {cap} leaves no highest supported minor below it"
+    return version.major, version.minor
+
+
+def test_server_on_the_minor_above_the_range_is_reported_as_out_of_range(tmp_path: Path):
+    major, minor = _ceiling()
+    server = f"v{major}.{minor}.0"
+    source = _source(tmp_path, _FakeGraph(server))
 
     warnings = _warning_texts(source)
     assert len(warnings) == 1
-    assert "v1.8.0" in warnings[0]
-    assert "1.7" in warnings[0]
+    assert server in warnings[0]
+    assert f"<{major}.{minor}" in warnings[0]
+
+
+def test_server_on_the_highest_supported_minor_is_in_range(tmp_path: Path):
+    major, minor = _ceiling()
+    source = _source(tmp_path, _FakeGraph(f"v{major}.{minor - 1}.0"))
+
+    assert _warning_texts(source) == []
 
 
 def test_server_patch_below_the_client_floor_is_in_range(tmp_path: Path):
@@ -84,8 +107,9 @@ def test_without_a_graph_the_version_is_only_logged(tmp_path: Path, caplog):
 
 
 def test_strict_version_fails_init_whenever_a_warning_would_be_raised(tmp_path: Path):
+    major, minor = _ceiling()
     for graph in (
-        _FakeGraph("v1.8.0"),
+        _FakeGraph(f"v{major}.{minor}.0"),
         _FakeGraph("not-a-version"),
         _FakeGraph("v0.3.14", server_env="cloud"),
     ):
